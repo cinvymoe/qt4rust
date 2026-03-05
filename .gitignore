@@ -1,0 +1,54 @@
+# Rust
+/target/
+**/*.rs.bk
+*.pdb
+
+# Qt
+*.qmlc
+*.jsc
+.qmake.stash
+*.pro.user
+*.pro.user.*
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+*.autosave
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+/build/
+/dist/
+*.o
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Testing
+/coverage/
+*.profraw
+*.profdata
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+
+# Deployment libraries
+/libs-to-deploy/
+
+# Kiro IDE
+.kiro/

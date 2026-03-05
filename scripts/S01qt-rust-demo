@@ -1,0 +1,38 @@
+#!/bin/bash
+
+case "$1" in
+start)
+    echo "Starting qt-rust-demo..."
+    
+    # 检查应用是否存在
+    if [ -x "/data/local/tmp/qt-rust-demo/qt-rust-demo" ]; then
+        # 使用 run.sh 启动应用
+        if [ -f "/data/local/tmp/qt-rust-demo/run.sh" ]; then
+            sh /data/local/tmp/qt-rust-demo/run.sh &
+            echo "qt-rust-demo started"
+        else
+            echo "Error: run.sh not found"
+        fi
+    else
+        echo "Error: qt-rust-demo not found or not executable"
+    fi
+    ;;
+
+stop)
+    echo "Stopping qt-rust-demo..."
+    killall qt-rust-demo
+    echo "qt-rust-demo stopped"
+    ;;
+
+restart|reload)
+    $0 stop
+    sleep 1
+    $0 start
+    ;;
+
+*)
+    echo "Usage: $0 {start|stop|restart}"
+    exit 1
+esac
+
+exit 0
