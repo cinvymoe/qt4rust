@@ -19,6 +19,8 @@ Window {
     
     // 导航栏显示状态
     property bool navigationVisible: true
+    // 顶部栏显示状态（虚拟键盘显示时隐藏）
+    property bool headerVisible: true
     
     // 自动隐藏定时器
     Timer {
@@ -27,13 +29,16 @@ Window {
         running: false
         repeat: false
         onTriggered: {
+            // 同时隐藏底部导航栏和顶部导航栏
             navigationVisible = false
+            headerVisible = false
         }
     }
     
     // 重置定时器的函数
     function resetHideTimer() {
         navigationVisible = true
+        headerVisible = true
         hideNavigationTimer.restart()
     }
     
@@ -53,18 +58,11 @@ Window {
                 anchors.fill: parent
                 spacing: 0
                 
-                // 顶部栏
-                Header {
-                    id: header
-                    width: parent.width
-                    alertActive: true
-                }
-                
                 // 主内容区域
                 Item {
                     id: contentArea
                     width: parent.width
-                    height: parent.height - header.height - (navigationVisible ? navigation.height : 0)
+                    height: parent.height - (navigationVisible ? navigation.height : 0)
                     
                     Behavior on height {
                         NumberAnimation {
@@ -82,26 +80,17 @@ Window {
                         // 监控主界面
                         MonitoringView {
                             id: monitoringView
+                            headerVisible: root.headerVisible
                         }
                         
-                        // 数据曲线（占位）
-                        Item {
-                            Text {
-                                anchors.centerIn: parent
-                                text: "数据曲线"
-                                font.pixelSize: Theme.fontSizeXXLarge
-                                color: Theme.textSecondary
-                            }
+                        // 数据曲线页面
+                        ChartView {
+                            id: chartView
                         }
                         
-                        // 报警记录（占位）
-                        Item {
-                            Text {
-                                anchors.centerIn: parent
-                                text: "报警记录"
-                                font.pixelSize: Theme.fontSizeXXLarge
-                                color: Theme.textSecondary
-                            }
+                        // 报警记录页面
+                        AlarmRecordView {
+                            id: alarmRecordView
                         }
                         
                         // 设置页面
@@ -147,6 +136,20 @@ Window {
         x: 0
         y: root.height
         width: root.width
+        
+        // 监听虚拟键盘状态变化
+        onActiveChanged: {
+            if (active) {
+                // 键盘显示时，隐藏顶部栏和底部导航
+                headerVisible = false
+                navigationVisible = false
+                hideNavigationTimer.stop()
+            } else {
+                // 键盘隐藏时，恢复顶部栏并重启自动隐藏定时器
+                headerVisible = true
+                resetHideTimer()
+            }
+        }
         
         states: State {
             name: "visible"

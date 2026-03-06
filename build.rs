@@ -10,12 +10,17 @@ fn main() {
             .qml_file("qml/views/HomeView.qml")
             .qml_file("qml/views/SettingsView.qml")
             .qml_file("qml/views/MonitoringView.qml")
+            .qml_file("qml/views/ChartView.qml")
+            .qml_file("qml/views/AlarmRecordView.qml")
             // 控件组件
             .qml_file("qml/components/controls/CustomButton.qml")
             .qml_file("qml/components/controls/CustomInput.qml")
             .qml_file("qml/components/controls/DataCard.qml")
             .qml_file("qml/components/controls/MomentCard.qml")
             .qml_file("qml/components/controls/NavigationButton.qml")
+            .qml_file("qml/components/controls/StatusCard.qml")
+            .qml_file("qml/components/controls/ProgressBar.qml")
+            .qml_file("qml/components/controls/AlarmRecordItem.qml")
             // 布局组件
             .qml_file("qml/components/layouts/MainLayout.qml")
             .qml_file("qml/components/layouts/Header.qml")
@@ -48,6 +53,7 @@ fn main() {
         "qml/assets/images/icon-weight.png",
     ])
     .qt_module("Network")  // macOS 需要
+    .qt_module("Charts")   // 图表模块
     .files(["src/counter.rs"])
     .build();
 }

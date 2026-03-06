@@ -3,10 +3,14 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../components/controls"
+import "../components/layouts"
 import "../styles"
 
 Item {
     id: monitoringView
+    
+    // 顶部栏显示状态（从父组件传递）
+    property bool headerVisible: true
     
     // 模拟数据属性
     property real momentPercentage: 94.8
@@ -17,12 +21,39 @@ Item {
     
     Rectangle {
         anchors.fill: parent
-        anchors.margins: Theme.spacingMedium
         color: "transparent"
         
-        Row {
+        Column {
             anchors.fill: parent
-            spacing: Theme.spacingMedium
+            spacing: 0
+            
+            // 顶部栏
+            Header {
+                id: header
+                width: parent.width
+                height: monitoringView.headerVisible ? Theme.headerHeight : 0
+                visible: height > 0
+                alertActive: true
+                clip: true
+                
+                Behavior on height {
+                    NumberAnimation {
+                        duration: Theme.animationDuration
+                        easing.type: Easing.InOutQuad
+                    }
+                }
+            }
+            
+            // 主内容区域
+            Rectangle {
+                width: parent.width
+                height: parent.height - header.height
+                color: "transparent"
+                
+                Row {
+                    anchors.fill: parent
+                    anchors.margins: Theme.spacingMedium
+                    spacing: Theme.spacingMedium
             
             // 左列
             Column {
@@ -308,6 +339,8 @@ Item {
                         }
                     }
                 }
+            }
+        }
             }
         }
     }

@@ -39,9 +39,9 @@ QtObject {
     readonly property int fontSizeHuge: 36                   // 巨大字体
     readonly property int fontSizeDisplay: 60                // 显示字体
     
-    // 字体家族
-    readonly property string fontFamilyDefault: "Inter"
-    readonly property string fontFamilyMono: "Consolas"
+    // 字体家族（使用系统默认字体）
+    readonly property string fontFamilyDefault: "sans-serif"
+    readonly property string fontFamilyMono: "monospace"
     
     // 间距配置
     readonly property int spacingTiny: 4                     // 极小间距
