@@ -1,4 +1,4 @@
-.PHONY: help build push push-qml run stop clean deploy install-autostart
+.PHONY: help build push push-qml push-no-plugins run stop clean deploy install-autostart
 
 # 脚本目录
 SCRIPTS_DIR := scripts
@@ -8,14 +8,15 @@ help:
 	@echo "Qt Rust Demo - Makefile"
 	@echo ""
 	@echo "可用命令:"
-	@echo "  make build           - 编译 ARM 版本应用"
-	@echo "  make push            - 推送应用和依赖到设备"
-	@echo "  make push-qml        - 仅推送 QML 文件到设备"
-	@echo "  make run             - 在设备上运行应用"
-	@echo "  make stop            - 停止设备上的应用"
-	@echo "  make deploy          - 编译并推送到设备"
+	@echo "  make build             - 编译 ARM 版本应用"
+	@echo "  make push              - 推送应用和依赖到设备"
+	@echo "  make push-qml          - 仅推送 QML 文件到设备"
+	@echo "  make push-no-plugins   - 推送应用但不推送 Qt 插件和共享库"
+	@echo "  make run               - 在设备上运行应用"
+	@echo "  make stop              - 停止设备上的应用"
+	@echo "  make deploy            - 编译并推送到设备"
 	@echo "  make install-autostart - 安装自动启动脚本"
-	@echo "  make clean           - 清理编译产物"
+	@echo "  make clean             - 清理编译产物"
 	@echo ""
 
 # 编译 ARM 版本
@@ -33,6 +34,11 @@ push-qml:
 	@echo "=== 推送 QML 文件到设备 ==="
 	@adb push qml /data/local/tmp/qt-rust-demo/
 	@echo "QML 文件推送完成"
+
+# 推送到设备（不推送 Qt 平台插件和共享库）
+push-no-plugins:
+	@echo "=== 推送到设备（跳过 Qt 平台插件和共享库）==="
+	@SKIP_QT_PLUGINS=1 SKIP_LIBS=1 bash $(SCRIPTS_DIR)/deploy-to-device.sh
 
 # 在设备上运行
 run: stop

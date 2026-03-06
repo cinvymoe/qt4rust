@@ -1,97 +1,143 @@
 // Qt Rust Demo - 主界面 QML 文件
-// 实现完整的 UI 布局，绑定 Rust Counter 对象
+// 起重机力矩监测系统
 
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Window
+import QtQuick.Layouts
 import QtQuick.VirtualKeyboard
-import qt.rust.demo
+import "views"
+import "components/layouts"
+import "styles"
 
 Window {
     id: root
     width: 1024
-    height: 600
+    height: 800
     visible: true
-    title: "Rust QT Demo"
+    title: "Crane Monitoring System"
     
-    Counter {
-        id: counter
+    // 导航栏显示状态
+    property bool navigationVisible: true
+    
+    // 自动隐藏定时器
+    Timer {
+        id: hideNavigationTimer
+        interval: 3000  // 3秒
+        running: false
+        repeat: false
+        onTriggered: {
+            navigationVisible = false
+        }
+    }
+    
+    // 重置定时器的函数
+    function resetHideTimer() {
+        navigationVisible = true
+        hideNavigationTimer.restart()
     }
     
     Rectangle {
         anchors.fill: parent
-        color: "#f0f0f0"
+        color: Theme.darkBackground
         
-        Column {
-            id: content
-            x: (parent.width - width) / 2
-            y: (parent.height - height) / 2 + (inputPanel.active ? -inputPanel.height / 2 : 0)
-            spacing: 20
-            
-            Behavior on y {
-                NumberAnimation {
-                    duration: 250
-                    easing.type: Easing.InOutQuad
-                }
+        // 全局鼠标区域，用于检测点击
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {
+                resetHideTimer()
             }
+            propagateComposedEvents: true
             
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "Platform: " + counter.platformInfo
-                font.pixelSize: 50
-            }
-            
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "Count: " + counter.count
-                font.pixelSize: 24
-                font.bold: true
-            }
-            
-            Button {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "Increment"
-                onClicked: counter.increment()
-            }
-            
-            Button {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "Reset"
-                onClicked: counter.reset()
-            }
-            
-            // 虚拟键盘测试输入框
-            TextField {
-                id: textField
-                anchors.horizontalCenter: parent.horizontalCenter
-                width: 400
-                placeholderText: "点击测试虚拟键盘..."
-                font.pixelSize: 20
+            Column {
+                anchors.fill: parent
+                spacing: 0
                 
-                onActiveFocusChanged: {
-                    if (activeFocus) {
-                        Qt.inputMethod.show()
+                // 顶部栏
+                Header {
+                    id: header
+                    width: parent.width
+                    alertActive: true
+                }
+                
+                // 主内容区域
+                Item {
+                    id: contentArea
+                    width: parent.width
+                    height: parent.height - header.height - (navigationVisible ? navigation.height : 0)
+                    
+                    Behavior on height {
+                        NumberAnimation {
+                            duration: Theme.animationDuration
+                            easing.type: Easing.InOutQuad
+                        }
+                    }
+                    
+                    // 页面切换器
+                    StackLayout {
+                        id: stackLayout
+                        anchors.fill: parent
+                        currentIndex: navigation.currentIndex
+                        
+                        // 监控主界面
+                        MonitoringView {
+                            id: monitoringView
+                        }
+                        
+                        // 数据曲线（占位）
+                        Item {
+                            Text {
+                                anchors.centerIn: parent
+                                text: "数据曲线"
+                                font.pixelSize: Theme.fontSizeXXLarge
+                                color: Theme.textSecondary
+                            }
+                        }
+                        
+                        // 报警记录（占位）
+                        Item {
+                            Text {
+                                anchors.centerIn: parent
+                                text: "报警记录"
+                                font.pixelSize: Theme.fontSizeXXLarge
+                                color: Theme.textSecondary
+                            }
+                        }
+                        
+                        // 设置页面
+                        SettingsView {
+                            id: settingsView
+                        }
+                    }
+                }
+                
+                // 底部导航
+                Navigation {
+                    id: navigation
+                    width: parent.width
+                    height: navigationVisible ? Theme.navigationHeight : 0
+                    visible: height > 0
+                    clip: true
+                    
+                    Behavior on height {
+                        NumberAnimation {
+                            duration: Theme.animationDuration
+                            easing.type: Easing.InOutQuad
+                        }
+                    }
+                    
+                    // 监听导航栏的点击事件
+                    onCurrentIndexChanged: {
+                        resetHideTimer()
                     }
                 }
             }
-            
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "输入内容: " + textField.text
-                font.pixelSize: 16
-                color: "#666"
-            }
         }
-        
-        // 覆盖整个内容区域的 MouseArea，用于隐藏键盘
-        MouseArea {
-            anchors.fill: parent
-            anchors.bottomMargin: inputPanel.active ? inputPanel.height : 0
-            enabled: textField.activeFocus
-            onClicked: {
-                textField.focus = false
-            }
-        }
+    }
+    
+    // 启动时开始定时器
+    Component.onCompleted: {
+        hideNavigationTimer.start()
     }
     
     // 虚拟键盘
@@ -116,7 +162,7 @@ Window {
             reversible: true
             NumberAnimation {
                 properties: "y"
-                duration: 250
+                duration: Theme.animationDuration
                 easing.type: Easing.InOutQuad
             }
         }

@@ -1,133 +1,171 @@
-// Qt Rust Demo - 主界面 QML 文件
-// 实现完整的 UI 布局，绑定 Rust Counter 对象
+// Qt Rust Demo - 预览版主界面
+// 用于 qmlscene 预览，不依赖 Rust 后端
 
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Window
-import QtQuick.VirtualKeyboard
+import QtQuick.Layouts
 
 Window {
     id: root
     width: 1024
-    height: 600
+    height: 800
     visible: true
-    title: "Rust QT Demo"
+    title: "Crane Monitoring System - Preview"
     
-    // 模拟 Counter 对象用于预览
-    QtObject {
-        id: counter
-        property int count: 0
-        property string platformInfo: "Preview Mode (x86_64)"
-        
-        function increment() {
-            count++
-        }
-        
-        function reset() {
-            count = 0
-        }
-    }
+    // 深色主题颜色
+    readonly property color darkBackground: "#0f172b"
+    readonly property color darkSurface: "#1d293d"
+    readonly property color darkBorder: "#314158"
+    readonly property color darkAccent: "#2b7fff"
+    readonly property color dangerColor: "#e7000b"
+    readonly property color dangerBackground: "#460809"
+    readonly property color dangerLight: "#fb2c36"
+    readonly property color warningColor: "#f0b100"
+    readonly property color successColor: "#00c950"
+    readonly property color textPrimary: "#ffffff"
+    readonly property color textSecondary: "#cad5e2"
+    readonly property color textTertiary: "#90a1b9"
+    readonly property color textAccent: "#51a2ff"
     
     Rectangle {
         anchors.fill: parent
-        color: "#f0f0f0"
+        color: darkBackground
         
         Column {
-            id: content
-            x: (parent.width - width) / 2
-            y: (parent.height - height) / 2 + (inputPanel.active ? -inputPanel.height / 2 : 0)
-            spacing: 20
+            anchors.fill: parent
+            spacing: 0
             
-            Behavior on y {
-                NumberAnimation {
-                    duration: 250
-                    easing.type: Easing.InOutQuad
-                }
-            }
-            
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "Platform: " + counter.platformInfo
-                font.pixelSize: 50
-            }
-            
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "Count: " + counter.count
-                font.pixelSize: 24
-                font.bold: true
-            }
-            
-            Button {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "Increment"
-                onClicked: counter.increment()
-            }
-            
-            Button {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "Reset"
-                onClicked: counter.reset()
-            }
-            
-            // 虚拟键盘测试输入框
-            TextField {
-                id: textField
-                anchors.horizontalCenter: parent.horizontalCenter
-                width: 400
-                placeholderText: "点击测试虚拟键盘..."
-                font.pixelSize: 20
+            // 顶部栏
+            Rectangle {
+                id: header
+                width: parent.width
+                height: 68
+                color: dangerBackground
+                border.color: dangerColor
+                border.width: 0.667
                 
-                onActiveFocusChanged: {
-                    if (activeFocus) {
-                        Qt.inputMethod.show()
+                Row {
+                    anchors.fill: parent
+                    anchors.margins: 16
+                    spacing: 8
+                    
+                    Image {
+                        source: "assets/images/icon-logo.png"
+                        width: 24
+                        height: 24
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter
+                        
+                        Text {
+                            text: "汽车吊力矩监测系统"
+                            font.pixelSize: 18
+                            color: textPrimary
+                        }
+                        
+                        Text {
+                            text: "Crane Moment Monitoring System"
+                            font.pixelSize: 12
+                            color: textTertiary
+                        }
+                    }
+                    
+                    Item { Layout.fillWidth: true }
+                    
+                    Rectangle {
+                        width: 108
+                        height: 32
+                        radius: 10
+                        color: dangerColor
+                        opacity: 0.62
+                        anchors.verticalCenter: parent.verticalCenter
+                        
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 8
+                            
+                            Image {
+                                source: "assets/images/icon-alert.png"
+                                width: 20
+                                height: 20
+                            }
+                            
+                            Text {
+                                text: "危险报警"
+                                font.pixelSize: 14
+                                color: textPrimary
+                            }
+                        }
                     }
                 }
             }
             
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "输入内容: " + textField.text
-                font.pixelSize: 16
-                color: "#666"
+            // 主内容
+            Item {
+                width: parent.width
+                height: parent.height - header.height - navigation.height
+                
+                Text {
+                    anchors.centerIn: parent
+                    text: "监控界面预览\n请使用 cargo run 运行完整版本"
+                    font.pixelSize: 24
+                    color: textSecondary
+                    horizontalAlignment: Text.AlignHCenter
+                }
             }
-        }
-        
-        // 覆盖整个内容区域的 MouseArea，用于隐藏键盘
-        MouseArea {
-            anchors.fill: parent
-            anchors.bottomMargin: inputPanel.active ? inputPanel.height : 0
-            enabled: textField.activeFocus
-            onClicked: {
-                textField.focus = false
-            }
-        }
-    }
-    
-    // 虚拟键盘
-    InputPanel {
-        id: inputPanel
-        z: 99
-        x: 0
-        y: root.height
-        width: root.width
-        
-        states: State {
-            name: "visible"
-            when: inputPanel.active
-            PropertyChanges {
-                target: inputPanel
-                y: root.height - inputPanel.height
-            }
-        }
-        transitions: Transition {
-            from: ""
-            to: "visible"
-            reversible: true
-            NumberAnimation {
-                properties: "y"
-                duration: 250
-                easing.type: Easing.InOutQuad
+            
+            // 底部导航
+            Rectangle {
+                id: navigation
+                width: parent.width
+                height: 68
+                color: darkSurface
+                border.color: "#000000"
+                border.width: 0.667
+                
+                Row {
+                    anchors.fill: parent
+                    
+                    Repeater {
+                        model: ["主界面", "数据曲线", "报警记录", "设置"]
+                        
+                        Rectangle {
+                            width: parent.width / 4
+                            height: parent.height
+                            color: index === 0 ? darkBorder : "transparent"
+                            
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: 4
+                                
+                                Rectangle {
+                                    width: 24
+                                    height: 24
+                                    color: index === 0 ? textAccent : textTertiary
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                }
+                                
+                                Text {
+                                    text: modelData
+                                    font.pixelSize: 12
+                                    color: index === 0 ? textAccent : textTertiary
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                }
+                            }
+                            
+                            Rectangle {
+                                visible: index === 0
+                                width: parent.width
+                                height: 4
+                                color: darkAccent
+                                anchors.top: parent.top
+                            }
+                        }
+                    }
+                }
             }
         }
     }

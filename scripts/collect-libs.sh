@@ -8,15 +8,25 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-BINARY="target/armv7-unknown-linux-gnueabihf/debug/qt-rust-demo"
+# 优先使用 release 版本，如果不存在则使用 debug 版本
+BINARY_RELEASE="target/armv7-unknown-linux-gnueabihf/release/qt-rust-demo"
+BINARY_DEBUG="target/armv7-unknown-linux-gnueabihf/debug/qt-rust-demo"
+
+if [ -f "$BINARY_RELEASE" ]; then
+    BINARY="$BINARY_RELEASE"
+    echo -e "${GREEN}使用 release 版本${NC}"
+elif [ -f "$BINARY_DEBUG" ]; then
+    BINARY="$BINARY_DEBUG"
+    echo -e "${YELLOW}使用 debug 版本${NC}"
+else
+    echo -e "${RED}错误: 未找到二进制文件${NC}"
+    echo "请先运行: cargo build --release --target armv7-unknown-linux-gnueabihf"
+    exit 1
+fi
+
 OUTPUT_DIR="libs-to-deploy"
 
 echo -e "${GREEN}=== 收集共享库依赖 ===${NC}"
-
-if [ ! -f "$BINARY" ]; then
-    echo -e "${RED}错误: 未找到二进制文件 $BINARY${NC}"
-    exit 1
-fi
 
 # 创建输出目录
 mkdir -p "$OUTPUT_DIR"
