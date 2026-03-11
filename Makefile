@@ -36,9 +36,9 @@ push-qml:
 	@echo "QML 文件推送完成"
 
 # 推送到设备（不推送 Qt 平台插件和共享库）
-push-no-plugins:
+push-no-plugins:build
 	@echo "=== 推送到设备（跳过 Qt 平台插件和共享库）==="
-	@SKIP_QT_PLUGINS=1 SKIP_LIBS=1 bash $(SCRIPTS_DIR)/deploy-to-device.sh
+	@SKIP_LIBS=1 bash $(SCRIPTS_DIR)/deploy-to-device.sh
 
 # 在设备上运行
 run: stop

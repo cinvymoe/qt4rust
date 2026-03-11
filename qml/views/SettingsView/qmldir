@@ -1,0 +1,5 @@
+module SettingsView
+SystemStatusView 1.0 SystemStatusView.qml
+CalibrationView 1.0 CalibrationView.qml
+MomentCurveView 1.0 MomentCurveView.qml
+AboutSystemView 1.0 AboutSystemView.qml

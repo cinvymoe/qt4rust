@@ -1,0 +1,5 @@
+module CalibrationContents
+LoadCalibrationContent 1.0 LoadCalibrationContent.qml
+AngleCalibrationContent 1.0 AngleCalibrationContent.qml
+RadiusCalibrationContent 1.0 RadiusCalibrationContent.qml
+AlarmThresholdContent 1.0 AlarmThresholdContent.qml

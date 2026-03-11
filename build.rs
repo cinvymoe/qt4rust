@@ -12,6 +12,17 @@ fn main() {
             .qml_file("qml/views/MonitoringView.qml")
             .qml_file("qml/views/ChartView.qml")
             .qml_file("qml/views/AlarmRecordView.qml")
+            // 设置子页面
+            .qml_file("qml/views/SettingsView/SystemStatusView.qml")
+            .qml_file("qml/views/SettingsView/CalibrationView.qml")
+            .qml_file("qml/views/SettingsView/MomentCurveView.qml")
+            .qml_file("qml/views/SettingsView/AboutSystemView.qml")
+            .qml_file("qml/views/SettingsView/SensorConfigView.qml")
+            // 校准内容组件
+            .qml_file("qml/views/SettingsView/CalibrationContents/LoadCalibrationContent.qml")
+            .qml_file("qml/views/SettingsView/CalibrationContents/AngleCalibrationContent.qml")
+            .qml_file("qml/views/SettingsView/CalibrationContents/RadiusCalibrationContent.qml")
+            .qml_file("qml/views/SettingsView/CalibrationContents/AlarmThresholdContent.qml")
             // 控件组件
             .qml_file("qml/components/controls/CustomButton.qml")
             .qml_file("qml/components/controls/CustomInput.qml")
@@ -21,6 +32,8 @@ fn main() {
             .qml_file("qml/components/controls/StatusCard.qml")
             .qml_file("qml/components/controls/ProgressBar.qml")
             .qml_file("qml/components/controls/AlarmRecordItem.qml")
+            .qml_file("qml/components/controls/SensorStatusCard.qml")
+            .qml_file("qml/components/controls/LoadCurveChart.qml")
             // 布局组件
             .qml_file("qml/components/layouts/MainLayout.qml")
             .qml_file("qml/components/layouts/Header.qml")
@@ -33,6 +46,8 @@ fn main() {
     // 添加图片资源到 Qt 资源系统
     .qrc_resources(vec![
         "qml/styles/qmldir",  // Theme singleton 配置
+        "qml/views/SettingsView/qmldir",  // SettingsView 子模块配置
+        "qml/views/SettingsView/CalibrationContents/qmldir",  // CalibrationContents 子模块配置
         "qml/assets/images/canvas-crane.png",
         "qml/assets/images/canvas.png",
         "qml/assets/images/icon-alarm-record.png",
@@ -51,6 +66,14 @@ fn main() {
         "qml/assets/images/icon-settings.png",
         "qml/assets/images/icon-settings.svg",
         "qml/assets/images/icon-weight.png",
+        "qml/assets/images/icon-system-status.svg",
+        "qml/assets/images/icon-calibration.svg",
+        "qml/assets/images/icon-moment-curve.svg",
+        "qml/assets/images/icon-about-system.svg",
+        "qml/assets/images/icon-sensor.svg",
+        "qml/assets/images/icon-status-online.svg",
+        "qml/assets/images/icon-sensor.svg",
+        "qml/assets/images/icon-status-online.svg",
     ])
     .qt_module("Network")  // macOS 需要
     .qt_module("Charts")   // 图表模块
