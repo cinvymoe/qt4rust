@@ -87,8 +87,7 @@ Item {
                     border.width: Theme.borderThin
                     
                     Row {
-                        anchors.left: parent.left
-                        anchors.leftMargin: 154
+                        anchors.centerIn: parent
                         height: parent.height
                         spacing: 0
                         
@@ -133,7 +132,7 @@ Item {
                 // 校准内容区域
                 Item {
                     width: parent.width
-                    height: parent.height - 49 - 81
+                    height: parent.height - 49 - 68
                     
                     // 载荷传感器校准
                     LoadCalibrationContent {
@@ -163,18 +162,18 @@ Item {
                 // 底部操作按钮
                 Rectangle {
                     width: parent.width
-                    height: 81
+                    height: 68
                     color: Theme.darkSurface
                     border.color: Theme.darkBorder
                     border.width: Theme.borderThin
                     
                     Row {
                         anchors.left: parent.left
-                        anchors.leftMargin: 154
+                        anchors.leftMargin: Theme.spacingLarge
                         anchors.right: parent.right
-                        anchors.rightMargin: 154
+                        anchors.rightMargin: Theme.spacingLarge
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: Theme.spacingSmall
+                        spacing: Theme.spacingMedium
                         
                         Button {
                             width: 140
@@ -208,7 +207,7 @@ Item {
                         }
                         
                         Button {
-                            width: parent.width - 140 - Theme.spacingSmall
+                            width: parent.width - 140 - Theme.spacingMedium
                             height: 48
                             
                             background: Rectangle {

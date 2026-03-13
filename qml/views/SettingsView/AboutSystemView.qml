@@ -555,40 +555,95 @@ Flickable {
                     width: parent.width
                     spacing: Theme.spacingSmall
                     
-                    Repeater {
-                        model: [
-                            {icon: "icon-home.svg", label: "服务热线", value: "400-888-6688"},
-                            {icon: "icon-home.svg", label: "技术邮箱", value: "support@crane-monitor.com"},
-                            {icon: "icon-home.svg", label: "公司地址", value: "北京市海淀区中关村科技园区"}
-                        ]
+                    // 服务热线
+                    Row {
+                        width: parent.width
+                        spacing: Theme.spacingSmall
                         
-                        Row {
-                            width: parent.width
-                            spacing: Theme.spacingSmall
+                        Image {
+                            width: Theme.iconSizeSmall
+                            height: Theme.iconSizeSmall
+                            source: "../../assets/images/icon-phone.svg"
+                            fillMode: Image.PreserveAspectFit
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        
+                        Column {
+                            width: parent.width - Theme.iconSizeSmall - Theme.spacingSmall
+                            spacing: 0
                             
-                            Image {
-                                width: Theme.iconSizeSmall
-                                height: Theme.iconSizeSmall
-                                source: "../../assets/images/" + modelData.icon
-                                fillMode: Image.PreserveAspectFit
-                                anchors.verticalCenter: parent.verticalCenter
+                            Text {
+                                text: "服务热线"
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: Theme.textTertiary
                             }
                             
-                            Column {
-                                width: parent.width - Theme.iconSizeSmall - Theme.spacingSmall
-                                spacing: 0
-                                
-                                Text {
-                                    text: modelData.label
-                                    font.pixelSize: Theme.fontSizeSmall
-                                    color: Theme.textTertiary
-                                }
-                                
-                                Text {
-                                    text: modelData.value
-                                    font.pixelSize: Theme.fontSizeMedium
-                                    color: "#e2e8f0"
-                                }
+                            Text {
+                                text: "400-888-6688"
+                                font.pixelSize: Theme.fontSizeMedium
+                                color: "#e2e8f0"
+                            }
+                        }
+                    }
+                    
+                    // 技术邮箱
+                    Row {
+                        width: parent.width
+                        spacing: Theme.spacingSmall
+                        
+                        Image {
+                            width: Theme.iconSizeSmall
+                            height: Theme.iconSizeSmall
+                            source: "../../assets/images/icon-email.svg"
+                            fillMode: Image.PreserveAspectFit
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        
+                        Column {
+                            width: parent.width - Theme.iconSizeSmall - Theme.spacingSmall
+                            spacing: 0
+                            
+                            Text {
+                                text: "技术邮箱"
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: Theme.textTertiary
+                            }
+                            
+                            Text {
+                                text: "support@crane-monitor.com"
+                                font.pixelSize: Theme.fontSizeMedium
+                                color: "#e2e8f0"
+                            }
+                        }
+                    }
+                    
+                    // 公司地址
+                    Row {
+                        width: parent.width
+                        spacing: Theme.spacingSmall
+                        
+                        Image {
+                            width: Theme.iconSizeSmall
+                            height: Theme.iconSizeSmall
+                            source: "../../assets/images/icon-location.svg"
+                            fillMode: Image.PreserveAspectFit
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        
+                        Column {
+                            width: parent.width - Theme.iconSizeSmall - Theme.spacingSmall
+                            spacing: 0
+                            
+                            Text {
+                                text: "公司地址"
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: Theme.textTertiary
+                            }
+                            
+                            Text {
+                                text: "北京市海淀区中关村科技园区"
+                                font.pixelSize: Theme.fontSizeMedium
+                                color: "#e2e8f0"
                             }
                         }
                     }

@@ -12,12 +12,49 @@ Item {
     // 顶部栏显示状态（从父组件传递）
     property bool headerVisible: true
     
-    // 模拟数据属性
-    property real momentPercentage: 94.8
-    property real currentLoad: 17.0
-    property real ratedLoad: 25.0
-    property real workRadius: 10.0
-    property real boomAngle: 62.7
+    // 数据模型 - 外部定义
+    ListModel {
+        id: monitoringDataModel
+        
+        ListElement {
+            type: "dataCard"
+            iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-weight.png"
+            label: "当前载荷"
+            unit: "吨"
+            description: "额定载荷"
+            showProgress: true
+            value: 17.0
+            maxValue: 25.0
+        }
+        
+        ListElement {
+            type: "dataCard"
+            iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-radius.png"
+            label: "工作半径"
+            unit: "米"
+            description: "水平工作距离"
+            showProgress: false
+            value: 10.0
+            maxValue: 0.0
+        }
+        
+        ListElement {
+            type: "dataCard"
+            iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-angle.png"
+            label: "吊臂角度"
+            unit: "度"
+            description: "与水平面夹角"
+            showProgress: false
+            value: 62.7
+            maxValue: 0.0
+        }
+        
+        ListElement {
+            type: "boomLength"
+            label: "臂长"
+            value: 22.6
+        }
+    }
     
     Rectangle {
         anchors.fill: parent
@@ -61,51 +98,52 @@ Item {
                 height: parent.height
                 spacing: Theme.spacingMedium
                 
-                // 危险状态卡片
-                Rectangle {
+                // 轮播卡片容器
+                Item {
+                    id: carouselContainer
                     width: parent.width
                     height: 96
-                    color: "transparent"
-                    border.color: Theme.dangerColor
-                    border.width: Theme.borderThick
-                    radius: Theme.radiusMedium
                     
-                    // 半透明背景
-                    Rectangle {
-                        anchors.fill: parent
-                        color: Theme.dangerBackground
-                        opacity: 0.3
-                        radius: Theme.radiusMedium
+                    // 当前显示的卡片索引 (0: 危险状态, 1: 时间卡片)
+                    property int currentIndex: 0
+                    
+                    // 轮播定时器 (每5秒切换)
+                    Timer {
+                        id: carouselTimer
+                        interval: 5000
+                        running: true
+                        repeat: true
+                        onTriggered: {
+                            carouselContainer.currentIndex = (carouselContainer.currentIndex + 1) % 2
+                        }
                     }
                     
-                    Row {
-                        anchors.centerIn: parent
-                        spacing: Theme.spacingMedium
+                    // 危险状态卡片
+                    DangerCard {
+                        id: dangerCard
+                        anchors.fill: parent
+                        opacity: carouselContainer.currentIndex === 0 ? 1 : 0
+                        visible: opacity > 0
                         
-                        Image {
-                            source: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-danger.png"
-                            width: Theme.iconSizeLarge
-                            height: Theme.iconSizeLarge
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                        
-                        Column {
-                            spacing: Theme.spacingTiny
-                            anchors.verticalCenter: parent.verticalCenter
-                            
-                            Text {
-                                text: "危险状态"
-                                font.pixelSize: Theme.fontSizeXLarge
-                                font.family: Theme.fontFamilyDefault
-                                font.weight: Font.Medium
-                                color: Theme.textPrimary
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: Theme.animationDuration
+                                easing.type: Easing.InOutQuad
                             }
-                            
-                            Text {
-                                text: "力矩超限！立即减载或降低幅度"
-                                font.pixelSize: Theme.fontSizeMedium
-                                font.family: Theme.fontFamilyDefault
-                                color: Theme.textSecondary
+                        }
+                    }
+                    
+                    // 时间卡片
+                    TimeCard {
+                        id: timeCard
+                        anchors.fill: parent
+                        opacity: carouselContainer.currentIndex === 1 ? 1 : 0
+                        visible: opacity > 0
+                        
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: Theme.animationDuration
+                                easing.type: Easing.InOutQuad
                             }
                         }
                     }
@@ -175,7 +213,7 @@ Item {
                 MomentCard {
                     width: parent.width
                     height: 216
-                    percentage: monitoringView.momentPercentage
+                    percentage: 94.8
                 }
                 
                 // 数据网格 - 使用 GridView (每行2列，可滑动)
@@ -184,45 +222,11 @@ Item {
                     width: parent.width
                     height: parent.height - 216 - Theme.spacingMedium
                     cellWidth: parent.width / 2
-                    cellHeight: 180 + Theme.spacingMedium
+                    cellHeight: 150 + Theme.spacingMedium
                     clip: true
                     
-                    // 数据模型
-                    model: ListModel {
-                        id: dataGridModel
-                        
-                        ListElement {
-                            type: "dataCard"
-                            iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-weight.png"
-                            label: "当前载荷"
-                            unit: "吨"
-                            description: "额定载荷"
-                            showProgress: true
-                        }
-                        
-                        ListElement {
-                            type: "dataCard"
-                            iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-radius.png"
-                            label: "工作半径"
-                            unit: "米"
-                            description: "水平工作距离"
-                            showProgress: false
-                        }
-                        
-                        ListElement {
-                            type: "dataCard"
-                            iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-angle.png"
-                            label: "吊臂角度"
-                            unit: "度"
-                            description: "与水平面夹角"
-                            showProgress: false
-                        }
-                        
-                        ListElement {
-                            type: "loadComparison"
-                            label: "载荷对比"
-                        }
-                    }
+                    // 使用外部定义的数据模型
+                    model: monitoringDataModel
                     
                     // 网格项目
                     delegate: Item {
@@ -238,8 +242,8 @@ Item {
                             sourceComponent: {
                                 if (model.type === "dataCard") {
                                     return dataCardComponent
-                                } else if (model.type === "loadComparison") {
-                                    return loadComparisonComponent
+                                } else if (model.type === "boomLength") {
+                                    return boomLengthComponent
                                 }
                                 return null
                             }
@@ -253,89 +257,25 @@ Item {
                         DataCard {
                             iconSource: itemData.iconSource
                             label: itemData.label
-                            value: {
-                                if (itemData.label === "当前载荷") {
-                                    return monitoringView.currentLoad.toFixed(1)
-                                } else if (itemData.label === "工作半径") {
-                                    return monitoringView.workRadius.toFixed(1)
-                                } else if (itemData.label === "吊臂角度") {
-                                    return monitoringView.boomAngle.toFixed(1)
-                                }
-                                return "0.0"
-                            }
+                            value: itemData.value.toFixed(1)
                             unit: itemData.unit
                             description: {
-                                if (itemData.label === "当前载荷") {
-                                    return "额定: " + monitoringView.ratedLoad.toFixed(1) + "吨"
+                                if (itemData.showProgress) {
+                                    return "额定: " + itemData.maxValue.toFixed(1) + itemData.unit
                                 }
                                 return itemData.description
                             }
                             showProgress: itemData.showProgress
-                            progress: itemData.showProgress ? (monitoringView.currentLoad / monitoringView.ratedLoad) : 0
+                            progress: itemData.showProgress ? (itemData.value / itemData.maxValue) : 0
                         }
                     }
                     
-                    // 载荷对比组件
+                    // 臂长组件
                     Component {
-                        id: loadComparisonComponent
+                        id: boomLengthComponent
                         
-                        Rectangle {
-                            color: Theme.darkSurface
-                            border.color: Theme.darkBorder
-                            border.width: Theme.borderThin
-                            radius: Theme.radiusMedium
-                            
-                            Column {
-                                anchors.fill: parent
-                                anchors.margins: Theme.spacingLarge
-                                spacing: Theme.spacingMedium
-                                
-                                Text {
-                                    text: "载荷对比"
-                                    font.pixelSize: Theme.fontSizeSmall
-                                    font.family: Theme.fontFamilyDefault
-                                    color: Theme.textSecondary
-                                }
-                                
-                                Rectangle {
-                                    width: parent.width
-                                    height: 56
-                                    radius: Theme.radiusMedium
-                                    color: Theme.darkBorder
-                                    
-                                    Rectangle {
-                                        width: parent.width * (monitoringView.currentLoad / monitoringView.ratedLoad)
-                                        height: parent.height
-                                        radius: Theme.radiusMedium
-                                        color: Theme.successColor
-                                        
-                                        Behavior on width {
-                                            NumberAnimation {
-                                                duration: Theme.animationDuration
-                                            }
-                                        }
-                                    }
-                                    
-                                    Column {
-                                        anchors.centerIn: parent
-                                        spacing: 0
-                                        
-                                        Text {
-                                            text: "实际 " + monitoringView.currentLoad.toFixed(1) + "t"
-                                            font.pixelSize: Theme.fontSizeTiny
-                                            font.family: Theme.fontFamilyMono
-                                            color: Theme.textPrimary
-                                        }
-                                        
-                                        Text {
-                                            text: "额定 " + monitoringView.ratedLoad.toFixed(1) + "t"
-                                            font.pixelSize: Theme.fontSizeTiny
-                                            font.family: Theme.fontFamilyMono
-                                            color: Theme.textSecondary
-                                        }
-                                    }
-                                }
-                            }
+                        BoomLengthCard {
+                            boomLength: itemData.value
                         }
                     }
                 }

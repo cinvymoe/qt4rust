@@ -3,22 +3,24 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../../../styles"
+import "../../../components/controls"
 
 Item {
     id: root
     
     Flickable {
+        id: flickable
         anchors.fill: parent
-        anchors.leftMargin: 154
-        anchors.rightMargin: 154
-        contentHeight: calibrationContent.height
+        contentHeight: calibrationContent.height + Theme.spacingMedium * 2
         clip: true
         
         Column {
             id: calibrationContent
-            width: parent.width
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: Theme.spacingLarge
             spacing: Theme.spacingLarge
-            topPadding: Theme.spacingMedium
             
             // 半径范围设置
             Rectangle {
@@ -69,7 +71,8 @@ Item {
                                 color: Theme.textSecondary
                             }
                             
-                            TextField {
+                            CustomInput {
+                                id: minRadiusField
                                 width: parent.width
                                 height: 42
                                 text: "3.0"
@@ -96,7 +99,8 @@ Item {
                                 color: Theme.textSecondary
                             }
                             
-                            TextField {
+                            CustomInput {
+                                id: maxRadiusField
                                 width: parent.width
                                 height: 42
                                 text: "30.0"
@@ -124,10 +128,10 @@ Item {
                 }
             }
             
-            // 多点标定设置
+            // 两点标定设置
             Rectangle {
                 width: parent.width
-                height: 326
+                height: 286
                 color: Theme.darkSurface
                 border.color: Theme.darkBorder
                 border.width: Theme.borderThin
@@ -138,64 +142,25 @@ Item {
                     anchors.margins: 25
                     spacing: Theme.spacingMedium
                     
-                    // 标题和添加按钮
+                    // 标题
                     Row {
                         width: parent.width
-                        height: 40
+                        height: 28
+                        spacing: Theme.spacingSmall
                         
-                        Row {
-                            spacing: Theme.spacingSmall
+                        Rectangle {
+                            width: 4
+                            height: 24
+                            color: Theme.darkAccent
                             anchors.verticalCenter: parent.verticalCenter
-                            
-                            Rectangle {
-                                width: 4
-                                height: 24
-                                color: Theme.darkAccent
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                            
-                            Text {
-                                text: "多点标定设置"
-                                font.pixelSize: Theme.fontSizeLarge
-                                font.weight: Font.Medium
-                                color: Theme.textPrimary
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
                         }
                         
-                        Item { Layout.fillWidth: true; width: parent.width - 132 - 136 }
-                        
-                        Button {
-                            width: 136
-                            height: 40
+                        Text {
+                            text: "两点标定设置"
+                            font.pixelSize: Theme.fontSizeLarge
+                            font.weight: Font.Medium
+                            color: Theme.textPrimary
                             anchors.verticalCenter: parent.verticalCenter
-                            
-                            background: Rectangle {
-                                color: "#155dfc"
-                                radius: Theme.radiusMedium
-                            }
-                            
-                            contentItem: Row {
-                                spacing: Theme.spacingSmall
-                                anchors.centerIn: parent
-                                
-                                Text {
-                                    text: "+"
-                                    font.pixelSize: Theme.fontSizeMedium
-                                    color: Theme.textPrimary
-                                    anchors.verticalCenter: parent.verticalCenter
-                                }
-                                
-                                Text {
-                                    text: "添加标定点"
-                                    font.pixelSize: Theme.fontSizeMedium
-                                    font.weight: Font.Medium
-                                    color: Theme.textPrimary
-                                    anchors.verticalCenter: parent.verticalCenter
-                                }
-                            }
-                            
-                            onClicked: console.log("添加半径标定点")
                         }
                     }
                     
@@ -331,7 +296,7 @@ Item {
             
             // 输入字段
             Row {
-                width: parent.width - 32 - 36 - Theme.spacingMedium * 3
+                width: parent.width - 32 - Theme.spacingMedium * 2
                 spacing: Theme.spacingMedium
                 anchors.verticalCenter: parent.verticalCenter
                 
@@ -345,7 +310,8 @@ Item {
                         color: Theme.textSecondary
                     }
                     
-                    TextField {
+                    CustomInput {
+                        id: adValueField
                         width: parent.width
                         height: 42
                         text: adValue
@@ -372,7 +338,8 @@ Item {
                         color: Theme.textSecondary
                     }
                     
-                    TextField {
+                    CustomInput {
+                        id: radiusValueField
                         width: parent.width
                         height: 42
                         text: radiusValue
@@ -388,28 +355,6 @@ Item {
                         }
                     }
                 }
-            }
-            
-            // 删除按钮
-            Button {
-                width: 36
-                height: 36
-                anchors.verticalCenter: parent.verticalCenter
-                
-                background: Rectangle {
-                    color: "transparent"
-                    radius: Theme.radiusMedium
-                }
-                
-                contentItem: Text {
-                    text: "🗑"
-                    font.pixelSize: Theme.fontSizeLarge
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    color: "#62748e"
-                }
-                
-                onClicked: console.log("删除半径标定点", pointNumber)
             }
         }
     }

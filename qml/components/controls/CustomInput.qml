@@ -5,6 +5,10 @@ import QtQuick.Controls
 TextField {
     id: control
     
+    // 默认键盘隐藏行为
+    Keys.onReturnPressed: Qt.inputMethod.hide()
+    Keys.onEnterPressed: Qt.inputMethod.hide()
+    
     background: Rectangle {
         implicitWidth: 200
         implicitHeight: 40

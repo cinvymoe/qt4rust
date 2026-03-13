@@ -3,22 +3,24 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../../../styles"
+import "../../../components/controls"
 
 Item {
     id: root
     
     Flickable {
+        id: flickable
         anchors.fill: parent
-        anchors.leftMargin: 154
-        anchors.rightMargin: 154
-        contentHeight: calibrationContent.height
+        contentHeight: calibrationContent.height + Theme.spacingMedium * 2
         clip: true
         
         Column {
             id: calibrationContent
-            width: parent.width
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: Theme.spacingLarge
             spacing: Theme.spacingLarge
-            topPadding: Theme.spacingMedium
             
             // 力矩报警阈值
             Rectangle {
@@ -79,7 +81,8 @@ Item {
                                     color: Theme.textSecondary
                                 }
                                 
-                                TextField {
+                                CustomInput {
+                                    id: warningThresholdField
                                     width: parent.width
                                     height: 42
                                     text: "80"
@@ -106,7 +109,8 @@ Item {
                                     color: Theme.textSecondary
                                 }
                                 
-                                TextField {
+                                CustomInput {
+                                    id: dangerThresholdField
                                     width: parent.width
                                     height: 42
                                     text: "100"
@@ -180,7 +184,8 @@ Item {
                             color: Theme.textSecondary
                         }
                         
-                        TextField {
+                        CustomInput {
+                            id: maxLoadField
                             width: parent.width
                             height: 42
                             text: "50.0"
@@ -252,7 +257,8 @@ Item {
                             color: Theme.textSecondary
                         }
                         
-                        TextField {
+                        CustomInput {
+                            id: maxAngleField
                             width: parent.width
                             height: 42
                             text: "85"

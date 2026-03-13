@@ -105,27 +105,53 @@ Flickable {
                         leftPadding: 16.667
                         rightPadding: 16.667
                         
-                        // 标题
+                        // 标题和按钮
                         Item {
                             width: parent.width - 2 * 16.667
-                            height: 28
+                            height: 40
                             
-                            Rectangle {
-                                width: 4
-                                height: 24
-                                color: Theme.successColor
+                            Row {
+                                spacing: 12
                                 anchors.left: parent.left
                                 anchors.verticalCenter: parent.verticalCenter
+                                
+                                Rectangle {
+                                    width: 4
+                                    height: 24
+                                    color: Theme.successColor
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                                
+                                Text {
+                                    text: "额定载荷曲线"
+                                    font.pixelSize: Theme.fontSizeLarge
+                                    font.family: Theme.fontFamilyDefault
+                                    color: Theme.textPrimary
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
                             }
                             
-                            Text {
-                                text: "额定载荷曲线"
-                                font.pixelSize: Theme.fontSizeLarge
-                                font.family: Theme.fontFamilyDefault
-                                color: Theme.textPrimary
-                                anchors.left: parent.left
-                                anchors.leftMargin: 12
+                            Button {
+                                width: 120
+                                height: 40
+                                anchors.right: parent.right
                                 anchors.verticalCenter: parent.verticalCenter
+                                
+                                background: Rectangle {
+                                    color: "#155dfc"
+                                    radius: Theme.radiusMedium
+                                }
+                                
+                                contentItem: Text {
+                                    text: "力矩曲线导入"
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.Medium
+                                    color: Theme.textPrimary
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                
+                                onClicked: console.log("力矩曲线导入")
                             }
                         }
                         

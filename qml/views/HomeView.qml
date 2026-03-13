@@ -43,7 +43,7 @@ Item {
             onClicked: counter.reset()
         }
         
-        TextField {
+        CustomInput {
             id: textField
             anchors.horizontalCenter: parent.horizontalCenter
             width: 400

@@ -25,22 +25,40 @@ Item {
                 border.color: Theme.darkBorder
                 border.width: Theme.borderNormal
                 
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: Theme.spacingSmall
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: Theme.spacingLarge
+                    anchors.rightMargin: Theme.spacingLarge
+                    spacing: Theme.spacingLarge
                     
-                    Text {
-                        text: "报警记录"
-                        font.pixelSize: Theme.fontSizeXLarge
-                        font.family: Theme.fontFamilyDefault
-                        color: Theme.textPrimary
+                    // 左侧标题区域
+                    ColumnLayout {
+                        spacing: Theme.spacingSmall
+                        
+                        Text {
+                            text: "报警记录"
+                            font.pixelSize: Theme.fontSizeXLarge
+                            font.family: Theme.fontFamilyDefault
+                            color: Theme.textPrimary
+                        }
+                        
+                        Text {
+                            text: "系统报警历史与统计分析"
+                            font.pixelSize: Theme.fontSizeSmall
+                            font.family: Theme.fontFamilyDefault
+                            color: Theme.textTertiary
+                        }
                     }
                     
-                    Text {
-                        text: "系统报警历史与统计分析"
-                        font.pixelSize: Theme.fontSizeSmall
-                        font.family: Theme.fontFamilyDefault
-                        color: Theme.textTertiary
+                    Item { Layout.fillWidth: true }
+                    
+                    // 右侧历史记录筛选区域
+                    HistoryFilterBar {
+                        id: historyFilter
+                        onFilterChanged: function(filter) {
+                            console.log("筛选条件已更改:", filter)
+                            // 这里可以添加筛选逻辑
+                        }
                     }
                 }
             }
@@ -335,223 +353,6 @@ Item {
                                                 font.pixelSize: Theme.fontSizeSmall
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.textTertiary
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // 历史记录标题卡片
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.leftMargin: Theme.spacingMedium
-                        Layout.rightMargin: Theme.spacingMedium
-                        Layout.preferredHeight: 300
-                        color: Theme.darkSurface
-                        border.color: Theme.darkBorder
-                        border.width: Theme.borderNormal
-                        radius: Theme.radiusMedium
-                        
-                        ColumnLayout {
-                            anchors.fill: parent
-                            anchors.margins: 17
-                            spacing: Theme.spacingMedium
-                            
-                            // 标题行
-                            RowLayout {
-                                Layout.fillWidth: true
-                                
-                                Text {
-                                    text: "历史记录"
-                                    font.pixelSize: Theme.fontSizeNormal
-                                    font.family: Theme.fontFamilyDefault
-                                    color: Theme.textPrimary
-                                }
-                                
-                                Item { Layout.fillWidth: true }
-                                
-                                RowLayout {
-                                    spacing: Theme.spacingSmall
-                                    
-                                    Image {
-                                        Layout.preferredWidth: 16
-                                        Layout.preferredHeight: 16
-                                        source: "../assets/images/icon-chart.png"
-                                        fillMode: Image.PreserveAspectFit
-                                    }
-                                    
-                                    Text {
-                                        text: "共 14 条记录"
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        font.family: Theme.fontFamilyDefault
-                                        color: Theme.textTertiary
-                                    }
-                                }
-                            }
-                            
-                            // 筛选按钮行
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: Theme.spacingMedium - 4
-                                
-                                RowLayout {
-                                    spacing: Theme.spacingSmall
-                                    
-                                    Button {
-                                        text: "全部"
-                                        background: Rectangle {
-                                            color: Theme.darkBorder
-                                            radius: Theme.radiusMedium
-                                        }
-                                        contentItem: Text {
-                                            text: parent.text
-                                            font.pixelSize: Theme.fontSizeMedium
-                                            font.family: Theme.fontFamilyDefault
-                                            color: Theme.textSecondary
-                                            horizontalAlignment: Text.AlignHCenter
-                                            verticalAlignment: Text.AlignVCenter
-                                        }
-                                        implicitWidth: 64
-                                        implicitHeight: 40
-                                    }
-                                    
-                                    Button {
-                                        text: "今天"
-                                        background: Rectangle {
-                                            color: Theme.darkBorder
-                                            radius: Theme.radiusMedium
-                                        }
-                                        contentItem: Text {
-                                            text: parent.text
-                                            font.pixelSize: Theme.fontSizeMedium
-                                            font.family: Theme.fontFamilyDefault
-                                            color: Theme.textSecondary
-                                            horizontalAlignment: Text.AlignHCenter
-                                            verticalAlignment: Text.AlignVCenter
-                                        }
-                                        implicitWidth: 64
-                                        implicitHeight: 40
-                                    }
-                                    
-                                    Button {
-                                        text: "最近7天"
-                                        background: Rectangle {
-                                            color: Theme.darkBorder
-                                            radius: Theme.radiusMedium
-                                        }
-                                        contentItem: Text {
-                                            text: parent.text
-                                            font.pixelSize: Theme.fontSizeMedium
-                                            font.family: Theme.fontFamilyDefault
-                                            color: Theme.textSecondary
-                                            horizontalAlignment: Text.AlignHCenter
-                                            verticalAlignment: Text.AlignVCenter
-                                        }
-                                        implicitWidth: 90
-                                        implicitHeight: 40
-                                    }
-                                    
-                                    Button {
-                                        text: "最近30天"
-                                        background: Rectangle {
-                                            color: Theme.darkBorder
-                                            radius: Theme.radiusMedium
-                                        }
-                                        contentItem: Text {
-                                            text: parent.text
-                                            font.pixelSize: Theme.fontSizeMedium
-                                            font.family: Theme.fontFamilyDefault
-                                            color: Theme.textSecondary
-                                            horizontalAlignment: Text.AlignHCenter
-                                            verticalAlignment: Text.AlignVCenter
-                                        }
-                                        implicitWidth: 99
-                                        implicitHeight: 40
-                                    }
-                                    
-                                    Button {
-                                        text: "自定义"
-                                        background: Rectangle {
-                                            color: "#155dfc"
-                                            radius: Theme.radiusMedium
-                                        }
-                                        contentItem: RowLayout {
-                                            spacing: Theme.spacingSmall
-                                            
-                                            Image {
-                                                Layout.preferredWidth: 16
-                                                Layout.preferredHeight: 16
-                                                source: "../assets/images/icon-settings.png"
-                                                fillMode: Image.PreserveAspectFit
-                                            }
-                                            
-                                            Text {
-                                                text: "自定义"
-                                                font.pixelSize: Theme.fontSizeMedium
-                                                font.family: Theme.fontFamilyDefault
-                                                color: Theme.textPrimary
-                                            }
-                                        }
-                                        implicitWidth: 104
-                                        implicitHeight: 40
-                                    }
-                                }
-                                
-                                // 日期选择器
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    Layout.preferredHeight: 104
-                                    color: Theme.darkBorder
-                                    border.color: "#45556c"
-                                    border.width: Theme.borderNormal
-                                    radius: Theme.radiusMedium
-                                    
-                                    RowLayout {
-                                        anchors.fill: parent
-                                        anchors.margins: 17
-                                        spacing: Theme.spacingMedium
-                                        
-                                        ColumnLayout {
-                                            Layout.fillWidth: true
-                                            spacing: Theme.spacingSmall
-                                            
-                                            Text {
-                                                text: "开始日期"
-                                                font.pixelSize: Theme.fontSizeSmall
-                                                font.family: Theme.fontFamilyDefault
-                                                color: Theme.textSecondary
-                                            }
-                                            
-                                            Rectangle {
-                                                Layout.fillWidth: true
-                                                Layout.preferredHeight: 42
-                                                color: Theme.darkSurface
-                                                border.color: "#45556c"
-                                                border.width: Theme.borderNormal
-                                                radius: Theme.radiusMedium
-                                            }
-                                        }
-                                        
-                                        ColumnLayout {
-                                            Layout.fillWidth: true
-                                            spacing: Theme.spacingSmall
-                                            
-                                            Text {
-                                                text: "结束日期"
-                                                font.pixelSize: Theme.fontSizeSmall
-                                                font.family: Theme.fontFamilyDefault
-                                                color: Theme.textSecondary
-                                            }
-                                            
-                                            Rectangle {
-                                                Layout.fillWidth: true
-                                                Layout.preferredHeight: 42
-                                                color: Theme.darkSurface
-                                                border.color: "#45556c"
-                                                border.width: Theme.borderNormal
-                                                radius: Theme.radiusMedium
                                             }
                                         }
                                     }
