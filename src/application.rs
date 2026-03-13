@@ -43,7 +43,10 @@ impl Application {
         // 创建 QML 引擎
         let engine = QQmlApplicationEngine::new();
         
-        Ok(Self { qt_app, engine })
+        Ok(Self { 
+            qt_app, 
+            engine,
+        })
     }
 
     /// 设置 QML 上下文

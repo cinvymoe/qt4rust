@@ -17,7 +17,6 @@ fn main() {
             .qml_file("qml/views/SettingsView/CalibrationView.qml")
             .qml_file("qml/views/SettingsView/MomentCurveView.qml")
             .qml_file("qml/views/SettingsView/AboutSystemView.qml")
-            .qml_file("qml/views/SettingsView/SensorConfigView.qml")
             // 校准内容组件
             .qml_file("qml/views/SettingsView/CalibrationContents/LoadCalibrationContent.qml")
             .qml_file("qml/views/SettingsView/CalibrationContents/AngleCalibrationContent.qml")
@@ -34,12 +33,21 @@ fn main() {
             .qml_file("qml/components/controls/AlarmRecordItem.qml")
             .qml_file("qml/components/controls/SensorStatusCard.qml")
             .qml_file("qml/components/controls/LoadCurveChart.qml")
+            .qml_file("qml/components/controls/HistoryFilterBar.qml")
+            .qml_file("qml/components/controls/TimeRangeFilter.qml")
+            .qml_file("qml/components/controls/MomentTrendChart.qml")
+            .qml_file("qml/components/controls/LoadTrendChart.qml")
+            .qml_file("qml/components/controls/MultiParamChart.qml")
+            .qml_file("qml/components/controls/TimeCard.qml")
+            .qml_file("qml/components/controls/DangerCard.qml")
+            .qml_file("qml/components/controls/BoomLengthCard.qml")
             // 布局组件
             .qml_file("qml/components/layouts/MainLayout.qml")
             .qml_file("qml/components/layouts/Header.qml")
             .qml_file("qml/components/layouts/Navigation.qml")
             // 对话框
             .qml_file("qml/components/dialogs/InfoDialog.qml")
+            .qml_file("qml/components/dialogs/CustomTimeRangeDialog.qml")
             // 样式系统
             .qml_file("qml/styles/Theme.qml")
     )
@@ -72,8 +80,10 @@ fn main() {
         "qml/assets/images/icon-about-system.svg",
         "qml/assets/images/icon-sensor.svg",
         "qml/assets/images/icon-status-online.svg",
-        "qml/assets/images/icon-sensor.svg",
-        "qml/assets/images/icon-status-online.svg",
+        "qml/assets/images/icon-phone.svg",
+        "qml/assets/images/icon-email.svg",
+        "qml/assets/images/icon-location.svg",
+        "qml/assets/images/icon-boom-length.svg",
     ])
     .qt_module("Network")  // macOS 需要
     .qt_module("Charts")   // 图表模块

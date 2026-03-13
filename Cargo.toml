@@ -1,3 +1,18 @@
+[workspace]
+members = [
+    ".",
+    "crates/cxx-qt-mvi-core",
+    "crates/sensor-simulator",
+    "crates/qt-threading-utils",
+    "crates/crane-data-layer",
+]
+resolver = "2"
+
+[workspace.dependencies]
+cxx = "1.0"
+cxx-qt = "0.8"
+cxx-qt-lib = "0.8"
+
 [package]
 name = "qt-rust-demo"
 version = "0.1.0"
@@ -6,9 +21,14 @@ authors = ["Qt Rust Demo Team"]
 description = "A demonstration application integrating Rust with Qt 6.x using cxx-qt for ARM32 Linux"
 
 [dependencies]
-cxx = "1.0"
-cxx-qt = "0.8"
-cxx-qt-lib = { version = "0.8", features = ["full"] }
+cxx-qt-mvi-core = { path = "crates/cxx-qt-mvi-core" }
+sensor-simulator = { path = "crates/sensor-simulator" }
+qt-threading-utils = { path = "crates/qt-threading-utils" }
+crane-data-layer = { path = "crates/crane-data-layer" }
+
+cxx = { workspace = true }
+cxx-qt = { workspace = true }
+cxx-qt-lib = { workspace = true, features = ["full"] }
 
 [build-dependencies]
 cxx-qt-build = { version = "0.8", features = ["link_qt_object_files"] }

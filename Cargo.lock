@@ -189,6 +189,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 
 [[package]]
+name = "crane-data-layer"
+version = "0.1.0"
+
+[[package]]
 name = "cxx"
 version = "1.0.194"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -310,6 +314,10 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "cxx-qt-mvi-core"
+version = "0.1.0"
 
 [[package]]
 name = "cxxbridge-cmd"
@@ -844,12 +852,20 @@ dependencies = [
 name = "qt-rust-demo"
 version = "0.1.0"
 dependencies = [
+ "crane-data-layer",
  "cxx",
  "cxx-qt",
  "cxx-qt-build",
  "cxx-qt-lib",
+ "cxx-qt-mvi-core",
  "proptest",
+ "qt-threading-utils",
+ "sensor-simulator",
 ]
+
+[[package]]
+name = "qt-threading-utils"
+version = "0.1.0"
 
 [[package]]
 name = "quick-error"
@@ -973,6 +989,10 @@ name = "semver"
 version = "1.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d767eb0aabc880b29956c35734170f26ed551a859dbd361d140cdbeca61ab1e2"
+
+[[package]]
+name = "sensor-simulator"
+version = "0.1.0"
 
 [[package]]
 name = "serde"

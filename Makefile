@@ -36,7 +36,7 @@ push-qml:
 	@echo "QML 文件推送完成"
 
 # 推送到设备（不推送 Qt 平台插件和共享库）
-push-no-plugins:build
+push-no-plugins:build run
 	@echo "=== 推送到设备（跳过 Qt 平台插件和共享库）==="
 	@SKIP_LIBS=1 bash $(SCRIPTS_DIR)/deploy-to-device.sh
 
@@ -52,7 +52,7 @@ stop:
 	@adb shell "killall qt-rust-demo" || echo "应用未运行或已停止"
 
 # 编译并部署
-deploy: build push
+deploy: build push run
 	@echo "=== 部署完成 ==="
 
 # 安装自动启动
