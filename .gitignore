@@ -53,3 +53,4 @@ __pycache__/
 # Kiro IDE
 .kiro/
 .kilocode/
+.kilocodemodes
