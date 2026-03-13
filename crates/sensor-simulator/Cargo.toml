@@ -1,0 +1,9 @@
+[package]
+name = "sensor-simulator"
+version = "0.1.0"
+edition = "2021"
+authors = ["Qt Rust Demo Team"]
+description = "Sensor data simulator for development and testing"
+license = "MIT"
+
+[dependencies]

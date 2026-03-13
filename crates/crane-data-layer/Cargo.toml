@@ -1,0 +1,9 @@
+[package]
+name = "crane-data-layer"
+version = "0.1.0"
+edition = "2021"
+authors = ["Qt Rust Demo Team"]
+description = "Data layer abstraction library with Repository pattern"
+license = "MIT"
+
+[dependencies]

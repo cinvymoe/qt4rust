@@ -1,0 +1,9 @@
+[package]
+name = "cxx-qt-mvi-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["Qt Rust Demo Team"]
+description = "MVI architecture core framework for cxx-qt applications"
+license = "MIT"
+
+[dependencies]

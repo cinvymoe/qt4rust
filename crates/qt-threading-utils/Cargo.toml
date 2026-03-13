@@ -1,0 +1,9 @@
+[package]
+name = "qt-threading-utils"
+version = "0.1.0"
+edition = "2021"
+authors = ["Qt Rust Demo Team"]
+description = "Threading and timer utilities for Qt applications"
+license = "MIT"
+
+[dependencies]
