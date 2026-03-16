@@ -1,9 +1,10 @@
 [package]
 name = "sensor-simulator"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Qt Rust Demo Team"]
-description = "Sensor data simulator for development and testing"
+description = "Unified sensor library supporting both simulated and real sensor interfaces"
 license = "MIT"
 
 [dependencies]
+thiserror = "1.0"

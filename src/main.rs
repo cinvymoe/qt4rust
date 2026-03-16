@@ -3,6 +3,14 @@
 
 mod application;
 mod counter;
+mod states;
+mod models;
+mod intents;
+mod reducers;
+mod data_sources;
+mod repositories;
+mod collector;
+mod monitoring_viewmodel;
 
 use application::Application;
 

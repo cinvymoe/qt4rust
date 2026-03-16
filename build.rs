@@ -87,6 +87,7 @@ fn main() {
     ])
     .qt_module("Network")  // macOS 需要
     .qt_module("Charts")   // 图表模块
-    .files(["src/counter.rs"])
+    .file("src/counter.rs")
+    .file("src/monitoring_viewmodel.rs")
     .build();
 }

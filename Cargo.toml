@@ -12,6 +12,8 @@ resolver = "2"
 cxx = "1.0"
 cxx-qt = "0.8"
 cxx-qt-lib = "0.8"
+tokio = { version = "1.42", features = ["rt", "rt-multi-thread", "time", "sync", "macros"] }
+sensor-simulator = { path = "crates/sensor-simulator" }
 
 [package]
 name = "qt-rust-demo"
