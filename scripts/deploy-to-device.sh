@@ -31,7 +31,7 @@ echo -e "${GREEN}✓ 设备已连接${NC}"
 
 # 配置
 BINARY_PATH="target/armv7-unknown-linux-gnueabihf/release/qt-rust-demo"
-DEVICE_DIR="/data/local/tmp/qt-rust-demo"
+DEVICE_DIR="/userdata/local/tmp/qt-rust-demo"
 DEVICE_LIB_DIR="$DEVICE_DIR/lib"
 QML_DIR="qml"
 
@@ -60,6 +60,21 @@ if [ -d "$QML_DIR" ]; then
 	echo -e "${GREEN}✓ QML 文件已推送${NC}"
 else
 	echo -e "${YELLOW}⚠ 未找到 QML 目录${NC}"
+fi
+
+# 收集并推送字体（解决 "Cannot load default config file" 及设备缺字体问题）
+echo -e "${YELLOW}收集并推送字体...${NC}"
+COLLECT_FONTS_SCRIPT="$(dirname "$0")/collect-fonts.sh"
+if [ -f "$COLLECT_FONTS_SCRIPT" ]; then
+	bash "$COLLECT_FONTS_SCRIPT"
+fi
+
+if [ -d "fonts" ] && [ "$(ls -A fonts 2>/dev/null)" ]; then
+	adb shell "mkdir -p $DEVICE_DIR/fonts"
+	adb push fonts/. "$DEVICE_DIR/fonts/"
+	echo -e "${GREEN}✓ 字体已推送 ($(ls fonts/*.ttf fonts/*.otf 2>/dev/null | wc -l) 个字体文件 + fonts.conf)${NC}"
+else
+	echo -e "${YELLOW}⚠ 未找到字体文件，跳过字体推送${NC}"
 fi
 
 # 推送共享库（可选）
@@ -202,15 +217,21 @@ fi
 echo -e "${YELLOW}创建启动脚本...${NC}"
 cat >/tmp/run-qt-rust-demo.sh <<'EOF'
 #!/bin/sh
-cd /data/local/tmp/qt-rust-demo
-export LD_LIBRARY_PATH=/data/local/tmp/qt-rust-demo/lib:$LD_LIBRARY_PATH
-export QT_PLUGIN_PATH=/data/local/tmp/qt-rust-demo/plugins
-export QT_QPA_PLATFORM_PLUGIN_PATH=/data/local/tmp/qt-rust-demo/plugins
+cd /userdata/local/tmp/qt-rust-demo
+export LD_LIBRARY_PATH=/userdata/local/tmp/qt-rust-demo/lib:$LD_LIBRARY_PATH
+export QT_PLUGIN_PATH=/userdata/local/tmp/qt-rust-demo/plugins
+export QT_QPA_PLATFORM_PLUGIN_PATH=/userdata/local/tmp/qt-rust-demo/plugins
 export QT_QPA_PLATFORM=linuxfb:fb=/dev/fb0
-export QML2_IMPORT_PATH=/data/local/tmp/qt-rust-demo/qml_modules
+export QML2_IMPORT_PATH=/userdata/local/tmp/qt-rust-demo/qml_modules
 export QT_QPA_FB_DISABLE_INPUT=0
 export QT_IM_MODULE=qtvirtualkeyboard
 export QT_VIRTUALKEYBOARD_DESKTOP_DISABLE=0
+export FONTCONFIG_FILE=/userdata/local/tmp/qt-rust-demo/fonts/fonts.conf
+export FONTCONFIG_PATH=/userdata/local/tmp/qt-rust-demo/fonts
+# 将 Qt VirtualKeyboard 用户数据目录重定向到可写路径
+# 避免 "Cannot create directory for user data /root/.config/qtvirtualkeyboard"
+export XDG_CONFIG_HOME=/tmp/qt-app-config
+mkdir -p /tmp/qt-app-config/qtvirtualkeyboard
 ./qt-rust-demo
 EOF
 
@@ -240,6 +261,7 @@ echo -e "${YELLOW}  cd $DEVICE_DIR${NC}"
 echo -e "${YELLOW}  export LD_LIBRARY_PATH=./lib:\$LD_LIBRARY_PATH${NC}"
 echo -e "${YELLOW}  export QT_QPA_PLATFORM=linuxfb:fb=/dev/fb0${NC}"
 echo -e "${YELLOW}  export QT_QPA_PLATFORM_PLUGIN_PATH=./plugins${NC}"
+echo -e "${YELLOW}  export FONTCONFIG_FILE=./fonts/fonts.conf${NC}"
 echo -e "${YELLOW}  ./qt-rust-demo${NC}"
 echo ""
 echo "方式 3: 使用设备上的脚本"

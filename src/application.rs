@@ -127,7 +127,7 @@ impl Application {
         }
         
         // 启动后台数据采集
-        self.start_data_collection();
+        // self.start_data_collection();
         
         eprintln!("[INFO] Starting Qt event loop...");
         

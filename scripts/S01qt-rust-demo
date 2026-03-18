@@ -1,15 +1,19 @@
 #!/bin/bash
 
+# 如果没有参数，默认执行 start
+[ -z "$1" ] && set -- start
+
 case "$1" in
 start)
     echo "Starting qt-rust-demo..."
     
     # 检查应用是否存在
-    if [ -x "/data/local/tmp/qt-rust-demo/qt-rust-demo" ]; then
+    if [ -x "/userdata/local/tmp/qt-rust-demo/qt-rust-demo" ]; then
         # 使用 run.sh 启动应用
-        if [ -f "/data/local/tmp/qt-rust-demo/run.sh" ]; then
-            sh /data/local/tmp/qt-rust-demo/run.sh &
-            echo "qt-rust-demo started"
+        if [ -f "/userdata/local/tmp/qt-rust-demo/run.sh" ]; then
+            # 重定向输出到日志文件
+            nohup sh /userdata/local/tmp/qt-rust-demo/run.sh > /userdata/local/tmp/qt-rust-demo/startup.log 2>&1 &
+            echo "qt-rust-demo started (PID: $!)"
         else
             echo "Error: run.sh not found"
         fi

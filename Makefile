@@ -1,4 +1,4 @@
-.PHONY: help build push push-qml push-no-plugins run stop clean deploy install-autostart
+.PHONY: help build push push-qml push-fonts push-no-plugins run stop clean deploy install-autostart
 
 # 脚本目录
 SCRIPTS_DIR := scripts
@@ -11,6 +11,7 @@ help:
 	@echo "  make build             - 编译 ARM 版本应用"
 	@echo "  make push              - 推送应用和依赖到设备"
 	@echo "  make push-qml          - 仅推送 QML 文件到设备"
+	@echo "  make push-fonts        - 收集并推送字体到设备"
 	@echo "  make push-no-plugins   - 推送应用但不推送 Qt 插件和共享库"
 	@echo "  make run               - 在设备上运行应用"
 	@echo "  make stop              - 停止设备上的应用"
@@ -34,6 +35,14 @@ push-qml:
 	@echo "=== 推送 QML 文件到设备 ==="
 	@adb push qml /data/local/tmp/qt-rust-demo/
 	@echo "QML 文件推送完成"
+
+# 收集并推送字体
+push-fonts:
+	@echo "=== 收集并推送字体到设备 ==="
+	@bash $(SCRIPTS_DIR)/collect-fonts.sh
+	@adb shell "mkdir -p /data/local/tmp/qt-rust-demo/fonts"
+	@adb push fonts/. /data/local/tmp/qt-rust-demo/fonts/
+	@echo "字体推送完成"
 
 # 推送到设备（不推送 Qt 平台插件和共享库）
 push-no-plugins:build run
