@@ -12,8 +12,7 @@ mod intents;
 mod reducers;
 mod data_sources;
 mod repositories;
-mod collector;
-mod pipeline;  // 新增：管道模块
+mod pipeline;  // 管道模块（替代旧的 collector）
 
 use application::Application;
 

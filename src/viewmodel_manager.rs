@@ -1,13 +1,13 @@
 // ViewModel 管理器 - 管理全局 ViewModel 实例和数据采集
 
 use crate::repositories::CraneDataRepository;
-use crate::collector::DataCollector;
-use std::sync::Mutex;
+use crate::pipeline::PipelineManager;
+use std::sync::{Arc, Mutex};
 
 /// ViewModel 管理器
 pub struct ViewModelManager {
-    /// 数据采集器
-    data_collector: Option<DataCollector>,
+    /// 管道管理器（三后台管道架构）
+    pipeline_manager: Option<PipelineManager>,
     
     /// ViewModel 是否已准备好
     viewmodel_ready: bool,
@@ -17,7 +17,7 @@ impl ViewModelManager {
     /// 创建新的管理器
     pub fn new() -> Self {
         Self {
-            data_collector: None,
+            pipeline_manager: None,
             viewmodel_ready: false,
         }
     }
@@ -36,29 +36,26 @@ impl ViewModelManager {
             return;
         }
         
-        eprintln!("[INFO] Starting data collection...");
+        eprintln!("[INFO] Starting three-pipeline data collection...");
         
         // 创建数据仓库
-        let repository = CraneDataRepository::new();
+        let repository = Arc::new(CraneDataRepository::new());
         
-        // 创建数据采集器
-        let mut collector = DataCollector::new(repository);
+        // 创建管道管理器
+        let mut manager = PipelineManager::new(repository);
         
-        // 启动采集 - 暂时只打印日志
-        // TODO: 实现与 ViewModel 的通信机制
-        collector.start(move |intent| {
-            eprintln!("[DATA] Collected: {:?}", intent);
-            // TODO: 通过某种机制更新 ViewModel
-        });
+        // 启动采集管道（后台线程 1）
+        manager.start_collection_pipeline();
         
-        self.data_collector = Some(collector);
-        eprintln!("[INFO] Data collection started");
+        self.pipeline_manager = Some(manager);
+        eprintln!("[INFO] Three-pipeline data collection started");
+        eprintln!("[INFO] Backend Thread 1 (Collection Pipeline) is now running at 10Hz");
     }
     
     /// 停止数据采集
     pub fn stop_data_collection(&mut self) {
-        if let Some(mut collector) = self.data_collector.take() {
-            collector.stop();
+        if let Some(mut manager) = self.pipeline_manager.take() {
+            manager.stop_all();
             eprintln!("[INFO] Data collection stopped");
         }
     }
