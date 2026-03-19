@@ -28,32 +28,26 @@ pub mod monitoring_viewmodel_bridge {
         /// 重置报警（Intent）
         #[qinvokable]
         unsafe fn reset_alarm(self: Pin<&mut MonitoringViewModel>);
+        
+        /// 测试方法：更新模拟数据（仅用于开发测试）
+        #[qinvokable]
+        unsafe fn update_test_data(
+            self: Pin<&mut MonitoringViewModel>,
+            load: f64,
+            radius: f64,
+            angle: f64
+        );
     }
 }
 
 use core::pin::Pin;
 use cxx_qt_lib::QString;
-use crate::states::MonitoringState;
-use crate::intents::MonitoringIntent;
-use crate::reducers::MonitoringReducer;
-use cxx_qt_mvi_core::prelude::Reducer;
-use std::time::Instant;
-use cxx_qt::CxxQtType;
+use crate::states::monitoring_state::MonitoringState;
+use crate::intents::monitoring_intent::MonitoringIntent;
+use crate::reducers::monitoring_reducer::MonitoringReducer;
 
 /// MonitoringViewModel 实现
 pub struct MonitoringViewModelRust {
-    /// 当前状态
-    state: MonitoringState,
-    
-    /// 状态转换器
-    reducer: MonitoringReducer,
-    
-    /// 最后更新时间（用于限制刷新频率）
-    last_update_time: Instant,
-    
-    /// 最小更新间隔（毫秒）
-    min_update_interval_ms: u64,
-    
     // Qt 属性字段
     current_load: f64,
     rated_load: f64,
@@ -64,6 +58,9 @@ pub struct MonitoringViewModelRust {
     is_danger: bool,
     sensor_connected: bool,
     error_message: QString,
+    
+    // 内部状态（不暴露给 QML）
+    reducer: MonitoringReducer,
 }
 
 impl Default for MonitoringViewModelRust {
@@ -79,10 +76,7 @@ impl Default for MonitoringViewModelRust {
             is_danger: state.is_danger,
             sensor_connected: state.sensor_connected,
             error_message: QString::from(""),
-            state,
             reducer: MonitoringReducer::new(),
-            last_update_time: Instant::now(),
-            min_update_interval_ms: 100,  // 最小 100ms 更新间隔，即最高 10Hz 刷新率
         }
     }
 }
@@ -90,75 +84,63 @@ impl Default for MonitoringViewModelRust {
 impl monitoring_viewmodel_bridge::MonitoringViewModel {
     /// 处理意图（公开方法，供后台线程调用）
     pub fn handle_intent(mut self: Pin<&mut Self>, intent: MonitoringIntent) {
-        // 对于传感器数据更新，检查刷新频率限制（节流）
-        if matches!(intent, MonitoringIntent::SensorDataUpdated(_)) {
-            let now = Instant::now();
-            // 获取rust引用并存储在局部变量中以延长生命周期
-            let binding = self.as_ref();
-            let rust_ref = binding.rust();
-            let elapsed = now.duration_since(rust_ref.last_update_time).as_millis() as u64;
-            
-            // 如果距离上次更新时间太短，跳过本次更新
-            if elapsed < rust_ref.min_update_interval_ms {
-                return;
-            }
-            
-            // 更新最后更新时间
-            let mut_binding = self.as_mut();
-            let mut mut_rust_ref = mut_binding.rust_mut();
-            mut_rust_ref.last_update_time = now;
-        }
+        // 构建当前状态
+        let current_state = MonitoringState {
+            current_load: *self.as_ref().current_load(),
+            rated_load: *self.as_ref().rated_load(),
+            working_radius: *self.as_ref().working_radius(),
+            boom_angle: *self.as_ref().boom_angle(),
+            boom_length: *self.as_ref().boom_length(),
+            moment_percentage: *self.as_ref().moment_percentage(),
+            is_danger: *self.as_ref().is_danger(),
+            sensor_connected: *self.as_ref().sensor_connected(),
+            error_message: {
+                let msg = self.as_ref().error_message().to_string();
+                if msg.is_empty() { None } else { Some(msg) }
+            },
+            last_update_time: std::time::SystemTime::now(),
+        };
         
-        // 1. 调用 Reducer 计算新状态
-        let binding = self.as_ref();
-        let rust_ref = binding.rust();
-        let new_state = rust_ref.reducer.reduce(rust_ref.state.clone(), intent);
+        // 调用 Reducer 计算新状态
+        let new_state = self.reducer.reduce(current_state, intent);
         
-        // 2. 更新状态
+        // 更新状态
         self.update_state(new_state);
     }
     
     /// 更新状态并触发 Qt 属性变化信号
     fn update_state(mut self: Pin<&mut Self>, new_state: MonitoringState) {
-        // 获取旧状态的副本用于比较
-        let binding = self.as_ref();
-        let rust_ref = binding.rust();
-        let old_state = rust_ref.state.clone();
-        
         // 只更新变化的属性，避免不必要的 UI 刷新
-        if old_state.current_load != new_state.current_load {
+        if *self.as_ref().current_load() != new_state.current_load {
             self.as_mut().set_current_load(new_state.current_load);
         }
-        if old_state.rated_load != new_state.rated_load {
+        if *self.as_ref().rated_load() != new_state.rated_load {
             self.as_mut().set_rated_load(new_state.rated_load);
         }
-        if old_state.working_radius != new_state.working_radius {
+        if *self.as_ref().working_radius() != new_state.working_radius {
             self.as_mut().set_working_radius(new_state.working_radius);
         }
-        if old_state.boom_angle != new_state.boom_angle {
+        if *self.as_ref().boom_angle() != new_state.boom_angle {
             self.as_mut().set_boom_angle(new_state.boom_angle);
         }
-        if old_state.boom_length != new_state.boom_length {
+        if *self.as_ref().boom_length() != new_state.boom_length {
             self.as_mut().set_boom_length(new_state.boom_length);
         }
-        if old_state.moment_percentage != new_state.moment_percentage {
+        if *self.as_ref().moment_percentage() != new_state.moment_percentage {
             self.as_mut().set_moment_percentage(new_state.moment_percentage);
         }
-        if old_state.is_danger != new_state.is_danger {
+        if *self.as_ref().is_danger() != new_state.is_danger {
             self.as_mut().set_is_danger(new_state.is_danger);
         }
-        if old_state.sensor_connected != new_state.sensor_connected {
+        if *self.as_ref().sensor_connected() != new_state.sensor_connected {
             self.as_mut().set_sensor_connected(new_state.sensor_connected);
         }
-        if old_state.error_message != new_state.error_message {
-            let error_msg = new_state.error_message.clone().unwrap_or_default();
-            self.as_mut().set_error_message(QString::from(&error_msg));
-        }
         
-        // 更新内部状态
-        let mut_binding = self.as_mut();
-        let mut mut_rust_ref = mut_binding.rust_mut();
-        mut_rust_ref.state = new_state;
+        let current_error = self.as_ref().error_message().to_string();
+        let new_error = new_state.error_message.clone().unwrap_or_default();
+        if current_error != new_error {
+            self.as_mut().set_error_message(QString::from(&new_error));
+        }
     }
     
     /// 清除错误
@@ -169,5 +151,14 @@ impl monitoring_viewmodel_bridge::MonitoringViewModel {
     /// 重置报警
     pub fn reset_alarm(mut self: Pin<&mut Self>) {
         self.as_mut().handle_intent(MonitoringIntent::ResetAlarm);
+    }
+    
+    /// 测试方法：更新模拟数据（仅用于开发测试）
+    pub fn update_test_data(mut self: Pin<&mut Self>, load: f64, radius: f64, angle: f64) {
+        // 创建模拟的传感器数据
+        let sensor_data = crate::models::SensorData::new(load, radius, angle);
+        
+        // 通过 Intent 更新状态
+        self.as_mut().handle_intent(MonitoringIntent::SensorDataUpdated(sensor_data));
     }
 }

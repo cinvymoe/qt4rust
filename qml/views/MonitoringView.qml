@@ -2,8 +2,10 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import qt.rust.demo  // 导入 Rust ViewModel
 import "../components/controls"
 import "../components/layouts"
+import "../components/dialogs"  // 导入对话框组件
 import "../styles"
 
 Item {
@@ -12,65 +14,180 @@ Item {
     // 顶部栏显示状态（从父组件传递）
     property bool headerVisible: true
     
-    // 数据模型 - 外部定义
+    // 绑定 ViewModel
+    MonitoringViewModel {
+        id: viewModel
+        
+        // 组件创建完成后注册到管理器
+        Component.onCompleted: {
+            console.log("[QML] MonitoringViewModel created")
+            
+            // 调试：列出所有可用的方法
+            console.log("[QML] Available methods:")
+            for (var prop in viewModel) {
+                if (typeof viewModel[prop] === "function") {
+                    console.log("[QML]   -", prop)
+                }
+            }
+        }
+    }
+    
+    // 使用 Timer 模拟数据更新（测试用）
+    Timer {
+        id: dataUpdateTimer
+        interval: 1000  // 1秒更新一次（方便观察）
+        running: true
+        repeat: true
+        
+        property real loadValue: 15.0
+        property real radiusValue: 8.0
+        property real angleValue: 60.0
+        
+        onTriggered: {
+            // 模拟数据变化
+            loadValue = 10.0 + Math.random() * 15.0  // 10-25 吨
+            radiusValue = 5.0 + Math.random() * 10.0  // 5-15 米
+            angleValue = 30.0 + Math.random() * 50.0  // 30-80 度
+            
+            console.log("[QML] Simulating data update: load=" + loadValue.toFixed(1))
+            
+            // 调用 ViewModel 方法（注意：使用 snake_case）
+            viewModel.update_test_data(loadValue, radiusValue, angleValue)
+        }
+    }
+    
+    // 数据模型 - 使用 ViewModel 数据动态更新
     ListModel {
         id: monitoringDataModel
+    }
+    
+    // 初始化数据模型
+    Component.onCompleted: {
+        updateDataModel()
+    }
+    
+    // 监听 ViewModel 属性变化，更新数据模型
+    Connections {
+        target: viewModel
+        function onCurrent_loadChanged() { updateDataModel() }
+        function onWorking_radiusChanged() { updateDataModel() }
+        function onBoom_angleChanged() { updateDataModel() }
+        function onBoom_lengthChanged() { updateDataModel() }
+    }
+    
+    // 更新数据模型函数
+    function updateDataModel() {
+        monitoringDataModel.clear()
         
-        ListElement {
-            type: "dataCard"
-            iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-weight.png"
-            label: "当前载荷"
-            unit: "吨"
-            description: "额定载荷"
-            showProgress: true
-            value: 17.0
-            maxValue: 25.0
-        }
+        // 确保值不为 undefined（注意：属性名使用 snake_case）
+        var currentLoad = viewModel.current_load || 0
+        var ratedLoad = viewModel.rated_load || 25
+        var workingRadius = viewModel.working_radius || 0
+        var boomAngle = viewModel.boom_angle || 0
+        var boomLength = viewModel.boom_length || 22.6
         
-        ListElement {
-            type: "dataCard"
-            iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-radius.png"
-            label: "工作半径"
-            unit: "米"
-            description: "水平工作距离"
-            showProgress: false
-            value: 10.0
+        monitoringDataModel.append({
+            type: "dataCard",
+            iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-weight.png",
+            label: "当前载荷",
+            unit: "吨",
+            description: "额定载荷",
+            showProgress: true,
+            value: currentLoad,
+            maxValue: ratedLoad
+        })
+        
+        monitoringDataModel.append({
+            type: "dataCard",
+            iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-radius.png",
+            label: "工作半径",
+            unit: "米",
+            description: "水平工作距离",
+            showProgress: false,
+            value: workingRadius,
             maxValue: 0.0
-        }
+        })
         
-        ListElement {
-            type: "dataCard"
-            iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-angle.png"
-            label: "吊臂角度"
-            unit: "度"
-            description: "与水平面夹角"
-            showProgress: false
-            value: 62.7
+        monitoringDataModel.append({
+            type: "dataCard",
+            iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-angle.png",
+            label: "吊臂角度",
+            unit: "度",
+            description: "与水平面夹角",
+            showProgress: false,
+            value: boomAngle,
             maxValue: 0.0
-        }
+        })
         
-        ListElement {
-            type: "boomLength"
-            label: "臂长"
-            value: 22.6
-        }
+        monitoringDataModel.append({
+            type: "boomLength",
+            label: "臂长",
+            value: boomLength
+        })
     }
     
     Rectangle {
         anchors.fill: parent
         color: "transparent"
         
+        // 错误提示对话框
+        InfoDialog {
+            id: errorDialog
+            visible: viewModel.error_message !== ""
+            title: "数据异常"
+            message: viewModel.error_message
+            
+            onAccepted: {
+                viewModel.clear_error()
+            }
+        }
+        
+        // 传感器断连提示
+        Rectangle {
+            id: sensorDisconnectedBanner
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: 40
+            color: Theme.dangerBackground
+            border.color: Theme.dangerColor
+            border.width: Theme.borderNormal
+            visible: !viewModel.sensor_connected
+            z: 100
+            
+            Row {
+                anchors.centerIn: parent
+                spacing: Theme.spacingMedium
+                
+                Rectangle {
+                    width: Theme.iconSizeSmall
+                    height: Theme.iconSizeSmall
+                    color: Theme.dangerColor
+                    radius: width / 2
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                
+                Text {
+                    text: "传感器连接断开"
+                    font.pixelSize: Theme.fontSizeMedium
+                    font.family: Theme.fontFamilyDefault
+                    color: Theme.textPrimary
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
+        }
+        
         Column {
             anchors.fill: parent
             spacing: 0
             
-            // 顶部栏
+            // 顶部栏 - 绑定危险状态
             Header {
                 id: header
                 width: parent.width
                 height: monitoringView.headerVisible ? Theme.headerHeight : 0
                 visible: height > 0
-                alertActive: true
+                alertActive: viewModel.is_danger
                 clip: true
                 
                 Behavior on height {
@@ -118,12 +235,17 @@ Item {
                         }
                     }
                     
-                    // 危险状态卡片
+                    // 危险状态卡片 - 绑定 ViewModel
                     DangerCard {
                         id: dangerCard
                         anchors.fill: parent
                         opacity: carouselContainer.currentIndex === 0 ? 1 : 0
                         visible: opacity > 0
+                        // 根据力矩百分比显示不同的消息
+                        title: viewModel.moment_percentage >= 100 ? "严重危险" : "危险状态"
+                        message: viewModel.moment_percentage >= 100 ? 
+                            "力矩严重超限！立即停止作业" : 
+                            "力矩超限！立即减载或降低幅度"
                         
                         Behavior on opacity {
                             NumberAnimation {
@@ -209,11 +331,11 @@ Item {
                 height: parent.height
                 spacing: Theme.spacingMedium
                 
-                // 力矩百分比卡片
+                // 力矩百分比卡片 - 绑定 ViewModel
                 MomentCard {
                     width: parent.width
                     height: 216
-                    percentage: 94.8
+                    percentage: viewModel.moment_percentage
                 }
                 
                 // 数据网格 - 使用 GridView (每行2列，可滑动)
@@ -233,49 +355,32 @@ Item {
                         width: dataGridView.cellWidth
                         height: dataGridView.cellHeight
                         
-                        Loader {
+                        // 直接在 delegate 中渲染，不使用 Loader
+                        DataCard {
                             anchors.fill: parent
                             anchors.margins: Theme.spacingMedium / 2
+                            visible: model.type === "dataCard"
                             
-                            property var itemData: model
-                            
-                            sourceComponent: {
-                                if (model.type === "dataCard") {
-                                    return dataCardComponent
-                                } else if (model.type === "boomLength") {
-                                    return boomLengthComponent
-                                }
-                                return null
-                            }
-                        }
-                    }
-                    
-                    // DataCard 组件
-                    Component {
-                        id: dataCardComponent
-                        
-                        DataCard {
-                            iconSource: itemData.iconSource
-                            label: itemData.label
-                            value: itemData.value.toFixed(1)
-                            unit: itemData.unit
+                            iconSource: model.iconSource || ""
+                            label: model.label || ""
+                            value: (model.value || 0).toFixed(1)
+                            unit: model.unit || ""
                             description: {
-                                if (itemData.showProgress) {
-                                    return "额定: " + itemData.maxValue.toFixed(1) + itemData.unit
+                                if (model.showProgress) {
+                                    return "额定: " + (model.maxValue || 0).toFixed(1) + (model.unit || "")
                                 }
-                                return itemData.description
+                                return model.description || ""
                             }
-                            showProgress: itemData.showProgress
-                            progress: itemData.showProgress ? (itemData.value / itemData.maxValue) : 0
+                            showProgress: model.showProgress || false
+                            progress: model.showProgress ? ((model.value || 0) / (model.maxValue || 1)) : 0
                         }
-                    }
-                    
-                    // 臂长组件
-                    Component {
-                        id: boomLengthComponent
                         
                         BoomLengthCard {
-                            boomLength: itemData.value
+                            anchors.fill: parent
+                            anchors.margins: Theme.spacingMedium / 2
+                            visible: model.type === "boomLength"
+                            
+                            boomLength: model.value || 0
                         }
                     }
                 }

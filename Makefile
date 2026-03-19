@@ -1,4 +1,4 @@
-.PHONY: help build push push-qml push-fonts push-no-plugins run stop clean deploy install-autostart
+.PHONY: help build push push-qml push-fonts push-no-plugins run stop clean deploy install-autostart push-no-plugins-with-build
 
 # 脚本目录
 SCRIPTS_DIR := scripts
@@ -45,9 +45,13 @@ push-fonts:
 	@echo "字体推送完成"
 
 # 推送到设备（不推送 Qt 平台插件和共享库）
-push-no-plugins:build run
+push-no-plugins:
 	@echo "=== 推送到设备（跳过 Qt 平台插件和共享库）==="
 	@SKIP_LIBS=1 bash $(SCRIPTS_DIR)/deploy-to-device.sh
+
+# 第一执编译，然后推送并运行
+push-no-plugins-with-build: build push-no-plugins run
+	@echo "=== 第一执编译、推送并运行完成 ==="
 
 # 在设备上运行
 run: stop

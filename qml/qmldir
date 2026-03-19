@@ -1,0 +1,2 @@
+module qt.rust.demo
+singleton DataCollectionManager 1.0 DataCollectionManager.qml

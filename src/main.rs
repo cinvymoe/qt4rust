@@ -3,6 +3,9 @@
 
 mod application;
 mod counter;
+mod monitoring_viewmodel;
+mod data_collection_controller;  // 新增：数据采集控制器
+mod viewmodel_manager;  // 新增：ViewModel 管理器
 mod states;
 mod models;
 mod intents;
@@ -10,7 +13,6 @@ mod reducers;
 mod data_sources;
 mod repositories;
 mod collector;
-mod monitoring_viewmodel;
 
 use application::Application;
 

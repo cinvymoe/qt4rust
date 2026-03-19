@@ -2,8 +2,7 @@
 
 use cxx_qt_lib::{QGuiApplication, QQmlApplicationEngine, QUrl};
 use std::fmt;
-use crate::repositories::CraneDataRepository;
-use crate::collector::DataCollector;
+use crate::viewmodel_manager;
 
 /// 应用程序错误类型
 #[derive(Debug)]
@@ -31,7 +30,6 @@ impl std::error::Error for ApplicationError {}
 pub struct Application {
     qt_app: cxx::UniquePtr<QGuiApplication>,
     engine: cxx::UniquePtr<QQmlApplicationEngine>,
-    data_collector: Option<DataCollector>,
 }
 
 impl Application {
@@ -39,6 +37,9 @@ impl Application {
     /// 初始化 Qt 应用和 QML 引擎
     pub fn new() -> Result<Self, ApplicationError> {
         eprintln!("[INFO] Initializing Qt application...");
+        
+        // 初始化 ViewModel 管理器
+        viewmodel_manager::init_viewmodel_manager();
         
         // 创建 Qt 应用程序实例
         let qt_app = QGuiApplication::new();
@@ -49,7 +50,6 @@ impl Application {
         Ok(Self { 
             qt_app, 
             engine,
-            data_collector: None,
         })
     }
 
@@ -86,26 +86,6 @@ impl Application {
         eprintln!("[INFO] QML file loaded");
         Ok(())
     }
-
-    /// 启动后台数据采集
-    fn start_data_collection(&mut self) {
-        eprintln!("[INFO] Starting background data collection...");
-        
-        // 创建数据仓库
-        let repository = CraneDataRepository::new();
-        
-        // 创建数据采集器
-        let mut collector = DataCollector::new(repository);
-        
-        // 启动采集（注意：这里需要通过 Qt 信号槽机制与 ViewModel 通信）
-        // 暂时只打印日志，完整实现需要 Qt 的线程安全机制
-        collector.start(|intent| {
-            eprintln!("[DATA] Collected: {:?}", intent);
-            // TODO: 通过 Qt 信号槽发送到 ViewModel
-        });
-        
-        self.data_collector = Some(collector);
-    }
     
     /// 运行应用程序
     /// 启动 Qt 事件循环并返回退出码
@@ -126,8 +106,9 @@ impl Application {
             };
         }
         
-        // 启动后台数据采集
-        // self.start_data_collection();
+        // 启动后台数据采集（在 QML 加载后）
+        // 注意：ViewModel 需要在 QML 中调用 registerToManager() 后才能接收数据
+        eprintln!("[INFO] Data collection will start after ViewModel registration");
         
         eprintln!("[INFO] Starting Qt event loop...");
         
