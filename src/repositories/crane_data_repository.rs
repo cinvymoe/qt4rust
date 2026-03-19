@@ -38,11 +38,13 @@ impl CraneDataRepository {
     }
     
     /// 获取缓存的数据
+    #[allow(dead_code)]
     pub fn get_cached_data(&self) -> Option<SensorData> {
         self.cache.lock().ok()?.clone()
     }
     
     /// 克隆 Repository（用于跨线程共享）
+    #[allow(dead_code)]
     pub fn clone_arc(&self) -> Arc<Mutex<Self>> {
         Arc::new(Mutex::new(Self {
             sensor_source: Arc::clone(&self.sensor_source),

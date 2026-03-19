@@ -83,7 +83,7 @@ impl Default for MonitoringViewModelRust {
 
 impl monitoring_viewmodel_bridge::MonitoringViewModel {
     /// 处理意图（公开方法，供后台线程调用）
-    pub fn handle_intent(mut self: Pin<&mut Self>, intent: MonitoringIntent) {
+    pub fn handle_intent(self: Pin<&mut Self>, intent: MonitoringIntent) {
         // 构建当前状态
         let current_state = MonitoringState {
             current_load: *self.as_ref().current_load(),

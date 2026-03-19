@@ -13,6 +13,7 @@ mod reducers;
 mod data_sources;
 mod repositories;
 mod collector;
+mod pipeline;  // 新增：管道模块
 
 use application::Application;
 

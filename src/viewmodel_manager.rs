@@ -23,6 +23,7 @@ impl ViewModelManager {
     }
     
     /// 标记 ViewModel 已准备好
+    #[allow(dead_code)]
     pub fn mark_viewmodel_ready(&mut self) {
         eprintln!("[INFO] ViewModel marked as ready");
         self.viewmodel_ready = true;
@@ -86,6 +87,7 @@ pub fn init_viewmodel_manager() {
 }
 
 /// 标记 ViewModel 已准备好
+#[allow(dead_code)]
 pub fn mark_viewmodel_ready() {
     let mut manager = VIEWMODEL_MANAGER.lock().unwrap();
     if let Some(mgr) = manager.as_mut() {

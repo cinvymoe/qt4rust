@@ -6,6 +6,7 @@ use crate::viewmodel_manager;
 
 /// 应用程序错误类型
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum ApplicationError {
     QmlLoadError(String),
     EngineInitError(String),

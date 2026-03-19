@@ -151,10 +151,7 @@ async fn main() {
     let collector_clone2 = Arc::clone(&collector);
     let counter_clone2 = Arc::clone(&counter);
     
-    let data_collector = DataCollector::new(
-        Duration::from_millis(300),
-        || {} // 空回调，我们在下面使用自定义回调
-    );
+    let data_collector = DataCollector::new(Duration::from_millis(300));
     
     data_collector.start(move || {
         let data = collector_clone2.read_all();
