@@ -6,6 +6,8 @@ mod counter;
 mod monitoring_viewmodel;
 mod data_collection_controller;  // 新增：数据采集控制器
 mod viewmodel_manager;  // 新增：ViewModel 管理器
+mod algorithms;  // 算法模块（AD 转换器等）
+mod config;  // 配置管理模块
 mod states;
 mod models;
 mod intents;

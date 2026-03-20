@@ -236,8 +236,11 @@ mod tests {
     
     #[test]
     fn test_pipeline_creation() {
+        use crate::config::config_manager::ConfigManager;
+        
         let config = CollectionPipelineConfig::default();
-        let repository = Arc::new(CraneDataRepository::new());
+        let config_manager = Arc::new(ConfigManager::default());
+        let repository = Arc::new(CraneDataRepository::new(config_manager));
         let buffer = Arc::new(RwLock::new(
             super::super::shared_buffer::ProcessedDataBuffer::new(100)
         ));

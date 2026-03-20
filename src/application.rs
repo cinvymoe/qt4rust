@@ -108,8 +108,8 @@ impl Application {
         }
         
         // 启动后台数据采集（在 QML 加载后）
-        // 注意：ViewModel 需要在 QML 中调用 registerToManager() 后才能接收数据
-        eprintln!("[INFO] Data collection will start after ViewModel registration");
+        eprintln!("[INFO] Starting backend data collection...");
+        viewmodel_manager::start_global_data_collection();
         
         eprintln!("[INFO] Starting Qt event loop...");
         

@@ -38,8 +38,8 @@ impl ViewModelManager {
         
         eprintln!("[INFO] Starting three-pipeline data collection...");
         
-        // 创建数据仓库
-        let repository = Arc::new(CraneDataRepository::new());
+        // 创建数据仓库（使用 Default 实现，自动创建 ConfigManager）
+        let repository = Arc::new(CraneDataRepository::default());
         
         // 创建管道管理器
         let mut manager = PipelineManager::new(repository);

@@ -112,7 +112,7 @@ mod tests {
     
     #[test]
     fn test_pipeline_manager_creation() {
-        let repository = Arc::new(CraneDataRepository::new());
+        let repository = Arc::new(CraneDataRepository::default());
         let manager = PipelineManager::new(repository);
         
         assert!(!manager.is_collection_running());
@@ -120,7 +120,7 @@ mod tests {
     
     #[test]
     fn test_start_stop_collection() {
-        let repository = Arc::new(CraneDataRepository::new());
+        let repository = Arc::new(CraneDataRepository::default());
         let mut manager = PipelineManager::new(repository);
         
         // 启动
@@ -142,7 +142,7 @@ mod tests {
     
     #[test]
     fn test_data_collection_frequency() {
-        let repository = Arc::new(CraneDataRepository::new());
+        let repository = Arc::new(CraneDataRepository::default());
         let mut manager = PipelineManager::new(repository);
         
         // 启动采集
@@ -174,7 +174,7 @@ mod tests {
     
     #[test]
     fn test_processed_data_content() {
-        let repository = Arc::new(CraneDataRepository::new());
+        let repository = Arc::new(CraneDataRepository::default());
         let mut manager = PipelineManager::new(repository);
         
         // 启动采集
@@ -192,16 +192,16 @@ mod tests {
         let data = latest.unwrap();
         eprintln!("[TEST] Processed data:");
         eprintln!("  - Sequence: {}", data.sequence_number);
-        eprintln!("  - Load: {:.2} tons", data.raw_data.ad1_load);
-        eprintln!("  - Radius: {:.2} m", data.raw_data.ad2_radius);
-        eprintln!("  - Angle: {:.2}°", data.raw_data.ad3_angle);
+        eprintln!("  - Load: {:.2} tons", data.current_load);
+        eprintln!("  - Radius: {:.2} m", data.working_radius);
+        eprintln!("  - Angle: {:.2}°", data.boom_angle);
         eprintln!("  - Moment %: {:.2}%", data.moment_percentage);
         eprintln!("  - Is danger: {}", data.is_danger);
         
         // 验证数据合理性
-        assert!(data.raw_data.ad1_load >= 0.0, "Load should be non-negative");
-        assert!(data.raw_data.ad2_radius >= 0.0, "Radius should be non-negative");
-        assert!(data.raw_data.ad3_angle >= 0.0 && data.raw_data.ad3_angle <= 90.0, 
+        assert!(data.current_load >= 0.0, "Load should be non-negative");
+        assert!(data.working_radius >= 0.0, "Radius should be non-negative");
+        assert!(data.boom_angle >= 0.0 && data.boom_angle <= 90.0, 
                 "Angle should be between 0 and 90 degrees");
         assert!(data.moment_percentage >= 0.0, "Moment percentage should be non-negative");
         
@@ -210,7 +210,7 @@ mod tests {
     
     #[test]
     fn test_history_buffer() {
-        let repository = Arc::new(CraneDataRepository::new());
+        let repository = Arc::new(CraneDataRepository::default());
         let mut manager = PipelineManager::new(repository);
         
         // 启动采集

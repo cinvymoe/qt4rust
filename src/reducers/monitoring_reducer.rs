@@ -52,9 +52,9 @@ impl MonitoringReducer {
     }
     
     /// 从传感器数据更新状态
-    fn update_from_sensor_data(&self, _state: MonitoringState, sensor_data: SensorData) -> MonitoringState {
-        // 计算力矩百分比
-        let moment_percentage = self.calculate_moment_percentage(&sensor_data);
+    fn update_from_sensor_data(&self, state: MonitoringState, sensor_data: SensorData) -> MonitoringState {
+        // 使用当前状态中的 rated_load 计算力矩百分比
+        let moment_percentage = self.calculate_moment_percentage(&sensor_data, state.rated_load);
         
         // 判断是否危险
         let is_danger = moment_percentage >= 90.0;
@@ -67,10 +67,10 @@ impl MonitoringReducer {
         
         MonitoringState {
             current_load: sensor_data.ad1_load,
-            rated_load: sensor_data.rated_load,
+            rated_load: state.rated_load,  // 保持原有配置
             working_radius: sensor_data.ad2_radius,
             boom_angle: sensor_data.ad3_angle,
-            boom_length: sensor_data.boom_length,
+            boom_length: state.boom_length,  // 保持原有配置
             moment_percentage,
             is_danger,
             sensor_connected: true,
@@ -80,8 +80,15 @@ impl MonitoringReducer {
     }
     
     /// 计算力矩百分比
-    fn calculate_moment_percentage(&self, sensor_data: &SensorData) -> f64 {
-        sensor_data.calculate_moment_percentage()
+    fn calculate_moment_percentage(&self, sensor_data: &SensorData, rated_load: f64) -> f64 {
+        let current_moment = sensor_data.ad1_load * sensor_data.ad2_radius;
+        let rated_moment = rated_load * sensor_data.ad2_radius;
+        
+        if rated_moment > 0.0 {
+            (current_moment / rated_moment) * 100.0
+        } else {
+            0.0
+        }
     }
 }
 
