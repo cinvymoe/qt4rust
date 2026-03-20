@@ -1,45 +1,25 @@
 // 传感器数据模型
 
-/// 传感器数据（AD1, AD2, AD3 输入）
+/// 传感器原始数据（仅包含 AD1, AD2, AD3 采集值）
 #[derive(Debug, Clone, PartialEq)]
 pub struct SensorData {
-    /// AD1 - 当前载荷（吨）
+    /// AD1 - 载荷传感器原始值
     pub ad1_load: f64,
     
-    /// AD2 - 工作半径（米）
+    /// AD2 - 工作半径传感器原始值（米）
     pub ad2_radius: f64,
     
-    /// AD3 - 吊臂角度（度）
+    /// AD3 - 吊臂角度传感器原始值（度）
     pub ad3_angle: f64,
-    
-    /// 额定载荷（吨）- 配置参数
-    pub rated_load: f64,
-    
-    /// 臂长（米）- 配置参数
-    pub boom_length: f64,
 }
 
 impl SensorData {
-    /// 创建新的传感器数据
+    /// 创建新的传感器原始数据
     pub fn new(ad1_load: f64, ad2_radius: f64, ad3_angle: f64) -> Self {
         Self {
             ad1_load,
             ad2_radius,
             ad3_angle,
-            rated_load: 25.0,  // 默认额定载荷
-            boom_length: 22.6, // 默认臂长
-        }
-    }
-    
-    /// 计算力矩百分比
-    pub fn calculate_moment_percentage(&self) -> f64 {
-        let current_moment = self.ad1_load * self.ad2_radius;
-        let rated_moment = self.rated_load * self.ad2_radius;
-        
-        if rated_moment > 0.0 {
-            (current_moment / rated_moment) * 100.0
-        } else {
-            0.0
         }
     }
     
@@ -68,13 +48,6 @@ mod tests {
         assert_eq!(data.ad1_load, 17.0);
         assert_eq!(data.ad2_radius, 10.0);
         assert_eq!(data.ad3_angle, 62.7);
-    }
-    
-    #[test]
-    fn test_calculate_moment_percentage() {
-        let data = SensorData::new(20.0, 10.0, 60.0);
-        let percentage = data.calculate_moment_percentage();
-        assert_eq!(percentage, 80.0); // (20*10) / (25*10) * 100
     }
     
     #[test]
