@@ -470,19 +470,66 @@ impl Drop for CollectionPipeline {
 }
 ```
 
-## 5. Pipeline 2: 存储管道
+## 5. Pipeline 2: 存储管道（改进版）
 
-### 5.1 管道配置
+### 5.1 数据库表设计
+
+```sql
+-- 运行数据表（定时批量存储）
+CREATE TABLE IF NOT EXISTS runtime_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sequence_number INTEGER NOT NULL UNIQUE,  -- 数据序列号，防止重复
+    timestamp INTEGER NOT NULL,               -- 时间戳（Unix 时间）
+    current_load REAL NOT NULL,               -- 当前载荷（吨）
+    rated_load REAL NOT NULL,                 -- 额定载荷（吨）
+    working_radius REAL NOT NULL,             -- 工作半径（米）
+    boom_angle REAL NOT NULL,                 -- 吊臂角度（度）
+    boom_length REAL NOT NULL,                -- 臂长（米）
+    moment_percentage REAL NOT NULL,          -- 力矩百分比
+    is_danger BOOLEAN NOT NULL,               -- 是否危险
+    validation_error TEXT,                    -- 验证错误信息
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_runtime_timestamp ON runtime_data(timestamp);
+CREATE INDEX IF NOT EXISTS idx_runtime_sequence ON runtime_data(sequence_number);
+
+-- 报警信息表（异步回调立即存储）
+CREATE TABLE IF NOT EXISTS alarm_records (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sequence_number INTEGER NOT NULL,         -- 关联的数据序列号
+    timestamp INTEGER NOT NULL,               -- 报警时间戳
+    alarm_type TEXT NOT NULL,                 -- 报警类型：warning/danger
+    current_load REAL NOT NULL,
+    rated_load REAL NOT NULL,
+    working_radius REAL NOT NULL,
+    boom_angle REAL NOT NULL,
+    boom_length REAL NOT NULL,
+    moment_percentage REAL NOT NULL,
+    description TEXT,                         -- 报警描述
+    acknowledged BOOLEAN NOT NULL DEFAULT 0,  -- 是否已确认
+    acknowledged_at INTEGER,                  -- 确认时间
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_alarm_timestamp ON alarm_records(timestamp);
+CREATE INDEX IF NOT EXISTS idx_alarm_type ON alarm_records(alarm_type);
+CREATE INDEX IF NOT EXISTS idx_alarm_acknowledged ON alarm_records(acknowledged);
+```
+
+### 5.2 管道配置
 
 ```rust
 // src/pipeline/storage_pipeline.rs (新增)
 
 use std::time::Duration;
+use std::collections::VecDeque;
+use std::sync::{Arc, Mutex};
 
 /// 存储管道配置
 #[derive(Debug, Clone)]
 pub struct StoragePipelineConfig {
-    /// 存储间隔
+    /// 存储间隔（运行数据）
     pub interval: Duration,
     
     /// 批量存储大小
@@ -493,6 +540,9 @@ pub struct StoragePipelineConfig {
     
     /// 重试延迟
     pub retry_delay: Duration,
+    
+    /// 管道队列最大容量
+    pub max_queue_size: usize,
 }
 
 impl Default for StoragePipelineConfig {
@@ -502,44 +552,192 @@ impl Default for StoragePipelineConfig {
             batch_size: 10,
             max_retries: 3,
             retry_delay: Duration::from_millis(100),
+            max_queue_size: 1000,  // 最多缓存 1000 条数据
         }
     }
 }
 ```
 
-### 5.2 管道实现
+### 5.3 存储管道队列
 
 ```rust
-// src/pipeline/storage_pipeline.rs (续)
+// src/pipeline/storage_queue.rs (新增)
+
+use std::collections::VecDeque;
+use std::sync::{Arc, Mutex};
+use crate::models::processed_data::ProcessedData;
+
+/// 存储队列（线程安全）
+pub struct StorageQueue {
+    queue: Arc<Mutex<VecDeque<ProcessedData>>>,
+    max_size: usize,
+    last_stored_sequence: Arc<Mutex<u64>>,
+}
+
+impl StorageQueue {
+    pub fn new(max_size: usize) -> Self {
+        Self {
+            queue: Arc::new(Mutex::new(VecDeque::with_capacity(max_size))),
+            max_size,
+            last_stored_sequence: Arc::new(Mutex::new(0)),
+        }
+    }
+    
+    /// 添加数据到队列
+    pub fn push(&self, data: ProcessedData) -> Result<(), String> {
+        let mut queue = self.queue.lock()
+            .map_err(|e| format!("Failed to lock queue: {}", e))?;
+        
+        // 检查是否已存储（避免重复）
+        if let Ok(last_seq) = self.last_stored_sequence.lock() {
+            if data.sequence_number <= *last_seq {
+                return Ok(()); // 已存储，跳过
+            }
+        }
+        
+        // 检查队列容量
+        if queue.len() >= self.max_size {
+            eprintln!("[WARN] Storage queue full, dropping oldest data");
+            queue.pop_front();
+        }
+        
+        queue.push_back(data);
+        Ok(())
+    }
+    
+    /// 批量取出数据（不删除）
+    pub fn peek_batch(&self, count: usize) -> Vec<ProcessedData> {
+        if let Ok(queue) = self.queue.lock() {
+            queue.iter().take(count).cloned().collect()
+        } else {
+            Vec::new()
+        }
+    }
+    
+    /// 删除已存储的数据
+    pub fn remove_stored(&self, count: usize, max_sequence: u64) -> Result<(), String> {
+        let mut queue = self.queue.lock()
+            .map_err(|e| format!("Failed to lock queue: {}", e))?;
+        
+        // 删除前 count 条数据
+        for _ in 0..count.min(queue.len()) {
+            queue.pop_front();
+        }
+        
+        // 更新最后存储的序列号
+        if let Ok(mut last_seq) = self.last_stored_sequence.lock() {
+            *last_seq = max_sequence;
+        }
+        
+        Ok(())
+    }
+    
+    /// 获取队列长度
+    pub fn len(&self) -> usize {
+        self.queue.lock().map(|q| q.len()).unwrap_or(0)
+    }
+    
+    /// 获取最后存储的序列号
+    pub fn last_stored_sequence(&self) -> u64 {
+        self.last_stored_sequence.lock()
+            .map(|seq| *seq)
+            .unwrap_or(0)
+    }
+}
+```
+
+### 5.4 数据库操作层（解耦设计）
+
+**核心原则**：数据库操作通过 trait 抽象，实现依赖倒置。
+
+```rust
+// src/repositories/storage_repository.rs (新增)
+
+use async_trait::async_trait;
+use crate::models::processed_data::ProcessedData;
+use crate::models::alarm_record::AlarmRecord;
+
+/// 存储仓库 trait（抽象接口）
+#[async_trait]
+pub trait StorageRepository: Send + Sync {
+    /// 批量存储运行数据
+    async fn save_runtime_data_batch(&self, data: &[ProcessedData]) -> Result<usize, String>;
+    
+    /// 存储单条报警记录
+    async fn save_alarm_record(&self, data: &ProcessedData) -> Result<i64, String>;
+    
+    /// 查询最近的运行数据
+    async fn query_recent_runtime_data(&self, limit: usize) -> Result<Vec<ProcessedData>, String>;
+    
+    /// 查询未确认的报警
+    async fn query_unacknowledged_alarms(&self) -> Result<Vec<AlarmRecord>, String>;
+    
+    /// 确认报警
+    async fn acknowledge_alarm(&self, alarm_id: i64) -> Result<(), String>;
+    
+    /// 获取最后存储的序列号
+    async fn get_last_stored_sequence(&self) -> Result<u64, String>;
+    
+    /// 健康检查
+    async fn health_check(&self) -> Result<(), String>;
+}
+```
+
+**优势**：
+- ✅ 易于测试（可以 mock Repository）
+- ✅ 支持多种数据库（SQLite、PostgreSQL、MySQL）
+- ✅ 符合依赖倒置原则
+- ✅ 业务逻辑与数据访问分离
+
+详细设计参见：`doc/STORAGE_DECOUPLING_DESIGN.md`
+
+### 5.5 存储管道实现（解耦版）
+
+### 5.5 存储管道实现（解耦版）
+
+```rust
+// src/pipeline/storage_pipeline.rs（解耦版本）
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
-use crate::repositories::CraneDataRepository;
+use tokio::runtime::Runtime;
+use super::storage_queue::StorageQueue;
+use crate::repositories::storage_repository::StorageRepository;  // 依赖抽象
 use super::shared_buffer::SharedBuffer;
 
-/// 存储管道
+/// 存储管道（解耦版本）
 pub struct StoragePipeline {
     config: StoragePipelineConfig,
-    repository: Arc<CraneDataRepository>,
+    storage_queue: Arc<StorageQueue>,
+    repository: Arc<dyn StorageRepository>,  // 依赖抽象接口，而非具体实现
     buffer: SharedBuffer,
     running: Arc<AtomicBool>,
     handle: Option<thread::JoinHandle<()>>,
+    tokio_runtime: Arc<Runtime>,
 }
 
 impl StoragePipeline {
+    /// 创建存储管道（依赖注入）
     pub fn new(
         config: StoragePipelineConfig,
-        repository: Arc<CraneDataRepository>,
+        repository: Arc<dyn StorageRepository>,  // 注入抽象接口
         buffer: SharedBuffer,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, String> {
+        let storage_queue = Arc::new(StorageQueue::new(config.max_queue_size));
+        let tokio_runtime = Arc::new(
+            Runtime::new().map_err(|e| format!("Failed to create Tokio runtime: {}", e))?
+        );
+        
+        Ok(Self {
             config,
+            storage_queue,
             repository,
             buffer,
             running: Arc::new(AtomicBool::new(false)),
             handle: None,
-        }
+            tokio_runtime,
+        })
     }
     
     /// 启动管道
@@ -552,9 +750,11 @@ impl StoragePipeline {
         self.running.store(true, Ordering::Relaxed);
         
         let config = self.config.clone();
-        let repository = Arc::clone(&self.repository);
+        let storage_queue = Arc::clone(&self.storage_queue);
+        let repository = Arc::clone(&self.repository);  // 克隆 trait object
         let buffer = Arc::clone(&self.buffer);
         let running = Arc::clone(&self.running);
+        let tokio_runtime = Arc::clone(&self.tokio_runtime);
         
         let handle = thread::spawn(move || {
             eprintln!("[INFO] Storage pipeline started");
@@ -562,27 +762,54 @@ impl StoragePipeline {
             while running.load(Ordering::Relaxed) {
                 let start_time = std::time::Instant::now();
                 
-                // 从共享缓冲区读取数据
-                let data_to_store = if let Ok(buf) = buffer.read() {
-                    buf.get_history(config.batch_size)
-                } else {
-                    Vec::new()
-                };
-                
-                // 存储数据
-                if !data_to_store.is_empty() {
-                    if let Err(e) = Self::store_with_retry(
-                        &repository,
-                        &data_to_store,
-                        &config
-                    ) {
-                        eprintln!("[ERROR] Storage failed: {}", e);
-                    } else {
-                        eprintln!("[INFO] Stored {} records", data_to_store.len());
+                // 1. 从共享缓冲区读取新数据
+                if let Ok(buf) = buffer.read() {
+                    let last_seq = storage_queue.last_stored_sequence();
+                    let new_data = buf.get_history(config.batch_size)
+                        .into_iter()
+                        .filter(|d| d.sequence_number > last_seq)
+                        .collect::<Vec<_>>();
+                    
+                    for data in new_data {
+                        if let Err(e) = storage_queue.push(data) {
+                            eprintln!("[ERROR] Failed to push to storage queue: {}", e);
+                        }
                     }
                 }
                 
-                // 控制存储频率
+                // 2. 从队列取出数据批量存储
+                let data_to_store = storage_queue.peek_batch(config.batch_size);
+                
+                if !data_to_store.is_empty() {
+                    let max_sequence = data_to_store.iter()
+                        .map(|d| d.sequence_number)
+                        .max()
+                        .unwrap_or(0);
+                    
+                    // 异步存储到数据库（通过抽象接口）
+                    let repository_clone = Arc::clone(&repository);
+                    let storage_queue_clone = Arc::clone(&storage_queue);
+                    let data_clone = data_to_store.clone();
+                    let count = data_to_store.len();
+                    
+                    tokio_runtime.spawn(async move {
+                        // 调用抽象接口方法
+                        match repository_clone.save_runtime_data_batch(&data_clone).await {
+                            Ok(saved_count) => {
+                                eprintln!("[INFO] Saved {} records", saved_count);
+                                // 存储成功，从队列删除
+                                if let Err(e) = storage_queue_clone.remove_stored(count, max_sequence) {
+                                    eprintln!("[ERROR] Failed to remove stored data: {}", e);
+                                }
+                            }
+                            Err(e) => {
+                                eprintln!("[ERROR] Failed to save runtime data: {}", e);
+                            }
+                        }
+                    });
+                }
+                
+                // 3. 控制存储频率
                 let elapsed = start_time.elapsed();
                 if elapsed < config.interval {
                     thread::sleep(config.interval - elapsed);
@@ -604,37 +831,21 @@ impl StoragePipeline {
         }
     }
     
-    /// 带重试的存储
-    fn store_with_retry(
-        repository: &CraneDataRepository,
-        data: &[crate::models::processed_data::ProcessedData],
-        config: &StoragePipelineConfig,
-    ) -> Result<(), String> {
-        let mut last_error = String::new();
+    /// 异步回调：立即存储报警记录（通过抽象接口）
+    pub fn save_alarm_async(&self, data: ProcessedData) {
+        let repository = Arc::clone(&self.repository);
         
-        for attempt in 0..=config.max_retries {
-            // TODO: 实现批量存储到 SQLite
-            // 目前只记录日志
-            for item in data {
-                if item.is_danger {
-                    // 存储报警记录
-                    if let Err(e) = repository.save_alarm_record(&item.raw_data) {
-                        last_error = e;
-                        break;
-                    }
+        self.tokio_runtime.spawn(async move {
+            // 调用抽象接口方法
+            match repository.save_alarm_record(&data).await {
+                Ok(alarm_id) => {
+                    eprintln!("[INFO] Alarm saved with id: {}", alarm_id);
+                }
+                Err(e) => {
+                    eprintln!("[ERROR] Failed to save alarm record: {}", e);
                 }
             }
-            
-            if last_error.is_empty() {
-                return Ok(());
-            }
-            
-            if attempt < config.max_retries {
-                thread::sleep(config.retry_delay);
-            }
-        }
-        
-        Err(format!("Failed after {} retries: {}", config.max_retries, last_error))
+        });
     }
 }
 
@@ -643,6 +854,422 @@ impl Drop for StoragePipeline {
         self.stop();
     }
 }
+```
+use std::sync::{Arc, Mutex};
+use crate::models::processed_data::ProcessedData;
+
+/// SQLite 数据源
+pub struct SqliteDataSource {
+    connection: Arc<Mutex<Connection>>,
+}
+
+impl SqliteDataSource {
+    /// 创建数据源并初始化表
+    pub fn new(db_path: &str) -> Result<Self, String> {
+        let conn = Connection::open(db_path)
+            .map_err(|e| format!("Failed to open database: {}", e))?;
+        
+        let source = Self {
+            connection: Arc::new(Mutex::new(conn)),
+        };
+        
+        source.init_tables()?;
+        Ok(source)
+    }
+    
+    /// 初始化数据库表
+    fn init_tables(&self) -> Result<(), String> {
+        let conn = self.connection.lock()
+            .map_err(|e| format!("Failed to lock connection: {}", e))?;
+        
+        // 创建运行数据表
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS runtime_data (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sequence_number INTEGER NOT NULL UNIQUE,
+                timestamp INTEGER NOT NULL,
+                current_load REAL NOT NULL,
+                rated_load REAL NOT NULL,
+                working_radius REAL NOT NULL,
+                boom_angle REAL NOT NULL,
+                boom_length REAL NOT NULL,
+                moment_percentage REAL NOT NULL,
+                is_danger BOOLEAN NOT NULL,
+                validation_error TEXT,
+                created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+            )",
+            [],
+        ).map_err(|e| format!("Failed to create runtime_data table: {}", e))?;
+        
+        // 创建报警信息表
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS alarm_records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sequence_number INTEGER NOT NULL,
+                timestamp INTEGER NOT NULL,
+                alarm_type TEXT NOT NULL,
+                current_load REAL NOT NULL,
+                rated_load REAL NOT NULL,
+                working_radius REAL NOT NULL,
+                boom_angle REAL NOT NULL,
+                boom_length REAL NOT NULL,
+                moment_percentage REAL NOT NULL,
+                description TEXT,
+                acknowledged BOOLEAN NOT NULL DEFAULT 0,
+                acknowledged_at INTEGER,
+                created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+            )",
+            [],
+        ).map_err(|e| format!("Failed to create alarm_records table: {}", e))?;
+        
+        // 创建索引
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_runtime_timestamp ON runtime_data(timestamp)", [])
+            .map_err(|e| format!("Failed to create index: {}", e))?;
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_runtime_sequence ON runtime_data(sequence_number)", [])
+            .map_err(|e| format!("Failed to create index: {}", e))?;
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_alarm_timestamp ON alarm_records(timestamp)", [])
+            .map_err(|e| format!("Failed to create index: {}", e))?;
+        
+        eprintln!("[INFO] Database tables initialized");
+        Ok(())
+    }
+    
+    /// 批量存储运行数据（使用事务）
+    pub fn save_runtime_data_batch(&self, data: &[ProcessedData]) -> Result<(), String> {
+        if data.is_empty() {
+            return Ok(());
+        }
+        
+        let conn = self.connection.lock()
+            .map_err(|e| format!("Failed to lock connection: {}", e))?;
+        
+        // 开始事务
+        conn.execute("BEGIN TRANSACTION", [])
+            .map_err(|e| format!("Failed to begin transaction: {}", e))?;
+        
+        for item in data {
+            let timestamp = item.timestamp.duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs() as i64)
+                .unwrap_or(0);
+            
+            let result = conn.execute(
+                "INSERT OR IGNORE INTO runtime_data 
+                 (sequence_number, timestamp, current_load, rated_load, working_radius, 
+                  boom_angle, boom_length, moment_percentage, is_danger, validation_error)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+                params![
+                    item.sequence_number as i64,
+                    timestamp,
+                    item.raw_data.ad1_load,
+                    item.raw_data.rated_load,
+                    item.raw_data.ad2_radius,
+                    item.raw_data.ad3_angle,
+                    item.raw_data.boom_length,
+                    item.moment_percentage,
+                    item.is_danger,
+                    item.validation_error.as_ref().map(|s| s.as_str()),
+                ],
+            );
+            
+            if let Err(e) = result {
+                // 回滚事务
+                let _ = conn.execute("ROLLBACK", []);
+                return Err(format!("Failed to insert runtime data: {}", e));
+            }
+        }
+        
+        // 提交事务
+        conn.execute("COMMIT", [])
+            .map_err(|e| format!("Failed to commit transaction: {}", e))?;
+        
+        eprintln!("[INFO] Saved {} runtime records to database", data.len());
+        Ok(())
+    }
+    
+    /// 异步存储报警记录（立即存储）
+    pub fn save_alarm_record(&self, data: &ProcessedData) -> Result<(), String> {
+        let conn = self.connection.lock()
+            .map_err(|e| format!("Failed to lock connection: {}", e))?;
+        
+        let timestamp = data.timestamp.duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+        
+        let alarm_type = if data.moment_percentage >= 100.0 {
+            "danger"
+        } else {
+            "warning"
+        };
+        
+        let description = format!(
+            "力矩百分比 {:.1}% 超过阈值，当前载荷 {:.1}t，工作半径 {:.1}m",
+            data.moment_percentage,
+            data.raw_data.ad1_load,
+            data.raw_data.ad2_radius
+        );
+        
+        conn.execute(
+            "INSERT INTO alarm_records 
+             (sequence_number, timestamp, alarm_type, current_load, rated_load, 
+              working_radius, boom_angle, boom_length, moment_percentage, description)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params![
+                data.sequence_number as i64,
+                timestamp,
+                alarm_type,
+                data.raw_data.ad1_load,
+                data.raw_data.rated_load,
+                data.raw_data.ad2_radius,
+                data.raw_data.ad3_angle,
+                data.raw_data.boom_length,
+                data.moment_percentage,
+                description,
+            ],
+        ).map_err(|e| format!("Failed to insert alarm record: {}", e))?;
+        
+        eprintln!("[INFO] Saved alarm record: {} at {:.1}%", alarm_type, data.moment_percentage);
+        Ok(())
+    }
+}
+```
+
+### 5.5 存储管道实现（改进版）
+
+```rust
+// src/pipeline/storage_pipeline.rs (续)
+
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread;
+use tokio::runtime::Runtime;
+use super::storage_queue::StorageQueue;
+use crate::data_sources::sqlite_data_source::SqliteDataSource;
+use super::shared_buffer::SharedBuffer;
+
+/// 存储管道
+pub struct StoragePipeline {
+    config: StoragePipelineConfig,
+    storage_queue: Arc<StorageQueue>,
+    db_source: Arc<SqliteDataSource>,
+    buffer: SharedBuffer,
+    running: Arc<AtomicBool>,
+    handle: Option<thread::JoinHandle<()>>,
+    tokio_runtime: Arc<Runtime>,
+}
+
+impl StoragePipeline {
+    pub fn new(
+        config: StoragePipelineConfig,
+        db_path: &str,
+        buffer: SharedBuffer,
+    ) -> Result<Self, String> {
+        let storage_queue = Arc::new(StorageQueue::new(config.max_queue_size));
+        let db_source = Arc::new(SqliteDataSource::new(db_path)?);
+        let tokio_runtime = Arc::new(
+            Runtime::new().map_err(|e| format!("Failed to create Tokio runtime: {}", e))?
+        );
+        
+        Ok(Self {
+            config,
+            storage_queue,
+            db_source,
+            buffer,
+            running: Arc::new(AtomicBool::new(false)),
+            handle: None,
+            tokio_runtime,
+        })
+    }
+    
+    /// 启动管道
+    pub fn start(&mut self) {
+        if self.running.load(Ordering::Relaxed) {
+            eprintln!("[WARN] Storage pipeline already running");
+            return;
+        }
+        
+        self.running.store(true, Ordering::Relaxed);
+        
+        let config = self.config.clone();
+        let storage_queue = Arc::clone(&self.storage_queue);
+        let db_source = Arc::clone(&self.db_source);
+        let buffer = Arc::clone(&self.buffer);
+        let running = Arc::clone(&self.running);
+        let tokio_runtime = Arc::clone(&self.tokio_runtime);
+        
+        let handle = thread::spawn(move || {
+            eprintln!("[INFO] Storage pipeline started");
+            
+            while running.load(Ordering::Relaxed) {
+                let start_time = std::time::Instant::now();
+                
+                // 1. 从共享缓冲区读取新数据，添加到队列
+                if let Ok(buf) = buffer.read() {
+                    let last_seq = storage_queue.last_stored_sequence();
+                    let new_data = buf.get_history(config.batch_size)
+                        .into_iter()
+                        .filter(|d| d.sequence_number > last_seq)
+                        .collect::<Vec<_>>();
+                    
+                    for data in new_data {
+                        if let Err(e) = storage_queue.push(data) {
+                            eprintln!("[ERROR] Failed to push to storage queue: {}", e);
+                        }
+                    }
+                }
+                
+                // 2. 从队列取出数据批量存储
+                let data_to_store = storage_queue.peek_batch(config.batch_size);
+                
+                if !data_to_store.is_empty() {
+                    let max_sequence = data_to_store.iter()
+                        .map(|d| d.sequence_number)
+                        .max()
+                        .unwrap_or(0);
+                    
+                    // 异步存储到数据库
+                    let db_source_clone = Arc::clone(&db_source);
+                    let storage_queue_clone = Arc::clone(&storage_queue);
+                    let data_clone = data_to_store.clone();
+                    let count = data_to_store.len();
+                    
+                    tokio_runtime.spawn(async move {
+                        match db_source_clone.save_runtime_data_batch(&data_clone).await {
+                            Ok(_) => {
+                                // 存储成功，从队列删除
+                                if let Err(e) = storage_queue_clone.remove_stored(count, max_sequence) {
+                                    eprintln!("[ERROR] Failed to remove stored data: {}", e);
+                                }
+                            }
+                            Err(e) => {
+                                eprintln!("[ERROR] Failed to save runtime data: {}", e);
+                            }
+                        }
+                    });
+                }
+                
+                // 3. 控制存储频率
+                let elapsed = start_time.elapsed();
+                if elapsed < config.interval {
+                    thread::sleep(config.interval - elapsed);
+                }
+            }
+            
+            eprintln!("[INFO] Storage pipeline stopped");
+        });
+        
+        self.handle = Some(handle);
+    }
+    
+    /// 停止管道
+    pub fn stop(&mut self) {
+        self.running.store(false, Ordering::Relaxed);
+        
+        if let Some(handle) = self.handle.take() {
+            let _ = handle.join();
+        }
+    }
+    
+    /// 异步回调：立即存储报警记录
+    pub fn save_alarm_async(&self, data: ProcessedData) {
+        let db_source = Arc::clone(&self.db_source);
+        
+        self.tokio_runtime.spawn(async move {
+            if let Err(e) = db_source.save_alarm_record(&data).await {
+                eprintln!("[ERROR] Failed to save alarm record: {}", e);
+            }
+        });
+    }
+}
+
+impl Drop for StoragePipeline {
+    fn drop(&mut self) {
+        self.stop();
+    }
+}
+```
+
+### 5.6 报警回调机制
+
+```rust
+// src/pipeline/collection_pipeline.rs (修改)
+
+impl CollectionPipeline {
+    pub fn start(&mut self) {
+        // ... 现有代码 ...
+        
+        let storage_pipeline = Arc::clone(&self.storage_pipeline);  // 新增：引用存储管道
+        
+        let handle = thread::spawn(move || {
+            eprintln!("[INFO] Collection pipeline started");
+            let mut consecutive_failures = 0;
+            
+            while running.load(Ordering::Relaxed) {
+                let start_time = std::time::Instant::now();
+                
+                match Self::collect_with_retry(&repository, &config) {
+                    Ok(sensor_data) => {
+                        consecutive_failures = 0;
+                        
+                        let seq = sequence_number.fetch_add(1, Ordering::Relaxed);
+                        let processed = ProcessedData::from_sensor_data(sensor_data, seq);
+                        
+                        // 检测报警状态，立即异步存储
+                        if processed.is_danger {
+                            eprintln!("[ALARM] Danger detected! Moment: {:.1}%", processed.moment_percentage);
+                            storage_pipeline.save_alarm_async(processed.clone());
+                        }
+                        
+                        // 写入共享缓冲区
+                        if let Ok(mut buf) = buffer.write() {
+                            buf.push(processed);
+                        }
+                    }
+                    Err(e) => {
+                        consecutive_failures += 1;
+                        eprintln!("[ERROR] Collection failed: {} (consecutive: {})", 
+                                  e, consecutive_failures);
+                        
+                        if let Ok(mut buf) = buffer.write() {
+                            buf.record_error();
+                        }
+                        
+                        if consecutive_failures >= config.disconnect_threshold {
+                            eprintln!("[ERROR] Sensor disconnected (threshold reached)");
+                        }
+                    }
+                }
+                
+                let elapsed = start_time.elapsed();
+                if elapsed < config.interval {
+                    thread::sleep(config.interval - elapsed);
+                }
+            }
+            
+            eprintln!("[INFO] Collection pipeline stopped");
+        });
+        
+        self.handle = Some(handle);
+    }
+}
+```
+
+### 5.7 完整数据流
+
+```
+采集管道（100ms）
+    ↓
+检测到数据
+    ├─ 正常数据 → 写入共享缓冲区 → 存储管道定时批量存储（1s）
+    │                                    ↓
+    │                              存储队列（避免重复）
+    │                                    ↓
+    │                              异步批量写入 runtime_data 表
+    │                                    ↓
+    │                              处理完删除队列数据
+    │
+    └─ 报警数据 → 立即异步回调 → 直接写入 alarm_records 表
+                     ↓
+                 不经过队列，立即存储
 ```
 
 ## 6. Pipeline 3: 显示管道
@@ -825,7 +1452,7 @@ impl display_timer_bridge::DisplayTimer {
 }
 ```
 
-## 7. 管道管理器
+## 7. 管道管理器（改进版）
 
 ### 7.1 统一管理三个管道
 
@@ -842,62 +1469,81 @@ use super::display_pipeline::{DisplayPipeline, DisplayPipelineConfig};
 /// 管道管理器
 pub struct PipelineManager {
     collection_pipeline: CollectionPipeline,
-    storage_pipeline: StoragePipeline,
+    storage_pipeline: Arc<StoragePipeline>,  // Arc 包装，供采集管道使用
     display_pipeline: DisplayPipeline,
     shared_buffer: SharedBuffer,
 }
 
 impl PipelineManager {
     /// 创建管道管理器
-    pub fn new(repository: Arc<CraneDataRepository>) -> Self {
+    pub fn new(repository: Arc<CraneDataRepository>, db_path: &str) -> Result<Self, String> {
         // 创建共享缓冲区
         let shared_buffer = Arc::new(std::sync::RwLock::new(
             ProcessedDataBuffer::new(1000)  // 保留最近 1000 条数据
         ));
         
-        // 创建三个管道
-        let collection_config = CollectionPipelineConfig::default();
+        // 创建存储管道（先创建，供采集管道引用）
         let storage_config = StoragePipelineConfig::default();
-        let display_config = DisplayPipelineConfig::default();
+        let storage_pipeline = Arc::new(StoragePipeline::new(
+            storage_config,
+            db_path,
+            Arc::clone(&shared_buffer),
+        )?);
         
+        // 创建采集管道（引用存储管道）
+        let collection_config = CollectionPipelineConfig::default();
         let collection_pipeline = CollectionPipeline::new(
             collection_config,
             Arc::clone(&repository),
             Arc::clone(&shared_buffer),
+            Arc::clone(&storage_pipeline),  // 传递存储管道引用
         );
         
-        let storage_pipeline = StoragePipeline::new(
-            storage_config,
-            Arc::clone(&repository),
-            Arc::clone(&shared_buffer),
-        );
-        
+        // 创建显示管道
+        let display_config = DisplayPipelineConfig::default();
         let display_pipeline = DisplayPipeline::new(
             display_config,
             Arc::clone(&shared_buffer),
         );
         
-        Self {
+        Ok(Self {
             collection_pipeline,
             storage_pipeline,
             display_pipeline,
             shared_buffer,
-        }
+        })
     }
     
     /// 启动所有管道
     pub fn start_all(&mut self) {
         eprintln!("[INFO] Starting all pipelines...");
+        
+        // 先启动存储管道
+        Arc::get_mut(&mut self.storage_pipeline)
+            .expect("Storage pipeline should be exclusively owned")
+            .start();
+        
+        // 再启动采集管道
         self.collection_pipeline.start();
-        self.storage_pipeline.start();
+        
         eprintln!("[INFO] All pipelines started (display pipeline runs on Qt timer)");
     }
     
     /// 停止所有管道
     pub fn stop_all(&mut self) {
         eprintln!("[INFO] Stopping all pipelines...");
+        
+        // 先停止采集管道
         self.collection_pipeline.stop();
-        self.storage_pipeline.stop();
+        
+        // 等待存储队列清空
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        
+        // 再停止存储管道
+        Arc::get_mut(&mut self.storage_pipeline)
+            .expect("Storage pipeline should be exclusively owned")
+            .stop();
+        
         eprintln!("[INFO] All pipelines stopped");
     }
     
@@ -910,6 +1556,13 @@ impl PipelineManager {
     pub fn get_shared_buffer(&self) -> SharedBuffer {
         Arc::clone(&self.shared_buffer)
     }
+    
+    /// 获取存储队列状态
+    pub fn get_storage_queue_status(&self) -> (usize, u64) {
+        // 返回 (队列长度, 最后存储序列号)
+        // TODO: 实现获取存储队列状态的方法
+        (0, 0)
+    }
 }
 
 impl Drop for PipelineManager {
@@ -919,7 +1572,198 @@ impl Drop for PipelineManager {
 }
 ```
 
-## 8. 与现有 MVI 架构集成
+### 7.2 Cargo.toml 依赖更新
+
+```toml
+[dependencies]
+# ... 现有依赖 ...
+
+# SQLite 数据库
+rusqlite = { version = "0.31", features = ["bundled"] }
+
+# 异步运行时
+tokio = { version = "1.42", features = ["full"] }
+
+# 序列化
+serde = { version = "1.0", features = ["derive"] }
+```
+
+### 7.3 模块结构
+
+```
+src/pipeline/
+├── mod.rs                      # 模块导出
+├── shared_buffer.rs            # 共享缓冲区
+├── storage_queue.rs            # 存储队列（新增）
+├── collection_pipeline.rs      # 采集管道
+├── storage_pipeline.rs         # 存储管道（改进）
+├── display_pipeline.rs         # 显示管道
+└── pipeline_manager.rs         # 管道管理器
+
+src/data_sources/
+├── mod.rs
+├── sensor_data_source.rs
+├── config_data_source.rs
+└── sqlite_data_source.rs       # SQLite 数据源（新增）
+```
+
+## 8. 使用示例
+
+### 8.1 初始化和启动
+
+```rust
+// src/application.rs 或 src/main.rs
+
+use crate::pipeline::pipeline_manager::PipelineManager;
+use crate::repositories::CraneDataRepository;
+use std::sync::Arc;
+
+fn main() {
+    // 创建数据仓库
+    let repository = Arc::new(CraneDataRepository::new());
+    
+    // 创建管道管理器（指定数据库路径）
+    let mut pipeline_manager = PipelineManager::new(
+        repository,
+        "data/crane_monitor.db"  // SQLite 数据库路径
+    ).expect("Failed to create pipeline manager");
+    
+    // 启动所有管道
+    pipeline_manager.start_all();
+    
+    // 应用运行...
+    
+    // 停止管道（应用退出时）
+    pipeline_manager.stop_all();
+}
+```
+
+### 8.2 查询数据库
+
+```rust
+// 查询最近的运行数据
+pub fn query_recent_runtime_data(db_path: &str, limit: usize) -> Result<Vec<RuntimeData>, String> {
+    let conn = Connection::open(db_path)
+        .map_err(|e| format!("Failed to open database: {}", e))?;
+    
+    let mut stmt = conn.prepare(
+        "SELECT * FROM runtime_data 
+         ORDER BY timestamp DESC 
+         LIMIT ?1"
+    ).map_err(|e| format!("Failed to prepare statement: {}", e))?;
+    
+    let rows = stmt.query_map([limit], |row| {
+        Ok(RuntimeData {
+            id: row.get(0)?,
+            sequence_number: row.get(1)?,
+            timestamp: row.get(2)?,
+            current_load: row.get(3)?,
+            rated_load: row.get(4)?,
+            working_radius: row.get(5)?,
+            boom_angle: row.get(6)?,
+            boom_length: row.get(7)?,
+            moment_percentage: row.get(8)?,
+            is_danger: row.get(9)?,
+            validation_error: row.get(10)?,
+        })
+    }).map_err(|e| format!("Failed to query: {}", e))?;
+    
+    let mut data = Vec::new();
+    for row in rows {
+        data.push(row.map_err(|e| format!("Failed to parse row: {}", e))?);
+    }
+    
+    Ok(data)
+}
+
+// 查询未确认的报警记录
+pub fn query_unacknowledged_alarms(db_path: &str) -> Result<Vec<AlarmRecord>, String> {
+    let conn = Connection::open(db_path)
+        .map_err(|e| format!("Failed to open database: {}", e))?;
+    
+    let mut stmt = conn.prepare(
+        "SELECT * FROM alarm_records 
+         WHERE acknowledged = 0 
+         ORDER BY timestamp DESC"
+    ).map_err(|e| format!("Failed to prepare statement: {}", e))?;
+    
+    let rows = stmt.query_map([], |row| {
+        Ok(AlarmRecord {
+            id: row.get(0)?,
+            sequence_number: row.get(1)?,
+            timestamp: row.get(2)?,
+            alarm_type: row.get(3)?,
+            current_load: row.get(4)?,
+            rated_load: row.get(5)?,
+            working_radius: row.get(6)?,
+            boom_angle: row.get(7)?,
+            boom_length: row.get(8)?,
+            moment_percentage: row.get(9)?,
+            description: row.get(10)?,
+            acknowledged: row.get(11)?,
+            acknowledged_at: row.get(12)?,
+        })
+    }).map_err(|e| format!("Failed to query: {}", e))?;
+    
+    let mut alarms = Vec::new();
+    for row in rows {
+        alarms.push(row.map_err(|e| format!("Failed to parse row: {}", e))?);
+    }
+    
+    Ok(alarms)
+}
+
+// 确认报警
+pub fn acknowledge_alarm(db_path: &str, alarm_id: i64) -> Result<(), String> {
+    let conn = Connection::open(db_path)
+        .map_err(|e| format!("Failed to open database: {}", e))?;
+    
+    conn.execute(
+        "UPDATE alarm_records 
+         SET acknowledged = 1, acknowledged_at = strftime('%s', 'now')
+         WHERE id = ?1",
+        params![alarm_id],
+    ).map_err(|e| format!("Failed to update: {}", e))?;
+    
+    Ok(())
+}
+```
+
+### 8.3 监控管道状态
+
+```rust
+// 获取管道健康状态
+pub fn check_pipeline_health(pipeline_manager: &PipelineManager) {
+    let buffer = pipeline_manager.get_shared_buffer();
+    
+    if let Ok(buf) = buffer.read() {
+        let stats = buf.get_stats();
+        
+        println!("=== Pipeline Health ===");
+        println!("Total collections: {}", stats.total_collections);
+        println!("Success count: {}", stats.success_count);
+        println!("Error count: {}", stats.error_count);
+        println!("Success rate: {:.1}%", 
+                 (stats.success_count as f64 / stats.total_collections as f64) * 100.0);
+        
+        if let Some(last_update) = stats.last_update_time {
+            if let Ok(elapsed) = std::time::SystemTime::now().duration_since(last_update) {
+                println!("Last update: {:?} ago", elapsed);
+                
+                if elapsed > std::time::Duration::from_secs(2) {
+                    println!("⚠️  WARNING: Data is stale!");
+                }
+            }
+        }
+    }
+    
+    let (queue_len, last_seq) = pipeline_manager.get_storage_queue_status();
+    println!("Storage queue length: {}", queue_len);
+    println!("Last stored sequence: {}", last_seq);
+}
+```
+
+## 9. 与现有 MVI 架构集成
 
 ### 8.1 更新 ViewModelManager
 
@@ -1559,29 +2403,148 @@ fn test_three_pipeline_integration() {
 ✅ **易于监控**: 完善的指标和健康检查
 ✅ **易于扩展**: 可轻松添加新管道
 
-### 15.2 关键技术点
+### 15.2 后台线程 2（存储管道）核心特性（解耦版）
 
-1. **共享缓冲区**: Arc<RwLock<ProcessedDataBuffer>>
-2. **管道隔离**: 独立线程 + 独立配置
-3. **Qt 线程安全**: 显示管道通过 Intent 更新 ViewModel
-4. **错误处理**: 重试、降级、恢复机制
-5. **性能监控**: 指标收集 + 健康检查
+#### ✅ 数据库操作解耦
+- **抽象接口**: `StorageRepository` trait 定义存储操作
+- **依赖注入**: 存储管道依赖抽象接口，而非具体实现
+- **易于测试**: 可以使用 `MockStorageRepository` 进行单元测试
+- **支持多种数据库**: SQLite、PostgreSQL、MySQL 等
 
-### 15.3 下一步工作
+#### ✅ 双表设计
+- **runtime_data 表**: 存储正常运行数据，定时批量写入
+- **alarm_records 表**: 存储报警信息，异步回调立即写入
 
-- [ ] 实现 ProcessedData 模型
-- [ ] 实现 SharedBuffer
-- [ ] 实现三个管道
-- [ ] 实现 PipelineManager
-- [ ] 更新 ViewModelManager
+#### ✅ 避免重复存储
+- 使用 `sequence_number` 唯一标识每条数据
+- 存储队列追踪 `last_stored_sequence`
+- 数据库表使用 `UNIQUE` 约束防止重复
+
+#### ✅ 管道队列机制
+```
+共享缓冲区 → 存储队列 → 异步批量存储 → 删除已存储数据
+     ↓
+  避免重复
+```
+
+#### ✅ 异步回调存储报警
+```
+采集管道检测到报警 → 立即调用 save_alarm_async()
+                          ↓
+                    Tokio 异步任务
+                          ↓
+                    repository.save_alarm_record()（抽象接口）
+                          ↓
+                    SqliteStorageRepository 实现
+                          ↓
+                    直接写入 alarm_records 表
+```
+
+#### ✅ 事务批处理
+- 使用 SQLite 事务批量插入
+- 提高存储效率，减少磁盘 I/O
+- 失败自动回滚，保证数据一致性
+
+### 15.3 关键技术点（解耦版）
+
+1. **存储队列**: `StorageQueue` 管理待存储数据，避免重复
+2. **序列号追踪**: `last_stored_sequence` 记录已存储位置
+3. **异步存储**: Tokio runtime 处理数据库操作
+4. **双路存储**: 
+   - 正常数据：队列 → 批量存储
+   - 报警数据：回调 → 立即存储
+5. **事务保护**: SQLite 事务保证批量插入的原子性
+6. **依赖抽象**: `StorageRepository` trait 解耦数据库操作
+7. **依赖注入**: 通过构造函数注入具体实现
+8. **易于测试**: 使用 `MockStorageRepository` 进行单元测试
+
+### 15.4 数据流对比
+
+**改进前（有重复存储问题）**:
+```
+共享缓冲区 → 每次读取最近 10 条 → 存储
+                ↓
+            可能重复存储相同数据
+```
+
+**改进后（无重复）**:
+```
+共享缓冲区 → 过滤已存储数据 → 存储队列 → 批量存储 → 删除队列数据
+                ↓                                    ↓
+          使用 sequence_number              更新 last_stored_sequence
+```
+
+### 15.5 性能优化
+
+| 优化项 | 方法 | 效果 |
+|--------|------|------|
+| 避免重复存储 | 序列号追踪 | 减少无效写入 |
+| 批量写入 | SQLite 事务 | 提升 10-100 倍性能 |
+| 异步处理 | Tokio runtime | 不阻塞主线程 |
+| 队列管理 | 处理完删除 | 控制内存占用 |
+| 报警优先 | 异步回调 | 实时响应 |
+
+### 15.6 下一步工作
+
+**必须实现**:
+- [x] 设计双表结构（runtime_data + alarm_records）
+- [x] 实现 StorageQueue（避免重复存储）
+- [x] 设计 StorageRepository trait（数据库操作解耦）
+- [x] 实现 SqliteStorageRepository（SQLite 实现）
+- [x] 实现 MockStorageRepository（测试用）
+- [x] 实现异步报警回调机制
+- [ ] 实现 CollectionPipeline 引用 StoragePipeline
 - [ ] 编写单元测试
 - [ ] 编写集成测试
-- [ ] 性能测试和优化
-- [ ] 文档更新
+
+**可选优化**:
+- [ ] 数据库自动清理（删除过期数据）
+- [ ] 存储失败重试队列
+- [ ] 数据压缩存储
+- [ ] 数据导出功能
+- [ ] PostgreSQL 实现
+- [ ] MySQL 实现
+
+### 15.7 配置示例
+
+```yaml
+# config/pipeline_config.yaml
+
+storage:
+  # 运行数据存储配置
+  interval_ms: 1000           # 1秒批量存储一次
+  batch_size: 10              # 每次最多存储 10 条
+  max_queue_size: 1000        # 队列最大容量
+  
+  # 数据库配置
+  db_path: "data/crane_monitor.db"
+  
+  # 重试配置
+  max_retries: 3
+  retry_delay_ms: 100
+  
+  # 报警配置
+  alarm_immediate: true       # 报警立即存储
+  alarm_async: true           # 使用异步回调
+```
 
 ---
 
-**文档版本**: 1.0  
+**文档版本**: 3.0（解耦版本）
 **创建日期**: 2026-03-19  
+**更新日期**: 2026-03-20
 **作者**: Crane 开发团队  
 **状态**: 设计完成，待实施
+
+**主要改进**:
+1. ✅ 双表设计（运行数据 + 报警信息）
+2. ✅ 避免重复存储（序列号追踪 + 队列管理）
+3. ✅ 异步报警回调（立即存储）
+4. ✅ 事务批处理（提升性能）
+5. ✅ 数据库操作解耦（StorageRepository trait）
+6. ✅ 依赖注入（易于测试和扩展）
+7. ✅ 完整的代码示例和使用指南
+
+**相关文档**:
+- `doc/STORAGE_DECOUPLING_DESIGN.md` - 存储解耦详细设计
+- `doc/STORAGE_PIPELINE_DESIGN.md` - 存储管道快速参考

@@ -51,6 +51,8 @@ pub struct CollectionPipeline {
     running: Arc<AtomicBool>,
     sequence_number: Arc<AtomicU64>,
     handle: Option<JoinHandle<()>>,
+    /// 报警回调（可选）
+    alarm_callback: Option<Arc<dyn Fn(ProcessedData) + Send + Sync>>,
 }
 
 impl CollectionPipeline {
@@ -67,7 +69,18 @@ impl CollectionPipeline {
             running: Arc::new(AtomicBool::new(false)),
             sequence_number: Arc::new(AtomicU64::new(0)),
             handle: None,
+            alarm_callback: None,
         }
+    }
+    
+    /// 设置报警回调
+    /// 
+    /// 当检测到报警状态时，会调用此回调函数
+    pub fn set_alarm_callback<F>(&mut self, callback: F)
+    where
+        F: Fn(ProcessedData) + Send + Sync + 'static,
+    {
+        self.alarm_callback = Some(Arc::new(callback));
     }
     
     /// 启动管道
@@ -84,6 +97,7 @@ impl CollectionPipeline {
         let buffer = Arc::clone(&self.buffer);
         let running = Arc::clone(&self.running);
         let sequence_number = Arc::clone(&self.sequence_number);
+        let alarm_callback = self.alarm_callback.clone();  // 克隆回调
         
         // 使用全局运行时生成任务
         let handle = qt_threading_utils::runtime::global_runtime().spawn(async move {
@@ -108,6 +122,14 @@ impl CollectionPipeline {
                         
                         let seq = sequence_number.fetch_add(1, Ordering::Relaxed);
                         let processed = ProcessedData::from_sensor_data(sensor_data, seq);
+                        
+                        // 检测报警状态，触发回调
+                        if processed.is_danger {
+                            if let Some(ref callback) = alarm_callback {
+                                eprintln!("[ALARM] Danger detected! Moment: {:.1}%", processed.moment_percentage);
+                                callback(processed.clone());
+                            }
+                        }
                         
                         // 使用 try_write 避免死锁
                         match buffer.try_write() {

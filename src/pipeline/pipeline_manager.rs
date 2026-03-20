@@ -2,13 +2,19 @@
 
 use std::sync::Arc;
 use crate::repositories::CraneDataRepository;
+use crate::repositories::storage_repository::StorageRepository;
+use crate::repositories::sqlite_storage_repository::SqliteStorageRepository;
 use super::shared_buffer::{ProcessedDataBuffer, SharedBuffer};
 use super::collection_pipeline::{CollectionPipeline, CollectionPipelineConfig};
+use super::storage_pipeline::{StoragePipeline, StoragePipelineConfig};
 
 /// 管道管理器
 pub struct PipelineManager {
     /// 采集管道
     collection_pipeline: Option<CollectionPipeline>,
+    
+    /// 存储管道
+    storage_pipeline: Option<StoragePipeline>,
     
     /// 共享缓冲区
     shared_buffer: SharedBuffer,
@@ -27,9 +33,47 @@ impl PipelineManager {
         
         Self {
             collection_pipeline: None,
+            storage_pipeline: None,
             shared_buffer,
             repository,
         }
+    }
+    
+    /// 创建管道管理器（带数据库路径）
+    /// 
+    /// # 参数
+    /// - `repository`: 数据仓库
+    /// - `db_path`: SQLite 数据库路径
+    /// 
+    /// # 返回
+    /// - `Ok(PipelineManager)`: 创建成功
+    /// - `Err(String)`: 错误信息
+    pub async fn new_with_storage(
+        repository: Arc<CraneDataRepository>,
+        db_path: &str,
+    ) -> Result<Self, String> {
+        // 创建共享缓冲区（保留最近 1000 条数据）
+        let shared_buffer = Arc::new(std::sync::RwLock::new(
+            ProcessedDataBuffer::new(1000)
+        ));
+        
+        // 创建存储仓库
+        let storage_repo = SqliteStorageRepository::new(db_path).await?;
+        
+        // 创建存储管道
+        let config = StoragePipelineConfig::default();
+        let storage_pipeline = StoragePipeline::new(
+            config,
+            Arc::new(storage_repo) as Arc<dyn StorageRepository>,
+            Arc::clone(&shared_buffer),
+        )?;
+        
+        Ok(Self {
+            collection_pipeline: None,
+            storage_pipeline: Some(storage_pipeline),
+            shared_buffer,
+            repository,
+        })
     }
     
     /// 启动采集管道（后台线程 1）
@@ -51,6 +95,15 @@ impl PipelineManager {
             Arc::clone(&self.shared_buffer),
         );
         
+        // 如果存储管道已启动，设置报警回调
+        if let Some(storage_pipeline) = &self.storage_pipeline {
+            let storage_clone = storage_pipeline.clone_for_callback();
+            pipeline.set_alarm_callback(Box::new(move |data| {
+                storage_clone.save_alarm_async(data);
+            }));
+            eprintln!("[INFO] Alarm callback connected to storage pipeline");
+        }
+        
         // 启动管道
         pipeline.start();
         
@@ -71,11 +124,38 @@ impl PipelineManager {
         }
     }
     
+    /// 启动存储管道（后台线程 2）
+    pub fn start_storage_pipeline(&mut self) {
+        if let Some(pipeline) = &mut self.storage_pipeline {
+            eprintln!("[INFO] Starting storage pipeline (Backend Thread 2)...");
+            pipeline.start();
+            eprintln!("[INFO] Storage pipeline started successfully");
+            eprintln!("[INFO] - Interval: 1s");
+            eprintln!("[INFO] - Batch size: 10");
+        } else {
+            eprintln!("[WARN] Storage pipeline not initialized. Use new_with_storage() to create manager with storage support.");
+        }
+    }
+    
+    /// 停止存储管道
+    pub fn stop_storage_pipeline(&mut self) {
+        if let Some(pipeline) = &mut self.storage_pipeline {
+            eprintln!("[INFO] Stopping storage pipeline...");
+            pipeline.stop();
+            eprintln!("[INFO] Storage pipeline stopped");
+        }
+    }
+    
     /// 启动所有管道
     pub fn start_all(&mut self) {
         eprintln!("[INFO] Starting all pipelines...");
+        
+        // 先启动存储管道
+        self.start_storage_pipeline();
+        
+        // 再启动采集管道（会自动连接报警回调）
         self.start_collection_pipeline();
-        // TODO: 启动存储管道（后台线程 2）
+        
         // TODO: 启动显示管道（主线程）
         eprintln!("[INFO] All pipelines started");
     }
@@ -83,8 +163,13 @@ impl PipelineManager {
     /// 停止所有管道
     pub fn stop_all(&mut self) {
         eprintln!("[INFO] Stopping all pipelines...");
+        
+        // 先停止采集管道
         self.stop_collection_pipeline();
-        // TODO: 停止存储管道
+        
+        // 再停止存储管道
+        self.stop_storage_pipeline();
+        
         // TODO: 停止显示管道
         eprintln!("[INFO] All pipelines stopped");
     }
@@ -97,6 +182,21 @@ impl PipelineManager {
     /// 检查采集管道是否运行中
     pub fn is_collection_running(&self) -> bool {
         self.collection_pipeline.is_some()
+    }
+    
+    /// 检查存储管道是否运行中
+    pub fn is_storage_running(&self) -> bool {
+        self.storage_pipeline.is_some()
+    }
+    
+    /// 获取存储队列长度
+    pub fn get_storage_queue_len(&self) -> Option<usize> {
+        self.storage_pipeline.as_ref().map(|p| p.queue_len())
+    }
+    
+    /// 获取最后存储的序列号
+    pub fn get_last_stored_sequence(&self) -> Option<u64> {
+        self.storage_pipeline.as_ref().map(|p| p.last_stored_sequence())
     }
 }
 

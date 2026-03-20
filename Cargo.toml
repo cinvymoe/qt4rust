@@ -22,15 +22,17 @@ edition = "2021"
 authors = ["Qt Rust Demo Team"]
 description = "A demonstration application integrating Rust with Qt 6.x using cxx-qt for ARM32 Linux"
 
+
+
 [dependencies]
-cxx-qt-mvi-core = { path = "crates/cxx-qt-mvi-core" }
+cxx-qt-mvi-core = { path = "crates/cxx-qt-mvi-core", optional = true }
 sensor-simulator = { path = "crates/sensor-simulator" }
 qt-threading-utils = { path = "crates/qt-threading-utils" }
 crane-data-layer = { path = "crates/crane-data-layer" }
 
-cxx = { workspace = true }
-cxx-qt = { workspace = true }
-cxx-qt-lib = { workspace = true, features = ["full"] }
+cxx = { workspace = true, optional = true }
+cxx-qt = { workspace = true, optional = true }
+cxx-qt-lib = { workspace = true, features = ["full"], optional = true }
 tokio = { workspace = true }
 
 serde = { version = "1.0", features = ["derive"] }
@@ -39,8 +41,12 @@ csv = "1.3"
 chrono = "0.4"
 tracing = "0.1"
 
+# 存储管道依赖
+async-trait = "0.1"
+rusqlite = { version = "0.31", features = ["bundled"] }
+
 [build-dependencies]
-cxx-qt-build = { version = "0.8", features = ["link_qt_object_files"] }
+cxx-qt-build = { version = "0.8", features = ["link_qt_object_files"], optional = true }
 
 [dev-dependencies]
 proptest = "1.4"
@@ -55,3 +61,14 @@ strip = true
 [[bin]]
 name = "qt-rust-demo"
 path = "src/main.rs"
+required-features = ["qt-ui"]
+
+[[example]]
+name = "full_pipeline_demo"
+path = "examples/full_pipeline_demo.rs"
+required-features = ["no-qt"]
+
+[features]
+default = ["qt-ui"]
+qt-ui = ["cxx", "cxx-qt", "cxx-qt-lib", "cxx-qt-mvi-core", "cxx-qt-build"]
+no-qt = []
