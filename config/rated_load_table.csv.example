@@ -1,0 +1,198 @@
+# 起重机额定载荷表配置文件示例
+# Example Rated Load Table Configuration File
+#
+# 说明 / Description:
+# 本文件定义了不同工作半径下的额定载荷值
+# This file defines rated load values at different working radii
+# 系统将根据当前工作半径查询对应的额定载荷，用于计算力矩百分比
+# System queries rated load based on current working radius to calculate moment percentage
+#
+# 查询规则（阶梯查找）/ Query Rules (Step Lookup):
+# - 找到第一个 >= 当前半径的表项，返回其额定载荷
+#   Find the first entry with radius >= current radius, return its rated load
+# - 如果当前半径大于所有表项，返回最后一项的额定载荷
+#   If current radius exceeds all entries, return the last entry's rated load
+#
+# 示例 / Examples:
+# - 当前半径 4.5 米 -> 查询到 5.0 米对应的 40.0 吨
+#   Current radius 4.5m -> Query returns 40.0 tons (from 5.0m entry)
+# - 当前半径 10.0 米 -> 查询到 10.0 米对应的 25.0 吨
+#   Current radius 10.0m -> Query returns 25.0 tons (exact match)
+# - 当前半径 25.0 米 -> 超出范围，返回最后一项 20.0 米对应的 8.0 吨
+#   Current radius 25.0m -> Exceeds range, returns 8.0 tons (from last entry 20.0m)
+#
+# 使用说明 / Usage Instructions:
+# 1. 复制此文件为 rated_load_table.csv
+#    Copy this file to rated_load_table.csv
+# 2. 根据起重机实际性能参数修改载荷表
+#    Modify load table according to actual crane performance parameters
+# 3. 根据安全要求调整力矩阈值
+#    Adjust moment thresholds according to safety requirements
+# 4. 保存后可通过系统界面重新加载配置
+#    After saving, reload configuration through system interface
+#
+# 注意事项 / Important Notes:
+# 1. 表项必须按半径升序排列
+#    Entries must be sorted by radius in ascending order
+# 2. 半径单位：米（m）
+#    Radius unit: meters (m)
+# 3. 额定载荷单位：吨（ton）
+#    Rated load unit: tons
+# 4. 所有数值必须大于 0
+#    All values must be greater than 0
+# 5. 力矩报警阈值必须大于等于预警阈值
+#    Moment alarm threshold must be >= warning threshold
+
+# ========== 力矩阈值配置 ==========
+# Moment Threshold Configuration
+#
+# 这些阈值用于判断力矩百分比是否超标
+# These thresholds determine if moment percentage exceeds limits
+#
+# moment_warning_threshold: 力矩预警阈值（百分比）
+#                          Moment warning threshold (percentage)
+#                          当力矩百分比达到此值时发出预警
+#                          Warning issued when moment percentage reaches this value
+#
+# moment_alarm_threshold: 力矩报警阈值（百分比）
+#                        Moment alarm threshold (percentage)
+#                        当力矩百分比达到此值时发出报警
+#                        Alarm issued when moment percentage reaches this value
+#
+# 默认值 / Default values:
+# moment_warning_threshold,85.0
+# moment_alarm_threshold,95.0
+
+# ========== 额定载荷表数据 ==========
+# Rated Load Table Data
+#
+# 格式 / Format: 半径（米），额定载荷（吨） / radius (meters), rated_load (tons)
+#
+# 以下是默认载荷表，适用于中型起重机
+# Below is the default load table for medium-sized cranes
+radius_m,rated_load_ton
+3.0,50.0
+5.0,40.0
+8.0,30.0
+10.0,25.0
+12.0,20.0
+15.0,15.0
+18.0,10.0
+20.0,8.0
+
+# ========== 载荷表示例 ==========
+# Load Table Examples
+#
+# 示例 1：小型起重机（最大载荷 25 吨）
+# Example 1: Small crane (max load 25 tons)
+# radius_m,rated_load_ton
+# 2.0,25.0
+# 4.0,20.0
+# 6.0,15.0
+# 8.0,12.0
+# 10.0,10.0
+# 12.0,8.0
+# 15.0,5.0
+#
+# 示例 2：大型起重机（最大载荷 100 吨）
+# Example 2: Large crane (max load 100 tons)
+# radius_m,rated_load_ton
+# 3.0,100.0
+# 5.0,80.0
+# 8.0,60.0
+# 10.0,50.0
+# 15.0,40.0
+# 20.0,30.0
+# 25.0,20.0
+# 30.0,15.0
+#
+# 示例 3：更细粒度的载荷表
+# Example 3: More granular load table
+# radius_m,rated_load_ton
+# 3.0,50.0
+# 4.0,45.0
+# 5.0,40.0
+# 6.0,36.0
+# 7.0,33.0
+# 8.0,30.0
+# 9.0,27.5
+# 10.0,25.0
+# 11.0,22.5
+# 12.0,20.0
+# 13.0,18.0
+# 14.0,16.5
+# 15.0,15.0
+# 16.0,13.5
+# 17.0,12.0
+# 18.0,10.5
+# 19.0,9.0
+# 20.0,8.0
+
+# ========== 自定义阈值示例 ==========
+# Custom Threshold Examples
+#
+# 示例 1：更保守的安全策略
+# Example 1: More conservative safety strategy
+# moment_warning_threshold,80.0
+# moment_alarm_threshold,90.0
+#
+# 示例 2：标准安全策略
+# Example 2: Standard safety strategy
+# moment_warning_threshold,85.0
+# moment_alarm_threshold,95.0
+#
+# 示例 3：宽松策略（不推荐）
+# Example 3: Relaxed strategy (not recommended)
+# moment_warning_threshold,90.0
+# moment_alarm_threshold,100.0
+
+# ========== 验证规则 ==========
+# Validation Rules
+#
+# 系统会自动验证以下规则：
+# System automatically validates the following rules:
+#
+# 1. 载荷表不能为空
+#    Load table cannot be empty
+#
+# 2. 所有半径值必须 >= 0
+#    All radius values must be >= 0
+#
+# 3. 所有额定载荷值必须 > 0
+#    All rated load values must be > 0
+#
+# 4. 表项必须按半径升序排列
+#    Entries must be sorted by radius in ascending order
+#
+# 5. 力矩预警阈值必须在 0-100 范围内
+#    Moment warning threshold must be within 0-100 range
+#
+# 6. 力矩报警阈值必须在 0-100 范围内
+#    Moment alarm threshold must be within 0-100 range
+#
+# 7. 力矩报警阈值必须 >= 力矩预警阈值
+#    Moment alarm threshold must be >= moment warning threshold
+#
+# 如果验证失败，系统将拒绝加载配置并保持使用旧配置
+# If validation fails, system will reject the configuration and keep using old configuration
+
+# ========== 配置建议 ==========
+# Configuration Recommendations
+#
+# 1. 载荷表应根据起重机制造商提供的性能曲线设置
+#    Load table should be set according to crane manufacturer's performance curve
+#
+# 2. 建议设置足够的数据点以覆盖整个工作范围
+#    Recommend setting sufficient data points to cover entire working range
+#
+# 3. 力矩预警阈值建议设置为 80-90%
+#    Moment warning threshold recommended at 80-90%
+#
+# 4. 力矩报警阈值建议设置为 90-100%
+#    Moment alarm threshold recommended at 90-100%
+#
+# 5. 在修改配置前，建议先备份原文件
+#    Recommend backing up original file before modification
+#
+# 6. 修改后应进行充分测试，确保安全
+#    Thoroughly test after modification to ensure safety
