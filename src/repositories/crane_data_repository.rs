@@ -2,6 +2,9 @@
 
 use crate::models::SensorData;
 use crate::data_sources::SensorDataSource;
+use crate::config::config_manager::ConfigManager;
+use crate::models::crane_config::CraneConfig;
+use crane_data_layer::error::DataResult;
 use std::sync::{Arc, Mutex};
 
 /// 起重机数据仓库
@@ -11,14 +14,27 @@ pub struct CraneDataRepository {
     
     /// 数据缓存
     cache: Arc<Mutex<Option<SensorData>>>,
+    
+    /// 配置管理器
+    config_manager: Arc<ConfigManager>,
 }
 
 impl CraneDataRepository {
     /// 创建新的数据仓库
-    pub fn new() -> Self {
+    /// 
+    /// # 参数
+    /// - `config_manager`: 配置管理器的 Arc 引用
+    /// 
+    /// # 示例
+    /// ```
+    /// let config_manager = Arc::new(ConfigManager::new()?);
+    /// let repo = CraneDataRepository::new(config_manager);
+    /// ```
+    pub fn new(config_manager: Arc<ConfigManager>) -> Self {
         Self {
             sensor_source: Arc::new(Mutex::new(SensorDataSource::new())),
             cache: Arc::new(Mutex::new(None)),
+            config_manager,
         }
     }
     
@@ -43,19 +59,59 @@ impl CraneDataRepository {
         self.cache.lock().ok()?.clone()
     }
     
+    /// 获取当前配置
+    /// 
+    /// 委托给 ConfigManager 获取当前配置。
+    /// 
+    /// # 返回
+    /// - `Ok(CraneConfig)`: 返回当前配置
+    /// - `Err(DataError)`: 配置未加载或获取失败
+    /// 
+    /// # 示例
+    /// ```
+    /// let config = repo.get_config()?;
+    /// let weight = config.sensor_calibration.convert_weight_ad_to_value(2048.0);
+    /// ```
+    pub fn get_config(&self) -> DataResult<CraneConfig> {
+        self.config_manager.get_config()
+    }
+    
+    /// 重新加载配置
+    /// 
+    /// 委托给 ConfigManager 重新加载配置。
+    /// 从文件重新读取配置，验证后更新缓存，并通知所有观察者。
+    /// 如果加载失败，会自动回滚到旧配置。
+    /// 
+    /// # 返回
+    /// - `Ok(CraneConfig)`: 重新加载成功，返回新配置
+    /// - `Err(DataError)`: 重新加载失败，已回滚到旧配置
+    /// 
+    /// # 示例
+    /// ```
+    /// match repo.reload_config() {
+    ///     Ok(config) => println!("配置重载成功"),
+    ///     Err(e) => eprintln!("配置重载失败: {:?}", e),
+    /// }
+    /// ```
+    pub fn reload_config(&self) -> DataResult<CraneConfig> {
+        self.config_manager.reload_config()
+    }
+    
     /// 克隆 Repository（用于跨线程共享）
     #[allow(dead_code)]
     pub fn clone_arc(&self) -> Arc<Mutex<Self>> {
         Arc::new(Mutex::new(Self {
             sensor_source: Arc::clone(&self.sensor_source),
             cache: Arc::clone(&self.cache),
+            config_manager: Arc::clone(&self.config_manager),
         }))
     }
 }
 
 impl Default for CraneDataRepository {
     fn default() -> Self {
-        Self::new()
+        let config_manager = Arc::new(ConfigManager::default());
+        Self::new(config_manager)
     }
 }
 
@@ -65,7 +121,7 @@ mod tests {
     
     #[test]
     fn test_get_latest_sensor_data() {
-        let repo = CraneDataRepository::new();
+        let repo = CraneDataRepository::default();
         let result = repo.get_latest_sensor_data();
         
         assert!(result.is_ok());
@@ -73,7 +129,7 @@ mod tests {
     
     #[test]
     fn test_cache() {
-        let repo = CraneDataRepository::new();
+        let repo = CraneDataRepository::default();
         
         // 初始缓存为空
         assert!(repo.get_cached_data().is_none());
@@ -81,5 +137,25 @@ mod tests {
         // 读取数据后缓存应该有值
         let _ = repo.get_latest_sensor_data();
         assert!(repo.get_cached_data().is_some());
+    }
+    
+    #[test]
+    fn test_get_config() {
+        let repo = CraneDataRepository::default();
+        let result = repo.get_config();
+        
+        assert!(result.is_ok(), "应该能获取配置");
+        
+        let config = result.unwrap();
+        assert!(config.sensor_calibration.weight_scale_ad > 0.0);
+        assert!(config.rated_load_table.entries.len() > 0);
+    }
+    
+    #[test]
+    fn test_reload_config() {
+        let repo = CraneDataRepository::default();
+        let result = repo.reload_config();
+        
+        assert!(result.is_ok(), "配置重载应该成功");
     }
 }
