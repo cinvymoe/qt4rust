@@ -154,7 +154,7 @@ impl LoadTableManager {
         content.push_str(&format!("# moment_alarm_threshold,{}\n", table.moment_alarm_threshold));
         
         // 添加表头
-        content.push_str("radius,rated_load\n");
+        content.push_str("radius_m,rated_load_ton\n");
         
         // 添加数据行
         for entry in &table.entries {

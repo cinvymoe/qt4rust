@@ -292,15 +292,15 @@ impl StorageRepository for SqliteStorageRepository {
     async fn get_last_stored_sequence(&self) -> Result<u64, String> {
         let conn = self.connection.lock().await;
         
-        let result: Result<i64, _> = conn.query_row(
+        let result: Result<Option<i64>, _> = conn.query_row(
             "SELECT MAX(sequence_number) FROM runtime_data",
             [],
             |row| row.get(0),
         );
         
         match result {
-            Ok(seq) => Ok(seq as u64),
-            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(0),
+            Ok(Some(seq)) => Ok(seq as u64),
+            Ok(None) => Ok(0),  // MAX() returns NULL when table is empty
             Err(e) => Err(format!("Failed to get last sequence: {}", e)),
         }
     }
@@ -308,7 +308,7 @@ impl StorageRepository for SqliteStorageRepository {
     async fn health_check(&self) -> Result<(), String> {
         let conn = self.connection.lock().await;
         
-        conn.execute("SELECT 1", [])
+        conn.query_row("SELECT 1", [], |_| Ok(()))
             .map_err(|e| format!("Health check failed: {}", e))?;
         
         Ok(())

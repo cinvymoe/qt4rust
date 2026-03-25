@@ -1064,6 +1064,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5a041e753da8b807c9255f28de81879c78c876392ff2469cde94799b2896b9d"
 
 [[package]]
+name = "qt-app"
+version = "0.1.0"
+dependencies = [
+ "cxx",
+ "cxx-qt",
+ "cxx-qt-build",
+ "cxx-qt-lib",
+ "qt-rust-demo",
+ "qt-threading-utils",
+]
+
+[[package]]
 name = "qt-build-utils"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1084,11 +1096,6 @@ dependencies = [
  "chrono",
  "crane-data-layer",
  "csv",
- "cxx",
- "cxx-qt",
- "cxx-qt-build",
- "cxx-qt-lib",
- "cxx-qt-mvi-core",
  "proptest",
  "qt-threading-utils",
  "rusqlite",

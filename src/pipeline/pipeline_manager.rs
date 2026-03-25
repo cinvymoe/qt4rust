@@ -60,8 +60,18 @@ impl PipelineManager {
         // 创建存储仓库
         let storage_repo = SqliteStorageRepository::new(db_path).await?;
         
+        // 从配置文件加载存储配置
+        let pipeline_config = crate::config::pipeline_config::PipelineConfig::load();
+        let config = StoragePipelineConfig::from_pipeline_config(&pipeline_config.storage);
+        
+        eprintln!("[INFO] Storage pipeline config loaded:");
+        eprintln!("  - Interval: {}ms", config.interval.as_millis());
+        eprintln!("  - Batch size: {}", config.batch_size);
+        eprintln!("  - Max retries: {}", config.max_retries);
+        eprintln!("  - Retry delay: {}ms", config.retry_delay.as_millis());
+        eprintln!("  - Max queue size: {}", config.max_queue_size);
+        
         // 创建存储管道
-        let config = StoragePipelineConfig::default();
         let storage_pipeline = StoragePipeline::new(
             config,
             Arc::new(storage_repo) as Arc<dyn StorageRepository>,
@@ -130,8 +140,6 @@ impl PipelineManager {
             eprintln!("[INFO] Starting storage pipeline (Backend Thread 2)...");
             pipeline.start();
             eprintln!("[INFO] Storage pipeline started successfully");
-            eprintln!("[INFO] - Interval: 1s");
-            eprintln!("[INFO] - Batch size: 10");
         } else {
             eprintln!("[WARN] Storage pipeline not initialized. Use new_with_storage() to create manager with storage support.");
         }

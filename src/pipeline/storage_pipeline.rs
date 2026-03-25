@@ -32,11 +32,24 @@ pub struct StoragePipelineConfig {
 impl Default for StoragePipelineConfig {
     fn default() -> Self {
         Self {
-            interval: Duration::from_secs(1),  // 1秒存储一次
+            interval: Duration::from_secs(5),  // 1秒存储一次
             batch_size: 10,
             max_retries: 3,
             retry_delay: Duration::from_millis(100),
             max_queue_size: 1000,  // 最多缓存 1000 条数据
+        }
+    }
+}
+
+impl StoragePipelineConfig {
+    /// 从管道配置创建存储管道配置
+    pub fn from_pipeline_config(config: &crate::config::pipeline_config::StorageConfig) -> Self {
+        Self {
+            interval: Duration::from_millis(config.interval_ms),
+            batch_size: config.batch_size,
+            max_retries: config.max_retries,
+            retry_delay: Duration::from_millis(config.retry_delay_ms),
+            max_queue_size: config.max_queue_size,
         }
     }
 }
