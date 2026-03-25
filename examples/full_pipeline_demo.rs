@@ -44,16 +44,30 @@ use demo_repository::DemoRepository;
 async fn main() -> Result<(), String> {
     println!("=== 完整管道系统演示（纯后台版本）===\n");
     
-    // 1. 创建数据仓库（简化版本）
+    // 1. 加载配置
+    use qt_rust_demo::config::pipeline_config::PipelineConfig;
+    
+    println!("[INFO] 加载配置文件...");
+    let config = PipelineConfig::load();
+    
+    println!("[INFO] 配置参数:");
+    println!("  - 采集间隔: {}ms", config.collection.interval_ms);
+    println!("  - 存储间隔: {}ms", config.storage.interval_ms);
+    println!("  - 批量大小: {}", config.storage.batch_size);
+    println!("  - 缓冲区大小: {}", config.collection.buffer_size);
+    println!("  - 使用模拟器: {}", config.collection.use_simulator);
+    println!("  - 数据库路径: {}\n", config.database.path);
+    
+    // 2. 创建数据仓库（简化版本）
     let repository = Arc::new(DemoRepository::new());
     
-    // 2. 创建数据库路径
-    let db_path = "crane_data_demo.db";
+    // 3. 创建数据库路径（使用配置）
+    let db_path = &config.database.path;
     
     println!("[INFO] 初始化存储系统...");
     println!("[INFO] Database: {}\n", db_path);
     
-    // 3. 创建存储仓库
+    // 4. 创建存储仓库
     use qt_rust_demo::repositories::sqlite_storage_repository::SqliteStorageRepository;
     use qt_rust_demo::repositories::storage_repository::StorageRepository;
     
@@ -62,38 +76,42 @@ async fn main() -> Result<(), String> {
     
     println!("[INFO] 数据库初始化完成");
     
-    // 4. 创建共享缓冲区
+    // 5. 创建共享缓冲区（使用配置的缓冲区大小）
     use qt_rust_demo::pipeline::shared_buffer::{ProcessedDataBuffer, SharedBuffer};
     use std::sync::RwLock;
     
     let shared_buffer: SharedBuffer = Arc::new(RwLock::new(
-        ProcessedDataBuffer::new(1000)
+        ProcessedDataBuffer::new(config.collection.buffer_size)
     ));
     
-    // 5. 创建存储管道
+    // 6. 创建存储管道（使用配置）
     use qt_rust_demo::pipeline::storage_pipeline::{StoragePipeline, StoragePipelineConfig};
     
-    let config = StoragePipelineConfig::default();
+    let storage_config = StoragePipelineConfig::from_pipeline_config(&config.storage);
     let mut storage_pipeline = StoragePipeline::new(
-        config,
+        storage_config,
         storage_repo,
         Arc::clone(&shared_buffer),
     )?;
     
     println!("[INFO] 存储管道创建完成");
     
-    // 6. 启动存储管道
+    // 7. 启动存储管道
     storage_pipeline.start();
     println!("[INFO] 存储管道已启动\n");
     
-    // 7. 模拟数据采集（简化版本，不使用完整的采集管道）
-    println!("[INFO] 开始模拟数据采集...\n");
+    // 8. 模拟数据采集（使用配置的采集间隔）
+    println!("[INFO] 开始模拟数据采集...");
+    println!("[INFO] 采集间隔: {}ms\n", config.collection.interval_ms);
     
     use qt_rust_demo::models::sensor_data::SensorData;
     use qt_rust_demo::models::processed_data::ProcessedData;
     
-    for i in 1..=10 {
-        tokio::time::sleep(Duration::from_secs(1)).await;
+    let collection_interval = Duration::from_millis(config.collection.interval_ms);
+    let total_iterations = 10;
+    
+    for i in 1..=total_iterations {
+        tokio::time::sleep(collection_interval).await;
         
         // 模拟采集数据
         let (load, radius, angle) = repository.get_data();
@@ -130,15 +148,15 @@ async fn main() -> Result<(), String> {
         println!();
     }
     
-    // 8. 等待存储完成
+    // 9. 等待存储完成
     println!("[INFO] 等待存储完成...");
     tokio::time::sleep(Duration::from_secs(2)).await;
     
-    // 9. 停止存储管道
+    // 10. 停止存储管道
     println!("[INFO] 停止存储管道...");
     storage_pipeline.stop();
     
-    // 10. 显示最终统计
+    // 11. 显示最终统计
     let buffer = Arc::clone(&shared_buffer);
     let stats = buffer.read().unwrap().get_stats().clone();
     
