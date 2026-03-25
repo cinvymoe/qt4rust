@@ -276,20 +276,77 @@ sudo apt install qt6-base-runtime qt6-declarative-runtime
 
 ## 项目结构
 
-```
-qt-rust-demo/
-├── Cargo.toml              # Rust 项目配置和依赖
-├── build.rs                # cxx-qt 构建脚本
-├── .cargo/
-│   └── config.toml         # 交叉编译配置
-├── src/
-│   ├── main.rs             # 应用程序入口点
-│   ├── counter.rs          # Counter 业务对象（待实现）
-│   └── application.rs      # Application 结构体（待实现）
-├── qml/
-│   └── main.qml            # QML 主界面
-└── tests/                  # 集成测试目录
+本项目采用 Cargo Workspace 结构，将核心业务逻辑和 Qt UI 分离：
 
+```
+qt-rust-demo/                           # Workspace 根目录
+├── Cargo.toml                          # Workspace 配置
+├── src/
+│   └── lib.rs                          # 核心库（无 Qt 依赖）
+├── crates/
+│   ├── qt-app/                         # Qt GUI 应用 ✨
+│   │   ├── Cargo.toml
+│   │   ├── build.rs                    # cxx-qt 构建脚本
+│   │   ├── qml/ -> ../../qml           # QML 文件（符号链接）
+│   │   └── src/
+│   │       ├── main.rs                 # 应用入口
+│   │       ├── application.rs          # Qt 应用初始化
+│   │       ├── monitoring_viewmodel.rs # 监控 ViewModel
+│   │       └── ...
+│   ├── cxx-qt-mvi-core/                # MVI 架构核心库
+│   ├── sensor-simulator/               # 传感器模拟器
+│   ├── qt-threading-utils/             # Qt 线程工具
+│   └── crane-data-layer/               # 数据层抽象
+├── qml/                                # QML 前端代码
+│   ├── main.qml
+│   ├── views/
+│   └── components/
+├── config/                             # 配置文件
+│   ├── sensor_calibration.toml
+│   └── rated_load_table.csv
+└── examples/                           # 示例程序（无 Qt）
+    ├── full_pipeline_demo.rs
+    └── test_storage_interval.rs
+```
+
+### 架构优势
+
+- **lib (qt-rust-demo)**: 核心业务逻辑，不依赖 Qt，可独立测试和复用
+- **qt-app**: Qt GUI 应用，依赖 lib，只包含 UI 相关代码
+- **分离的好处**:
+  1. lib 可以在没有 Qt 环境的机器上编译和测试
+  2. lib 可以被其他项目复用（CLI 工具、Web 服务等）
+  3. 职责清晰，易于维护
+
+## 编译和运行
+
+### 编译核心库（无 Qt）
+
+```bash
+# 编译 lib
+cargo build --lib
+
+# 运行示例程序
+cargo run --example full_pipeline_demo
+```
+
+### 编译 Qt 应用
+
+```bash
+# 本地编译
+cargo build -p qt-app
+
+# 运行
+cargo run -p qt-app
+
+# 交叉编译到 ARM32
+cargo build -p qt-app --target armv7-unknown-linux-gnueabihf --release
+```
+
+### 编译整个 Workspace
+
+```bash
+cargo build --workspace
 ```
 
 ## 性能指标
