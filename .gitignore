@@ -53,4 +53,5 @@ __pycache__/
 # Kiro IDE
 .kiro/
 .kilocode/
-.kilocodemodes
+.kilocodemodesbuild.rs.bak
+crane_data.db
