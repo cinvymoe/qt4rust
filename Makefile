@@ -24,7 +24,7 @@ help:
 # 编译 ARM 版本
 build:
 	@echo "=== 编译 ARM 版本 ==="
-	cargo build --release --target armv7-unknown-linux-gnueabihf
+	cargo build --release --target armv7-unknown-linux-gnueabihf -p qt-app
 
 # 推送到设备
 push:

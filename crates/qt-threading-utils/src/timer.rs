@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
+use tracing;
 
 /// 周期定时器 - 使用 Tokio 异步执行周期任务
 pub struct PeriodicTimer {
@@ -158,7 +159,7 @@ impl BlockingPeriodicTimer {
                 }));
                 
                 if let Err(e) = result {
-                    eprintln!("[ERROR] Timer callback panicked: {:?}", e);
+                    tracing::error!("Timer callback panicked: {:?}", e);
                 }
             }
         });

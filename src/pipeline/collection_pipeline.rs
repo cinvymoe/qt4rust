@@ -86,7 +86,7 @@ impl CollectionPipeline {
     /// 启动管道
     pub fn start(&mut self) {
         if self.running.load(Ordering::Relaxed) {
-            eprintln!("[WARN] Collection pipeline already running");
+            tracing::warn!(" Collection pipeline already running");
             return;
         }
         
@@ -101,7 +101,7 @@ impl CollectionPipeline {
         
         // 使用全局运行时生成任务
         let handle = qt_threading_utils::runtime::global_runtime().spawn(async move {
-            eprintln!("[INFO] Collection pipeline started");
+            tracing::info!(" Collection pipeline started");
             let mut consecutive_failures = 0;
             let mut interval_timer = tokio::time::interval(config.interval);
             
@@ -126,7 +126,7 @@ impl CollectionPipeline {
                         // 检测报警状态，触发回调
                         if processed.is_danger {
                             if let Some(ref callback) = alarm_callback {
-                                eprintln!("[ALARM] Danger detected! Moment: {:.1}%", processed.moment_percentage);
+                                tracing::warn!("[ALARM] Danger detected! Moment: {:.1}%", processed.moment_percentage);
                                 callback(processed.clone());
                             }
                         }
@@ -137,7 +137,7 @@ impl CollectionPipeline {
                                 buf.push(processed);
                             }
                             Err(_) => {
-                                eprintln!("[WARN] Failed to acquire buffer lock, skipping write");
+                                tracing::warn!(" Failed to acquire buffer lock, skipping write");
                                 // 跳过本次写入，避免阻塞
                             }
                         }
@@ -145,7 +145,7 @@ impl CollectionPipeline {
                     Ok(Err(e)) => {
                         // 采集失败
                         consecutive_failures += 1;
-                        eprintln!("[ERROR] Collection failed: {} (consecutive: {})", 
+                        tracing::error!(" Collection failed: {} (consecutive: {})", 
                                   e, consecutive_failures);
                         
                         match buffer.try_write() {
@@ -153,31 +153,31 @@ impl CollectionPipeline {
                                 buf.record_error();
                             }
                             Err(_) => {
-                                eprintln!("[WARN] Failed to acquire buffer lock for error recording");
+                                tracing::warn!(" Failed to acquire buffer lock for error recording");
                             }
                         }
                         
                         // 检测断连
                         if consecutive_failures >= config.disconnect_threshold {
-                            eprintln!("[ERROR] Sensor disconnected (threshold reached)");
+                            tracing::error!(" Sensor disconnected (threshold reached)");
                             // TODO: 触发断连事件
                         }
                     }
                     Err(e) => {
                         // 任务 panic 检测
                         if e.is_panic() {
-                            eprintln!("[PANIC] Collection task panicked: {:?}", e);
+                            tracing::error!("[PANIC] Collection task panicked: {:?}", e);
                             // 记录 panic 信息到 stderr
                             let panic_payload = e.into_panic();
                             if let Some(panic_msg) = panic_payload.downcast_ref::<&str>() {
-                                eprintln!("[PANIC] Panic message: {}", panic_msg);
+                                tracing::error!("[PANIC] Panic message: {}", panic_msg);
                             } else if let Some(panic_msg) = panic_payload.downcast_ref::<String>() {
-                                eprintln!("[PANIC] Panic message: {}", panic_msg);
+                                tracing::error!("[PANIC] Panic message: {}", panic_msg);
                             } else {
-                                eprintln!("[PANIC] Panic message: <unknown type>");
+                                tracing::error!("[PANIC] Panic message: <unknown type>");
                             }
                         } else {
-                            eprintln!("[ERROR] Collection task cancelled: {}", e);
+                            tracing::error!(" Collection task cancelled: {}", e);
                         }
                         
                         // 在 buffer 中记录错误
@@ -186,14 +186,14 @@ impl CollectionPipeline {
                                 buf.record_error();
                             }
                             Err(_) => {
-                                eprintln!("[WARN] Failed to acquire buffer lock for panic error recording");
+                                tracing::warn!(" Failed to acquire buffer lock for panic error recording");
                             }
                         }
                     }
                 }
             }
             
-            eprintln!("[INFO] Collection pipeline stopped");
+            tracing::info!(" Collection pipeline stopped");
         });
         
         self.handle = Some(handle);

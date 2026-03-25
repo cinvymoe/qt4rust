@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
+use tracing;
 
 /// 数据采集器 - 使用 Tokio 在后台异步执行定期任务
 /// 
@@ -156,7 +157,7 @@ impl BlockingDataCollector {
                 }));
                 
                 if let Err(e) = result {
-                    eprintln!("[ERROR] Collector callback panicked: {:?}", e);
+                    tracing::error!("Collector callback panicked: {:?}", e);
                     // 继续运行，不中断采集
                 }
             }

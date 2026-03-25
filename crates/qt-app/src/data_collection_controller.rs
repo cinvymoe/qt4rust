@@ -7,15 +7,15 @@ pub mod data_collection_controller_bridge {
         #[qml_element]
         #[qml_singleton]
         type DataCollectionController = super::DataCollectionControllerRust;
-        
+
         /// 启动数据采集
         #[qinvokable]
         unsafe fn start_collection(self: Pin<&mut DataCollectionController>);
-        
+
         /// 停止数据采集
         #[qinvokable]
         unsafe fn stop_collection(self: Pin<&mut DataCollectionController>);
-        
+
         /// 检查是否正在采集
         #[qinvokable]
         unsafe fn is_collecting(self: &DataCollectionController) -> bool;
@@ -38,24 +38,24 @@ impl Default for DataCollectionControllerRust {
 impl data_collection_controller_bridge::DataCollectionController {
     /// 启动数据采集
     pub fn start_collection(self: Pin<&mut Self>) {
-        eprintln!("[INFO] Starting data collection from QML...");
-        
+        tracing::info!("Starting data collection from QML...");
+
         // 调用全局管理器启动数据采集
         crate::viewmodel_manager::start_global_data_collection();
-        
-        eprintln!("[INFO] Data collection started");
+
+        tracing::info!("Data collection started");
     }
-    
+
     /// 停止数据采集
     pub fn stop_collection(self: Pin<&mut Self>) {
-        eprintln!("[INFO] Stopping data collection from QML...");
-        
+        tracing::info!("Stopping data collection from QML...");
+
         // 调用全局管理器停止数据采集
         crate::viewmodel_manager::stop_global_data_collection();
-        
-        eprintln!("[INFO] Data collection stopped");
+
+        tracing::info!("Data collection stopped");
     }
-    
+
     /// 检查是否正在采集
     pub fn is_collecting(&self) -> bool {
         // 简化实现：总是返回 false

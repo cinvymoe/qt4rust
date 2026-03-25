@@ -8,6 +8,7 @@ pub mod repositories;
 pub mod pipeline;
 pub mod data_sources;
 pub mod algorithms;
+pub mod logging;
 
 // 内部模块（现在也导出，供 qt-app 中的 cxx-qt 模块使用）
 pub mod states;

@@ -32,29 +32,7 @@ Item {
         }
     }
     
-    // 使用 Timer 模拟数据更新（测试用）
-    Timer {
-        id: dataUpdateTimer
-        interval: 1000  // 1秒更新一次（方便观察）
-        running: true
-        repeat: true
-        
-        property real loadValue: 15.0
-        property real radiusValue: 8.0
-        property real angleValue: 60.0
-        
-        onTriggered: {
-            // 模拟数据变化
-            loadValue = 10.0 + Math.random() * 15.0  // 10-25 吨
-            radiusValue = 5.0 + Math.random() * 10.0  // 5-15 米
-            angleValue = 30.0 + Math.random() * 50.0  // 30-80 度
-            
-            console.log("[QML] Simulating data update: load=" + loadValue.toFixed(1))
-            
-            // 调用 ViewModel 方法（注意：使用 snake_case）
-            viewModel.update_test_data(loadValue, radiusValue, angleValue)
-        }
-    }
+
     
     // 数据模型 - 使用 ViewModel 数据动态更新
     ListModel {

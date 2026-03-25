@@ -190,12 +190,12 @@ impl PipelineConfig {
         
         match Self::from_file(config_path) {
             Ok(config) => {
-                println!("[INFO] Loaded config from: {}", config_path);
+                tracing::info!("Loaded config from: {}", config_path);
                 config
             }
             Err(e) => {
-                eprintln!("[WARN] Failed to load config: {}", e);
-                eprintln!("[INFO] Using default configuration");
+                tracing::warn!("Failed to load config: {}", e);
+                tracing::info!("Using default configuration");
                 Self::default()
             }
         }

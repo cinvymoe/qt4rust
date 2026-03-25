@@ -79,6 +79,7 @@ impl PipelineConfig {
                 config
             }
             Err(e) => {
+                // 示例代码，使用 eprintln 是合理的
                 eprintln!("[WARN] 配置加载失败: {}", e);
                 eprintln!("[INFO] 使用默认配置");
                 Self::default()

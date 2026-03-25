@@ -1,0 +1,62 @@
+# 全局日志配置文件示例
+# 
+# 复制此文件为 logging.toml 并根据需要修改
+
+# 默认日志级别
+# 可选值: trace, debug, info, warn, error, off
+default_level = "info"
+
+# 是否输出到控制台
+console_output = true
+
+# 是否输出到文件
+file_output = false
+
+# 日志文件路径
+log_file = "logs/app.log"
+
+# 模块日志级别配置示例
+# 
+# 模块路径格式:
+# - 精确匹配: "qt_rust_demo::pipeline::storage_pipeline"
+# - 通配符匹配: "qt_rust_demo::pipeline::*" (匹配 pipeline 下所有模块)
+# - 前缀匹配: "qt_rust_demo::pipeline*" (匹配以 pipeline 开头的所有模块)
+
+# Pipeline 模块使用 debug 级别
+[[modules]]
+module = "qt_rust_demo::pipeline::*"
+level = "debug"
+
+# Storage pipeline 使用 trace 级别（最详细）
+[[modules]]
+module = "qt_rust_demo::pipeline::storage_pipeline"
+level = "trace"
+
+# Repositories 使用 info 级别
+[[modules]]
+module = "qt_rust_demo::repositories::*"
+level = "info"
+
+# Data sources 使用 debug 级别
+[[modules]]
+module = "qt_rust_demo::data_sources::*"
+level = "debug"
+
+# ViewModels 使用 info 级别
+[[modules]]
+module = "qt_rust_demo::viewmodels::*"
+level = "info"
+
+# 关闭某个模块的日志输出
+# [[modules]]
+# module = "qt_rust_demo::some_noisy_module"
+# level = "off"
+
+# 更多示例:
+# [[modules]]
+# module = "qt_rust_demo::algorithms::*"
+# level = "warn"
+# 
+# [[modules]]
+# module = "qt_rust_demo::config::*"
+# level = "error"

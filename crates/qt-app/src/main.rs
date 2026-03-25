@@ -20,7 +20,7 @@ fn setup_virtual_keyboard() {
     }
     let _ = std::fs::create_dir_all("/tmp/qt-app-config/qtvirtualkeyboard");
 
-    eprintln!("[INFO] Virtual Keyboard enabled: QT_IM_MODULE=qtvirtualkeyboard");
+    tracing::info!("Virtual Keyboard enabled: QT_IM_MODULE=qtvirtualkeyboard");
 }
 
 /// 初始化 fontconfig 配置路径，避免 "Cannot load default config file" 警告
@@ -36,23 +36,36 @@ fn setup_fontconfig() {
         let fonts_conf = dir.join("fonts/fonts.conf");
         if fonts_conf.exists() {
             std::env::set_var("FONTCONFIG_FILE", &fonts_conf);
-            eprintln!("[INFO] Fontconfig: using {}", fonts_conf.display());
+            tracing::info!("Fontconfig: using {}", fonts_conf.display());
         }
     }
 }
 
 fn main() {
+    // 初始化日志系统（在其他初始化之前）
+    match qt_rust_demo::logging::init_logging_from_file("config/logging.toml") {
+        Ok(_) => {
+            tracing::info!("日志系统初始化成功");
+        }
+        Err(e) => {
+            // 日志系统未初始化，使用 eprintln 是合理的
+            eprintln!("[WARN] 无法加载日志配置文件: {}", e);
+            eprintln!("[INFO] 使用默认日志配置");
+            qt_rust_demo::logging::init_default_logging();
+        }
+    }
+    
     setup_virtual_keyboard();
     setup_fontconfig();
     
     // 创建应用程序实例
     let mut app = match Application::new() {
         Ok(app) => {
-            eprintln!("[INFO] Application initialized successfully");
+            tracing::info!("Application initialized successfully");
             app
         }
         Err(e) => {
-            eprintln!("[ERROR] Failed to initialize application: {}", e);
+            tracing::error!("Failed to initialize application: {}", e);
             std::process::exit(1); // Qt 应用初始化失败
         }
     };

@@ -9,6 +9,7 @@ license = "MIT"
 [dependencies]
 tokio = { workspace = true }
 futures = "0.3"
+tracing = { workspace = true }
 
 [dev-dependencies]
 sensor-simulator = { workspace = true }

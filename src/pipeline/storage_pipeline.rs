@@ -76,7 +76,7 @@ impl StoragePipeline {
     /// # 返回
     /// - `Ok(StoragePipeline)`: 创建成功
     /// - `Err(String)`: 错误信息
-    pub fn new(
+    pub async fn new(
         config: StoragePipelineConfig,
         repository: Arc<dyn StorageRepository>,
         buffer: SharedBuffer,
@@ -85,6 +85,19 @@ impl StoragePipeline {
         let tokio_runtime = Arc::new(
             Runtime::new().map_err(|e| format!("Failed to create Tokio runtime: {}", e))?
         );
+        
+        // 从数据库读取最后存储的序列号，初始化队列
+        match repository.get_last_stored_sequence().await {
+            Ok(last_seq) => {
+                if last_seq > 0 {
+                    storage_queue.set_last_stored_sequence(last_seq);
+                    tracing::info!(" Initialized storage queue with last_seq={}", last_seq);
+                }
+            }
+            Err(e) => {
+                tracing::warn!(" Failed to get last stored sequence: {}", e);
+            }
+        }
         
         Ok(Self {
             config,
@@ -100,7 +113,7 @@ impl StoragePipeline {
     /// 启动管道
     pub fn start(&mut self) {
         if self.running.load(Ordering::Relaxed) {
-            eprintln!("[WARN] Storage pipeline already running");
+            tracing::warn!(" Storage pipeline already running");
             return;
         }
         
@@ -114,7 +127,10 @@ impl StoragePipeline {
         let tokio_runtime = Arc::clone(&self.tokio_runtime);
         
         let handle = thread::spawn(move || {
-            eprintln!("[INFO] Storage pipeline started");
+            tracing::info!(" Storage pipeline started");
+            
+            let _last_run_time = std::time::Instant::now();
+            let iteration_count = 0u64;
             
             while running.load(Ordering::Relaxed) {
                 let start_time = std::time::Instant::now();
@@ -122,20 +138,26 @@ impl StoragePipeline {
                 // 1. 从共享缓冲区读取新数据
                 if let Ok(buf) = buffer.read() {
                     let last_seq = storage_queue.last_stored_sequence();
-                    let new_data = buf.get_history(config.batch_size)
+                    let history = buf.get_history(config.batch_size);
+                    let new_data = history
                         .into_iter()
                         .filter(|d| d.sequence_number > last_seq)
                         .collect::<Vec<_>>();
                     
+                    tracing::debug!(" Storage: last_seq={}, new_data_count={}", last_seq, new_data.len());
+                    
                     for data in new_data {
                         if let Err(e) = storage_queue.push(data) {
-                            eprintln!("[ERROR] Failed to push to storage queue: {}", e);
+                            tracing::error!(" Failed to push to storage queue: {}", e);
                         }
                     }
                 }
                 
                 // 2. 从队列取出数据批量存储
                 let data_to_store = storage_queue.peek_batch(config.batch_size);
+                
+                tracing::debug!(" Storage: queue_len={}, data_to_store={}", 
+                          storage_queue.len(), data_to_store.len());
                 
                 if !data_to_store.is_empty() {
                     let max_sequence = data_to_store.iter()
@@ -151,16 +173,23 @@ impl StoragePipeline {
                     
                     tokio_runtime.spawn(async move {
                         // 调用抽象接口方法
+                        tracing::debug!(" Attempting to save {} records", count);
                         match repository_clone.save_runtime_data_batch(&data_clone).await {
                             Ok(saved_count) => {
-                                eprintln!("[INFO] Saved {} records", saved_count);
-                                // 存储成功，从队列删除
-                                if let Err(e) = storage_queue_clone.remove_stored(count, max_sequence) {
-                                    eprintln!("[ERROR] Failed to remove stored data: {}", e);
+                                tracing::info!(" Saved {} records", saved_count);
+                                if saved_count > 0 {
+                                    // 存储成功，从队列删除
+                                    if let Err(e) = storage_queue_clone.remove_stored(count, max_sequence) {
+                                        tracing::error!(" Failed to remove stored data: {}", e);
+                                    } else {
+                                        tracing::debug!(" Removed {} records from queue, last_seq={}", count, max_sequence);
+                                    }
+                                } else {
+                                    tracing::warn!(" Saved 0 records, not removing from queue");
                                 }
                             }
                             Err(e) => {
-                                eprintln!("[ERROR] Failed to save runtime data: {}", e);
+                                tracing::error!(" Failed to save runtime data: {}", e);
                             }
                         }
                     });
@@ -168,12 +197,23 @@ impl StoragePipeline {
                 
                 // 3. 控制存储频率
                 let elapsed = start_time.elapsed();
-                if elapsed < config.interval {
-                    thread::sleep(config.interval - elapsed);
+                let sleep_time = if elapsed < config.interval {
+                    config.interval - elapsed
+                } else {
+                    Duration::from_millis(0)
+                };
+                
+                tracing::info!("[STORAGE] Iteration #{} completed in {:.3}s, sleeping for {:.3}s", 
+                          iteration_count, 
+                          elapsed.as_secs_f64(),
+                          sleep_time.as_secs_f64());
+                
+                if sleep_time > Duration::from_millis(0) {
+                    thread::sleep(sleep_time);
                 }
             }
             
-            eprintln!("[INFO] Storage pipeline stopped");
+            tracing::info!(" Storage pipeline stopped");
         });
         
         self.handle = Some(handle);
@@ -199,10 +239,10 @@ impl StoragePipeline {
             // 调用抽象接口方法
             match repository.save_alarm_record(&data).await {
                 Ok(alarm_id) => {
-                    eprintln!("[INFO] Alarm saved with id: {}", alarm_id);
+                    tracing::info!(" Alarm saved with id: {}", alarm_id);
                 }
                 Err(e) => {
-                    eprintln!("[ERROR] Failed to save alarm record: {}", e);
+                    tracing::error!(" Failed to save alarm record: {}", e);
                 }
             }
         });
@@ -256,7 +296,7 @@ mod tests {
             config,
             repo as Arc<dyn StorageRepository>,
             buffer,
-        );
+        ).await;
         
         assert!(pipeline.is_ok());
     }
@@ -271,7 +311,7 @@ mod tests {
             config,
             repo.clone() as Arc<dyn StorageRepository>,
             buffer,
-        ).unwrap();
+        ).await.unwrap();
         
         // 创建报警数据
         let sensor_data = SensorData::new(23.0, 10.0, 60.0);
@@ -297,7 +337,7 @@ mod tests {
             config,
             repo as Arc<dyn StorageRepository>,
             buffer,
-        ).unwrap();
+        ).await.unwrap();
         
         // 初始队列应该为空
         assert_eq!(pipeline.queue_len(), 0);

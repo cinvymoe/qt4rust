@@ -15,6 +15,7 @@ cxx-qt = "0.8"
 cxx-qt-lib = "0.8"
 tokio = { version = "1.42", features = ["full"] }
 sensor-simulator = { path = "crates/sensor-simulator" }
+tracing = "0.1"
 
 [package]
 name = "qt-rust-demo"
@@ -37,6 +38,7 @@ toml = "0.8"
 csv = "1.3"
 chrono = "0.4"
 tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 
 # 存储管道依赖
 async-trait = "0.1"

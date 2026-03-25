@@ -61,7 +61,7 @@ impl ProcessedDataBuffer {
         // 检查内存使用，如果超过限制则移除最旧数据
         while self.estimated_memory_usage() > MAX_MEMORY && !self.history.is_empty() {
             self.history.pop_front();
-            eprintln!("[WARN] Memory pressure: removed oldest data (current usage: {} bytes)", 
+            tracing::warn!(" Memory pressure: removed oldest data (current usage: {} bytes)", 
                       self.estimated_memory_usage());
         }
         

@@ -87,7 +87,7 @@ impl SqliteStorageRepository {
         conn.execute("CREATE INDEX IF NOT EXISTS idx_alarm_acknowledged ON alarm_records(acknowledged)", [])
             .map_err(|e| format!("Failed to create index: {}", e))?;
         
-        eprintln!("[INFO] Database tables initialized");
+        tracing::info!("Database tables initialized");
         Ok(())
     }
 }
@@ -99,6 +99,10 @@ impl StorageRepository for SqliteStorageRepository {
             return Ok(0);
         }
         
+        tracing::debug!("save_runtime_data_batch: attempting to save {} records", data.len());
+        tracing::debug!("Sequence numbers: {:?}", 
+                  data.iter().map(|d| d.sequence_number).collect::<Vec<_>>());
+        
         let conn = self.connection.lock().await;
         
         // 开始事务
@@ -106,6 +110,7 @@ impl StorageRepository for SqliteStorageRepository {
             .map_err(|e| format!("Failed to begin transaction: {}", e))?;
         
         let mut saved_count = 0;
+        let mut ignored_count = 0;
         
         for item in data {
             let timestamp = item.timestamp.duration_since(std::time::UNIX_EPOCH)
@@ -130,7 +135,14 @@ impl StorageRepository for SqliteStorageRepository {
             );
             
             match result {
-                Ok(rows) => saved_count += rows,
+                Ok(rows) => {
+                    if rows > 0 {
+                        saved_count += rows;
+                    } else {
+                        ignored_count += 1;
+                        tracing::debug!("Ignored duplicate sequence_number: {}", item.sequence_number);
+                    }
+                }
                 Err(e) => {
                     // 回滚事务
                     let _ = conn.execute("ROLLBACK", []);
@@ -143,7 +155,7 @@ impl StorageRepository for SqliteStorageRepository {
         conn.execute("COMMIT", [])
             .map_err(|e| format!("Failed to commit transaction: {}", e))?;
         
-        eprintln!("[INFO] Saved {} runtime records to database", saved_count);
+        tracing::info!("Saved {} runtime records to database (ignored {} duplicates)", saved_count, ignored_count);
         Ok(saved_count)
     }
     
@@ -188,7 +200,7 @@ impl StorageRepository for SqliteStorageRepository {
         
         let alarm_id = conn.last_insert_rowid();
         
-        eprintln!("[INFO] Saved alarm record: {} (id: {})", alarm_type, alarm_id);
+        tracing::info!("Saved alarm record: {} (id: {})", alarm_type, alarm_id);
         Ok(alarm_id)
     }
     

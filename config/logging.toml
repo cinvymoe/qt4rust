@@ -1,0 +1,43 @@
+# 全局日志配置文件
+# 
+# 此文件用于控制应用程序的日志输出行为
+# 可以为每个模块/文件单独设置日志级别
+
+# 默认日志级别（可选值: trace, debug, info, warn, error, off）
+# 设置为 off 表示默认不显示任何日志
+default_level = "off"
+
+# 是否输出到控制台
+console_output = true
+
+# 是否输出到文件
+file_output = false
+
+# 日志文件路径（当 file_output = true 时生效）
+log_file = "logs/app.log"
+
+# 只显示 PipelineManager 的日志
+[[modules]]
+module = "qt_rust_demo::pipeline::pipeline_manager"
+level = "trace"
+
+# 其他模块配置示例（已注释）
+# [[modules]]
+# module = "qt_rust_demo::pipeline::storage_pipeline"
+# level = "trace"
+# 
+# [[modules]]
+# module = "qt_rust_demo::pipeline::*"
+# level = "debug"
+# 
+# [[modules]]
+# module = "qt_rust_demo::repositories::*"
+# level = "info"
+# 
+# [[modules]]
+# module = "qt_rust_demo::data_sources::*"
+# level = "debug"
+# 
+# [[modules]]
+# module = "qt_rust_demo::viewmodels::*"
+# level = "info"

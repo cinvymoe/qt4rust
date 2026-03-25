@@ -25,31 +25,31 @@ impl ViewModelManager {
     /// 标记 ViewModel 已准备好
     #[allow(dead_code)]
     pub fn mark_viewmodel_ready(&mut self) {
-        eprintln!("[INFO] ViewModel marked as ready");
+        tracing::info!("ViewModel marked as ready");
         self.viewmodel_ready = true;
     }
     
     /// 启动数据采集
     pub fn start_data_collection(&mut self) {
-        eprintln!("[INFO] Starting three-pipeline data collection...");
+        tracing::info!("Starting three-pipeline data collection...");
         
         // 创建数据仓库（使用 Default 实现，自动创建 ConfigManager）
         let repository = Arc::new(CraneDataRepository::default());
         
         // 创建管道管理器（带存储支持）
         let db_path = "crane_data.db";
-        eprintln!("[INFO] Initializing storage system with database: {}", db_path);
+        tracing::info!("Initializing storage system with database: {}", db_path);
         
         let manager = match qt_threading_utils::runtime::global_runtime().block_on(async {
             PipelineManager::new_with_storage(repository, db_path).await
         }) {
             Ok(mgr) => {
-                eprintln!("[INFO] Storage system initialized successfully");
+                tracing::info!("Storage system initialized successfully");
                 mgr
             }
             Err(e) => {
-                eprintln!("[ERROR] Failed to initialize storage system: {}", e);
-                eprintln!("[WARN] Falling back to collection-only mode");
+                tracing::error!("Failed to initialize storage system: {}", e);
+                tracing::warn!("Falling back to collection-only mode");
                 let repository = Arc::new(CraneDataRepository::default());
                 PipelineManager::new(repository)
             }
@@ -62,16 +62,16 @@ impl ViewModelManager {
         self.pipeline_manager = Some(manager);
         self.viewmodel_ready = true;  // 标记为已准备好
         
-        eprintln!("[INFO] Three-pipeline data collection started");
-        eprintln!("[INFO] Backend Thread 1 (Collection Pipeline) is now running at 10Hz");
-        eprintln!("[INFO] Backend Thread 2 (Storage Pipeline) is now running at 1Hz");
+        tracing::info!("Three-pipeline data collection started");
+        tracing::info!("Backend Thread 1 (Collection Pipeline) is now running at 10Hz");
+        tracing::info!("Backend Thread 2 (Storage Pipeline) is now running at 1Hz");
     }
     
     /// 停止数据采集
     pub fn stop_data_collection(&mut self) {
         if let Some(mut manager) = self.pipeline_manager.take() {
             manager.stop_all();
-            eprintln!("[INFO] Data collection stopped");
+            tracing::info!("Data collection stopped");
         }
     }
 }
@@ -95,7 +95,7 @@ static VIEWMODEL_MANAGER: Mutex<Option<ViewModelManager>> = Mutex::new(None);
 pub fn init_viewmodel_manager() {
     let mut manager = VIEWMODEL_MANAGER.lock().unwrap();
     *manager = Some(ViewModelManager::new());
-    eprintln!("[INFO] ViewModelManager initialized");
+    tracing::info!("ViewModelManager initialized");
 }
 
 /// 标记 ViewModel 已准备好

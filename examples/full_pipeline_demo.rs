@@ -92,7 +92,7 @@ async fn main() -> Result<(), String> {
         storage_config,
         storage_repo,
         Arc::clone(&shared_buffer),
-    )?;
+    ).await?;
     
     println!("[INFO] 存储管道创建完成");
     

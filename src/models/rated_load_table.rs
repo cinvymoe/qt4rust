@@ -201,7 +201,9 @@ impl Default for RatedLoadTable {
             ],
             moment_warning_threshold: 85.0,   // 力矩预警阈值 85%
             moment_alarm_threshold: 95.0,     // 力矩报警阈值 95%
+            #[allow(deprecated)]
             alarm_threshold: 85.0,            // 兼容旧字段
+            #[allow(deprecated)]
             danger_threshold: 95.0,           // 兼容旧字段
         }
     }

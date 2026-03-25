@@ -56,7 +56,7 @@ impl StorageQueue {
         
         // 检查队列容量
         if queue.len() >= self.max_size {
-            eprintln!("[WARN] Storage queue full ({}), dropping oldest data", self.max_size);
+            tracing::warn!("Storage queue full ({}), dropping oldest data", self.max_size);
             queue.pop_front();
         }
         
@@ -120,6 +120,13 @@ impl StorageQueue {
         self.last_stored_sequence.lock()
             .map(|seq| *seq)
             .unwrap_or(0)
+    }
+    
+    /// 设置最后存储的序列号（用于初始化）
+    pub fn set_last_stored_sequence(&self, sequence: u64) {
+        if let Ok(mut last_seq) = self.last_stored_sequence.lock() {
+            *last_seq = sequence;
+        }
     }
 }
 
