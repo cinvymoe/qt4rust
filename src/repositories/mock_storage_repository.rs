@@ -111,6 +111,53 @@ impl StorageRepository for MockStorageRepository {
             Ok(())
         }
     }
+    
+    async fn purge_old_records(&self, max_records: usize, _purge_threshold: usize) -> Result<usize, String> {
+        if max_records == 0 {
+            return Ok(0);
+        }
+        
+        let mut storage = self.runtime_data.lock().unwrap();
+        if storage.len() <= max_records {
+            return Ok(0);
+        }
+        
+        let removed = storage.len() - max_records;
+        storage.drain(0..removed);
+        Ok(removed)
+    }
+    
+    async fn purge_old_alarms(&self, alarm_max_records: usize, _alarm_purge_threshold: usize) -> Result<usize, String> {
+        if alarm_max_records == 0 {
+            return Ok(0);
+        }
+        
+        let mut alarms = self.alarm_records.lock().unwrap();
+        if alarms.len() <= alarm_max_records {
+            return Ok(0);
+        }
+        
+        let removed = alarms.len() - alarm_max_records;
+        alarms.drain(0..removed);
+        Ok(removed)
+    }
+    
+    async fn get_runtime_data_count(&self) -> Result<i64, String> {
+        let storage = self.runtime_data.lock().unwrap();
+        Ok(storage.len() as i64)
+    }
+    
+    async fn get_runtime_data_range(&self, offset: i64, limit: usize) -> Result<Vec<ProcessedData>, String> {
+        let storage = self.runtime_data.lock().unwrap();
+        let start = offset as usize;
+        let end = (start + limit).min(storage.len());
+        
+        if start >= storage.len() {
+            return Ok(vec![]);
+        }
+        
+        Ok(storage[start..end].to_vec())
+    }
 }
 
 #[cfg(test)]

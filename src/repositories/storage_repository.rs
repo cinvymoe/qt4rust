@@ -72,4 +72,48 @@ pub trait StorageRepository: Send + Sync {
     /// - `Ok(())`: 健康
     /// - `Err(String)`: 错误信息
     async fn health_check(&self) -> Result<(), String>;
+    
+    /// 清理旧数据
+    /// 
+    /// 当记录数超过阈值时，删除最早的记录直到记录数降到 max_records
+    /// 
+    /// # 参数
+    /// - `max_records`: 最大记录条数（0 表示不清理）
+    /// - `purge_threshold`: 触发清理的阈值（0 表示使用默认值 max_records * 1.1）
+    /// 
+    /// # 返回
+    /// - `Ok(usize)`: 删除的记录数
+    /// - `Err(String)`: 错误信息
+    async fn purge_old_records(&self, max_records: usize, purge_threshold: usize) -> Result<usize, String>;
+    
+    /// 清理旧报警记录
+    /// 
+    /// 当报警记录数超过阈值时，删除最早的记录直到记录数降到 alarm_max_records
+    /// 
+    /// # 参数
+    /// - `alarm_max_records`: 最大报警记录条数（0 表示不清理）
+    /// - `alarm_purge_threshold`: 触发清理的阈值（0 表示使用默认值 alarm_max_records * 1.1）
+    /// 
+    /// # 返回
+    /// - `Ok(usize)`: 删除的记录数
+    /// - `Err(String)`: 错误信息
+    async fn purge_old_alarms(&self, alarm_max_records: usize, alarm_purge_threshold: usize) -> Result<usize, String>;
+    
+    /// 获取运行数据总记录数
+    /// 
+    /// # 返回
+    /// - `Ok(i64)`: 记录总数
+    /// - `Err(String)`: 错误信息
+    async fn get_runtime_data_count(&self) -> Result<i64, String>;
+    
+    /// 查询指定范围的运行数据
+    /// 
+    /// # 参数
+    /// - `offset`: 偏移量（从 0 开始）
+    /// - `limit`: 查询数量
+    /// 
+    /// # 返回
+    /// - `Ok(Vec<ProcessedData>)`: 运行数据列表
+    /// - `Err(String)`: 错误信息
+    async fn get_runtime_data_range(&self, offset: i64, limit: usize) -> Result<Vec<ProcessedData>, String>;
 }

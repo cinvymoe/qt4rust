@@ -27,16 +27,32 @@ pub struct StoragePipelineConfig {
     
     /// 管道队列最大容量
     pub max_queue_size: usize,
+    
+    /// 数据库最大记录条数（0 表示不限制）
+    pub max_records: usize,
+    
+    /// 清理阈值（0 表示使用默认值 max_records * 1.1）
+    pub purge_threshold: usize,
+    
+    /// 报警记录最大条数（0 表示不限制）
+    pub alarm_max_records: usize,
+    
+    /// 报警清理阈值（0 表示使用默认值 alarm_max_records * 1.1）
+    pub alarm_purge_threshold: usize,
 }
 
 impl Default for StoragePipelineConfig {
     fn default() -> Self {
         Self {
-            interval: Duration::from_secs(5),  // 1秒存储一次
+            interval: Duration::from_secs(5),
             batch_size: 10,
             max_retries: 3,
             retry_delay: Duration::from_millis(100),
-            max_queue_size: 1000,  // 最多缓存 1000 条数据
+            max_queue_size: 1000,
+            max_records: 0,
+            purge_threshold: 0,
+            alarm_max_records: 0,
+            alarm_purge_threshold: 0,
         }
     }
 }
@@ -50,6 +66,10 @@ impl StoragePipelineConfig {
             max_retries: config.max_retries,
             retry_delay: Duration::from_millis(config.retry_delay_ms),
             max_queue_size: config.max_queue_size,
+            max_records: config.max_records,
+            purge_threshold: config.purge_threshold,
+            alarm_max_records: config.alarm_max_records,
+            alarm_purge_threshold: config.alarm_purge_threshold,
         }
     }
 }
@@ -63,6 +83,8 @@ pub struct StoragePipeline {
     running: Arc<AtomicBool>,
     handle: Option<thread::JoinHandle<()>>,
     tokio_runtime: Arc<Runtime>,
+    /// 上次报警状态（用于检测持续报警）
+    last_was_danger: Arc<AtomicBool>,
 }
 
 impl StoragePipeline {
@@ -107,6 +129,7 @@ impl StoragePipeline {
             running: Arc::new(AtomicBool::new(false)),
             handle: None,
             tokio_runtime,
+            last_was_danger: Arc::new(AtomicBool::new(false)),
         })
     }
     
@@ -179,6 +202,8 @@ impl StoragePipeline {
                     let storage_queue_clone = Arc::clone(&storage_queue);
                     let data_clone = data_to_store.clone();
                     let count = data_to_store.len();
+                    let max_records = config.max_records;
+                    let purge_threshold = config.purge_threshold;
                     
                     tokio_runtime.spawn(async move {
                         // 调用抽象接口方法
@@ -192,6 +217,20 @@ impl StoragePipeline {
                                         tracing::error!(" Failed to remove stored data: {}", e);
                                     } else {
                                         tracing::debug!(" Removed {} records from queue, last_seq={}", count, max_sequence);
+                                    }
+                                    
+                                    // 清理旧数据
+                                    if max_records > 0 {
+                                        match repository_clone.purge_old_records(max_records, purge_threshold).await {
+                                            Ok(purged) if purged > 0 => {
+                                                tracing::info!(" Purged {} old records (max_records={}, threshold={})", 
+                                                             purged, max_records, purge_threshold);
+                                            }
+                                            Ok(_) => {}
+                                            Err(e) => {
+                                                tracing::error!(" Failed to purge old records: {}", e);
+                                            }
+                                        }
                                     }
                                 } else {
                                     tracing::warn!(" Saved 0 records, not removing from queue");
@@ -237,18 +276,49 @@ impl StoragePipeline {
         }
     }
     
-    /// 异步回调：立即存储报警记录（通过抽象接口）
+    /// 异步回调：立即存储报警记录
+    /// 
+    /// 检测持续报警：上次 is_danger=true 且本次也是 true 时跳过
+    /// 状态由 notify_danger_cleared() 重置（当 is_danger 变为 false 时）
     /// 
     /// # 参数
     /// - `data`: 处理后的数据（包含报警信息）
     pub fn save_alarm_async(&self, data: ProcessedData) {
+        // 检查上次是否也是报警状态
+        let last_was_danger = self.last_was_danger.load(Ordering::Relaxed);
+        
+        if last_was_danger {
+            // 上次是报警，本次也是报警，跳过（持续报警不重复保存）
+            tracing::debug!(" Continuous alarm detected, skipping duplicate");
+            return;
+        }
+        
+        // 上次不是报警，本次是报警，设置为 true
+        self.last_was_danger.store(true, Ordering::Relaxed);
+        
         let repository = Arc::clone(&self.repository);
+        let alarm_max_records = self.config.alarm_max_records;
+        let alarm_purge_threshold = self.config.alarm_purge_threshold;
+        let sequence_number = data.sequence_number;
         
         self.tokio_runtime.spawn(async move {
-            // 调用抽象接口方法
+            // 存储报警记录
             match repository.save_alarm_record(&data).await {
                 Ok(alarm_id) => {
-                    tracing::info!(" Alarm saved with id: {}", alarm_id);
+                    tracing::info!(" New alarm saved with id: {} (sequence: {})", alarm_id, sequence_number);
+                    
+                    // 清理旧报警记录
+                    if alarm_max_records > 0 {
+                        match repository.purge_old_alarms(alarm_max_records, alarm_purge_threshold).await {
+                            Ok(purged) if purged > 0 => {
+                                tracing::info!(" Purged {} old alarms", purged);
+                            }
+                            Ok(_) => {}
+                            Err(e) => {
+                                tracing::error!(" Failed to purge old alarms: {}", e);
+                            }
+                        }
+                    }
                 }
                 Err(e) => {
                     tracing::error!(" Failed to save alarm record: {}", e);
@@ -277,7 +347,14 @@ impl StoragePipeline {
             running: Arc::clone(&self.running),
             handle: None,  // 不克隆线程句柄
             tokio_runtime: Arc::clone(&self.tokio_runtime),
+            last_was_danger: Arc::clone(&self.last_was_danger),
         }
+    }
+    
+    /// 通知报警状态已解除（当 is_danger 从 true 变为 false 时调用）
+    pub fn notify_danger_cleared(&self) {
+        self.last_was_danger.store(false, Ordering::Relaxed);
+        tracing::debug!(" Danger state reset to false");
     }
 }
 

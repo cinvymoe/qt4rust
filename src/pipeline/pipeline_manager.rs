@@ -127,6 +127,13 @@ impl PipelineManager {
                 storage_clone.save_alarm_async(data);
             }));
             info!("报警回调已连接到存储管道");
+            
+            // 设置报警解除回调
+            let storage_for_reset = storage_pipeline.clone_for_callback();
+            pipeline.set_danger_cleared_callback(Box::new(move || {
+                storage_for_reset.notify_danger_cleared();
+            }));
+            info!("报警解除回调已连接到存储管道");
         }
         
         // 启动管道

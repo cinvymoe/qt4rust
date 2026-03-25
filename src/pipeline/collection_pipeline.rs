@@ -53,6 +53,10 @@ pub struct CollectionPipeline {
     handle: Option<JoinHandle<()>>,
     /// 报警回调（可选）
     alarm_callback: Option<Arc<dyn Fn(ProcessedData) + Send + Sync>>,
+    /// 报警解除回调（可选）
+    danger_cleared_callback: Option<Arc<dyn Fn() + Send + Sync>>,
+    /// 上次报警状态
+    previous_danger: bool,
 }
 
 impl CollectionPipeline {
@@ -70,6 +74,8 @@ impl CollectionPipeline {
             sequence_number: Arc::new(AtomicU64::new(0)),
             handle: None,
             alarm_callback: None,
+            danger_cleared_callback: None,
+            previous_danger: false,
         }
     }
     
@@ -81,6 +87,16 @@ impl CollectionPipeline {
         F: Fn(ProcessedData) + Send + Sync + 'static,
     {
         self.alarm_callback = Some(Arc::new(callback));
+    }
+    
+    /// 设置报警解除回调
+    /// 
+    /// 当报警状态解除时（is_danger 从 true 变为 false），会调用此回调函数
+    pub fn set_danger_cleared_callback<F>(&mut self, callback: F)
+    where
+        F: Fn() + Send + Sync + 'static,
+    {
+        self.danger_cleared_callback = Some(Arc::new(callback));
     }
     
     /// 设置初始序列号
@@ -106,12 +122,14 @@ impl CollectionPipeline {
         let running = Arc::clone(&self.running);
         let sequence_number = Arc::clone(&self.sequence_number);
         let alarm_callback = self.alarm_callback.clone();  // 克隆回调
+        let danger_cleared_callback = self.danger_cleared_callback.clone();  // 克隆回调
         
         // 使用全局运行时生成任务
         let handle = qt_threading_utils::runtime::global_runtime().spawn(async move {
             tracing::info!(" Collection pipeline started");
             let mut consecutive_failures = 0;
             let mut interval_timer = tokio::time::interval(config.interval);
+            let mut previous_danger = false;  // 跟踪上次报警状态
             
             while running.load(Ordering::Relaxed) {
                 interval_timer.tick().await;
@@ -131,13 +149,23 @@ impl CollectionPipeline {
                         let seq = sequence_number.fetch_add(1, Ordering::Relaxed);
                         let processed = ProcessedData::from_sensor_data(sensor_data, seq);
                         
+                        let current_danger = processed.is_danger;
+                        
                         // 检测报警状态，触发回调
-                        if processed.is_danger {
+                        if current_danger {
                             if let Some(ref callback) = alarm_callback {
                                 tracing::warn!("[ALARM] Danger detected! Moment: {:.1}%", processed.moment_percentage);
                                 callback(processed.clone());
                             }
+                        } else if previous_danger {
+                            // 上次是报警，本次不是报警，触发解除回调
+                            if let Some(ref callback) = danger_cleared_callback {
+                                tracing::info!("[ALARM] Danger cleared");
+                                callback();
+                            }
                         }
+                        
+                        previous_danger = current_danger;
                         
                         // 使用 try_write 避免死锁
                         match buffer.try_write() {

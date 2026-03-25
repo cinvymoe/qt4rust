@@ -2,6 +2,7 @@
 
 use async_trait::async_trait;
 use std::sync::Arc;
+use std::time::SystemTime;
 use tokio::sync::Mutex;
 use rusqlite::{Connection, params};
 use crate::repositories::storage_repository::StorageRepository;
@@ -324,6 +325,139 @@ impl StorageRepository for SqliteStorageRepository {
             .map_err(|e| format!("Health check failed: {}", e))?;
         
         Ok(())
+    }
+    
+    async fn purge_old_records(&self, max_records: usize, purge_threshold: usize) -> Result<usize, String> {
+        if max_records == 0 {
+            return Ok(0);
+        }
+        
+        let conn = self.connection.lock().await;
+        
+        // 获取当前记录数
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM runtime_data",
+            [],
+            |row| row.get(0),
+        ).map_err(|e| format!("Failed to count records: {}", e))?;
+        
+        // 计算清理阈值
+        let threshold = if purge_threshold > 0 {
+            purge_threshold
+        } else {
+            // 默认：超过 max_records 的 110% 或超过 max_records + 1000 时才删除
+            // 两者取较小值，避免 max_records 很小时频繁删除
+            std::cmp::min(
+                (max_records as f64 * 1.1) as usize,
+                max_records.saturating_add(1000)
+            )
+        };
+        
+        if count as usize <= threshold {
+            return Ok(0);
+        }
+        
+        // 删除到 max_records（留出缓冲空间）
+        let to_delete = count as usize - max_records;
+        
+        // 删除最早的记录（按 id 顺序）
+        let deleted = conn.execute(
+            "DELETE FROM runtime_data WHERE id IN (
+                SELECT id FROM runtime_data ORDER BY id ASC LIMIT ?1
+            )",
+            params![to_delete as i64],
+        ).map_err(|e| format!("Failed to purge old records: {}", e))?;
+        
+        tracing::info!("Purged {} old records (current={}, threshold={}, max_records={})", 
+                      deleted, count, threshold, max_records);
+        Ok(deleted)
+    }
+    
+    async fn purge_old_alarms(&self, alarm_max_records: usize, alarm_purge_threshold: usize) -> Result<usize, String> {
+        if alarm_max_records == 0 {
+            return Ok(0);
+        }
+        
+        let conn = self.connection.lock().await;
+        
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM alarm_records",
+            [],
+            |row| row.get(0),
+        ).map_err(|e| format!("Failed to count alarm records: {}", e))?;
+        
+        let threshold = if alarm_purge_threshold > 0 {
+            alarm_purge_threshold
+        } else {
+            std::cmp::min(
+                (alarm_max_records as f64 * 1.1) as usize,
+                alarm_max_records.saturating_add(100)
+            )
+        };
+        
+        if count as usize <= threshold {
+            return Ok(0);
+        }
+        
+        let to_delete = count as usize - alarm_max_records;
+        
+        let deleted = conn.execute(
+            "DELETE FROM alarm_records WHERE id IN (
+                SELECT id FROM alarm_records ORDER BY id ASC LIMIT ?1
+            )",
+            params![to_delete as i64],
+        ).map_err(|e| format!("Failed to purge old alarms: {}", e))?;
+        
+        tracing::info!("Purged {} old alarms (current={}, threshold={}, alarm_max_records={})", 
+                      deleted, count, threshold, alarm_max_records);
+        Ok(deleted)
+    }
+    
+    async fn get_runtime_data_count(&self) -> Result<i64, String> {
+        let conn = self.connection.lock().await;
+        
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM runtime_data",
+            [],
+            |row| row.get(0)
+        ).map_err(|e| format!("Failed to get runtime data count: {}", e))?;
+        
+        Ok(count)
+    }
+    
+    async fn get_runtime_data_range(&self, offset: i64, limit: usize) -> Result<Vec<ProcessedData>, String> {
+        let conn = self.connection.lock().await;
+        
+        let mut stmt = conn.prepare(
+            "SELECT sequence_number, timestamp, current_load, working_radius, boom_angle, 
+                    moment_percentage, is_danger, validation_error 
+             FROM runtime_data 
+             ORDER BY id ASC 
+             LIMIT ? OFFSET ?"
+        ).map_err(|e| format!("Failed to prepare statement: {}", e))?;
+        
+        let rows = stmt.query_map(params![limit as i64, offset], |row| {
+            let timestamp_secs: i64 = row.get(1)?;
+            let timestamp = SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(timestamp_secs as u64);
+            
+            Ok(ProcessedData {
+                sequence_number: row.get(0)?,
+                timestamp,
+                current_load: row.get(2)?,
+                working_radius: row.get(3)?,
+                boom_angle: row.get(4)?,
+                moment_percentage: row.get(5)?,
+                is_danger: row.get(6)?,
+                validation_error: row.get(7)?,
+            })
+        }).map_err(|e| format!("Failed to query runtime data: {}", e))?;
+        
+        let mut result = Vec::new();
+        for row in rows {
+            result.push(row.map_err(|e| format!("Failed to parse row: {}", e))?);
+        }
+        
+        Ok(result)
     }
 }
 

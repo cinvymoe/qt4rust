@@ -69,6 +69,34 @@ retry_delay_ms = 100
 # Maximum number of data items that can be cached in storage queue
 max_queue_size = 1000
 
+# 数据库最大记录条数
+# Maximum database record count
+# 设置数据库保存的最大数据条数，超出后旧数据会被自动清理
+# Maximum number of records to keep in database; old data will be auto-purged when exceeded
+# 设置为 0 表示不限制
+# Set to 0 for unlimited
+max_records = 100
+
+# 清理阈值
+# Purge threshold
+# 触发清理的阈值，超过此值时执行清理（0 表示使用默认值 max_records * 1.1）
+# Threshold for triggering cleanup; cleanup runs when count exceeds this (0 = default max_records * 1.1)
+purge_threshold = 200
+
+# 报警记录最大条数
+# Alarm records max count
+# 设置报警记录的最大保存条数，超出后旧记录会被自动清理
+# Maximum number of alarm records to keep; old records will be auto-purged when exceeded
+# 设置为 0 表示不限制
+# Set to 0 for unlimited
+alarm_max_records = 150
+
+# 报警清理阈值
+# Alarm purge threshold
+# 触发报警清理的阈值，超过此值时执行清理（0 表示使用默认值 alarm_max_records * 1.1）
+# Threshold for triggering alarm cleanup; cleanup runs when count exceeds this (0 = default alarm_max_records * 1.1)
+alarm_purge_threshold = 300
+
 # ========== 数据库配置 ==========
 # Database Configuration
 

@@ -20,10 +20,10 @@ pub struct PipelineConfig {
 pub struct CollectionConfig {
     /// 采集间隔（毫秒）
     pub interval_ms: u64,
-    
+
     /// 缓冲区大小
     pub buffer_size: usize,
-    
+
     /// 是否使用模拟传感器
     pub use_simulator: bool,
 }
@@ -33,18 +33,30 @@ pub struct CollectionConfig {
 pub struct StorageConfig {
     /// 存储间隔（毫秒）
     pub interval_ms: u64,
-    
+
     /// 批量存储大小
     pub batch_size: usize,
-    
+
     /// 失败重试次数
     pub max_retries: u32,
-    
+
     /// 重试延迟（毫秒）
     pub retry_delay_ms: u64,
-    
+
     /// 存储队列最大容量
     pub max_queue_size: usize,
+
+    /// 数据库最大记录条数（0 表示不限制）
+    pub max_records: usize,
+
+    /// 清理阈值：超过此值时才执行清理（0 表示使用默认值 max_records * 1.1）
+    pub purge_threshold: usize,
+
+    /// 报警记录最大条数（0 表示不限制）
+    pub alarm_max_records: usize,
+
+    /// 报警清理阈值（0 表示使用默认值 alarm_max_records * 1.1）
+    pub alarm_purge_threshold: usize,
 }
 
 /// 数据库配置
@@ -52,10 +64,10 @@ pub struct StorageConfig {
 pub struct DatabaseConfig {
     /// 数据库文件路径
     pub path: String,
-    
+
     /// 是否启用 WAL 模式
     pub enable_wal: bool,
-    
+
     /// 连接池大小
     pub pool_size: u32,
 }
@@ -82,10 +94,10 @@ pub struct SensorSimConfig {
 pub struct MonitoringConfig {
     /// 是否启用监控
     pub enable: bool,
-    
+
     /// 统计间隔（秒）
     pub stats_interval_sec: u64,
-    
+
     /// 是否打印详细日志
     pub verbose: bool,
 }
@@ -120,6 +132,10 @@ impl Default for StorageConfig {
             max_retries: 3,
             retry_delay_ms: 100,
             max_queue_size: 1000,
+            max_records: 0,
+            purge_threshold: 0,
+            alarm_max_records: 0,
+            alarm_purge_threshold: 0,
         }
     }
 }
@@ -174,20 +190,20 @@ impl PipelineConfig {
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, String> {
         let content = fs::read_to_string(path.as_ref())
             .map_err(|e| format!("Failed to read config file: {}", e))?;
-        
-        let config: PipelineConfig = toml::from_str(&content)
-            .map_err(|e| format!("Failed to parse config file: {}", e))?;
-        
+
+        let config: PipelineConfig =
+            toml::from_str(&content).map_err(|e| format!("Failed to parse config file: {}", e))?;
+
         config.validate()?;
-        
+
         Ok(config)
     }
-    
+
     /// 从默认路径加载配置
     /// 优先级：./config/pipeline_config.toml > 默认配置
     pub fn load() -> Self {
         let config_path = "config/pipeline_config.toml";
-        
+
         match Self::from_file(config_path) {
             Ok(config) => {
                 tracing::info!("Loaded config from: {}", config_path);
@@ -200,57 +216,57 @@ impl PipelineConfig {
             }
         }
     }
-    
+
     /// 验证配置参数
     fn validate(&self) -> Result<(), String> {
         // 验证采集间隔
         if self.collection.interval_ms < 50 {
             return Err("Collection interval must be >= 50ms".to_string());
         }
-        
+
         // 验证缓冲区大小
         if self.collection.buffer_size == 0 {
             return Err("Buffer size must be > 0".to_string());
         }
-        
+
         // 验证存储间隔
         if self.storage.interval_ms < self.collection.interval_ms {
             return Err("Storage interval should be >= collection interval".to_string());
         }
-        
+
         // 验证批量大小
         if self.storage.batch_size == 0 {
             return Err("Batch size must be > 0".to_string());
         }
-        
+
         // 验证队列大小
         if self.storage.max_queue_size == 0 {
             return Err("Queue size must be > 0".to_string());
         }
-        
+
         // 验证数据库路径
         if self.database.path.is_empty() {
             return Err("Database path cannot be empty".to_string());
         }
-        
+
         Ok(())
     }
-    
+
     /// 获取采集间隔 Duration
     pub fn collection_interval(&self) -> Duration {
         Duration::from_millis(self.collection.interval_ms)
     }
-    
+
     /// 获取存储间隔 Duration
     pub fn storage_interval(&self) -> Duration {
         Duration::from_millis(self.storage.interval_ms)
     }
-    
+
     /// 获取重试延迟 Duration
     pub fn retry_delay(&self) -> Duration {
         Duration::from_millis(self.storage.retry_delay_ms)
     }
-    
+
     /// 获取监控统计间隔 Duration
     pub fn stats_interval(&self) -> Duration {
         Duration::from_secs(self.monitoring.stats_interval_sec)
@@ -260,7 +276,7 @@ impl PipelineConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_default_config() {
         let config = PipelineConfig::default();
@@ -268,27 +284,27 @@ mod tests {
         assert_eq!(config.storage.batch_size, 10);
         assert!(config.collection.use_simulator);
     }
-    
+
     #[test]
     fn test_validate_success() {
         let config = PipelineConfig::default();
         assert!(config.validate().is_ok());
     }
-    
+
     #[test]
     fn test_validate_collection_interval_too_small() {
         let mut config = PipelineConfig::default();
         config.collection.interval_ms = 10;
         assert!(config.validate().is_err());
     }
-    
+
     #[test]
     fn test_validate_storage_interval_too_small() {
         let mut config = PipelineConfig::default();
         config.storage.interval_ms = 50;
         assert!(config.validate().is_err());
     }
-    
+
     #[test]
     fn test_duration_conversions() {
         let config = PipelineConfig::default();
