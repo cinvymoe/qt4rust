@@ -83,6 +83,14 @@ impl CollectionPipeline {
         self.alarm_callback = Some(Arc::new(callback));
     }
     
+    /// 设置初始序列号
+    /// 
+    /// 用于在程序重启后继续之前的序列号
+    pub fn set_initial_sequence(&mut self, sequence: u64) {
+        self.sequence_number.store(sequence, Ordering::Relaxed);
+        tracing::info!(" Collection pipeline sequence initialized to {}", sequence);
+    }
+    
     /// 启动管道
     pub fn start(&mut self) {
         if self.running.load(Ordering::Relaxed) {

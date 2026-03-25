@@ -49,7 +49,7 @@ interval_ms = 5000
 # Batch size
 # 每次批量存储的最大数据条数
 # Maximum number of data items per batch storage
-batch_size = 10
+batch_size = 1
 
 # 失败重试次数
 # Maximum retry attempts

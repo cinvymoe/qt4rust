@@ -139,6 +139,15 @@ impl StoragePipeline {
                 if let Ok(buf) = buffer.read() {
                     let last_seq = storage_queue.last_stored_sequence();
                     let history = buf.get_history(config.batch_size);
+                    
+                    // 诊断信息：显示 buffer 中的序列号范围
+                    if !history.is_empty() {
+                        let min_seq = history.iter().map(|d| d.sequence_number).min().unwrap_or(0);
+                        let max_seq = history.iter().map(|d| d.sequence_number).max().unwrap_or(0);
+                        tracing::debug!(" Storage: buffer_size={}, seq_range=[{}, {}], last_stored={}", 
+                                  history.len(), min_seq, max_seq, last_seq);
+                    }
+                    
                     let new_data = history
                         .into_iter()
                         .filter(|d| d.sequence_number > last_seq)

@@ -1,4 +1,4 @@
-.PHONY: help build push push-qml push-config push-fonts push-no-plugins run stop clean deploy install-autostart push-no-plugins-with-build
+.PHONY: help build push push-qml push-config push-fonts push-no-plugins run stop clean deploy install-autostart push-no-plugins-with-build pull-db
 
 # 脚本目录
 SCRIPTS_DIR := scripts
@@ -18,6 +18,7 @@ help:
 	@echo "  make stop              - 停止设备上的应用"
 	@echo "  make deploy            - 编译并推送到设备"
 	@echo "  make install-autostart - 安装自动启动脚本"
+	@echo "  make pull-db           - 从设备拉取数据库文件"
 	@echo "  make clean             - 清理编译产物"
 	@echo ""
 
@@ -80,6 +81,23 @@ deploy: build push run
 install-autostart:
 	@echo "=== 安装自动启动脚本 ==="
 	@bash $(SCRIPTS_DIR)/install-autostart.sh
+
+# 从设备拉取数据库
+pull-db:
+	@echo "=== 从设备拉取数据库 ==="
+	@adb pull /data/local/tmp/qt-rust-demo/crane_data.db ./crane_data_device.db
+	@echo "数据库已保存到: crane_data_device.db"
+	@echo ""
+	@echo "查看数据库统计信息:"
+	@sqlite3 crane_data_device.db "SELECT 'Runtime Data Records: ' || COUNT(*) FROM runtime_data;"
+	@sqlite3 crane_data_device.db "SELECT 'Alarm Records: ' || COUNT(*) FROM alarm_records;"
+	@sqlite3 crane_data_device.db "SELECT 'Latest Sequence: ' || MAX(sequence_number) FROM runtime_data;"
+	@echo ""
+	@echo "最新 5 条运行数据:"
+	@sqlite3 crane_data_device.db -header -column "SELECT sequence_number, current_load, working_radius, moment_percentage, datetime(timestamp, 'unixepoch', 'localtime') as time FROM runtime_data ORDER BY sequence_number DESC LIMIT 5;"
+	@echo ""
+	@echo "最新 5 条报警记录:"
+	@sqlite3 crane_data_device.db -header -column "SELECT id, moment_percentage, datetime(timestamp, 'unixepoch', 'localtime') as time FROM alarm_records ORDER BY id DESC LIMIT 5;"
 
 # 清理
 clean:

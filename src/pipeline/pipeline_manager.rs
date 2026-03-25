@@ -113,8 +113,15 @@ impl PipelineManager {
             Arc::clone(&self.shared_buffer),
         );
         
-        // 如果存储管道已启动，设置报警回调
+        // 从存储管道获取最后存储的序列号，初始化采集管道的序列号生成器
         if let Some(storage_pipeline) = &self.storage_pipeline {
+            let last_seq = storage_pipeline.last_stored_sequence();
+            if last_seq > 0 {
+                pipeline.set_initial_sequence(last_seq);
+                info!("采集管道序列号初始化为: {}", last_seq);
+            }
+            
+            // 设置报警回调
             let storage_clone = storage_pipeline.clone_for_callback();
             pipeline.set_alarm_callback(Box::new(move |data| {
                 storage_clone.save_alarm_async(data);

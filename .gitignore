@@ -57,3 +57,4 @@ __pycache__/
 crane_data.db
 .kilocodemodes
 build.rs.bak
+crane_data_device.db
