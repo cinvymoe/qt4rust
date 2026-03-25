@@ -1,0 +1,199 @@
+# 管道系统配置文件示例
+# Pipeline System Configuration File Example
+#
+# 说明 / Description:
+# 本文件包含管道系统的所有运行参数配置
+# This file contains all runtime parameters for the pipeline system
+#
+# 使用说明 / Usage Instructions:
+# 1. 复制此文件为 pipeline_config.toml
+#    Copy this file to pipeline_config.toml
+# 2. 根据实际需求修改参数
+#    Modify parameters according to actual requirements
+# 3. 保存后重启程序生效
+#    Restart program after saving to take effect
+
+# ========== 数据采集管道配置 ==========
+# Data Collection Pipeline Configuration
+
+[collection]
+# 采集间隔（毫秒）
+# Collection interval (milliseconds)
+# 控制从传感器读取数据的频率
+# Controls the frequency of reading data from sensors
+interval_ms = 100
+
+# 缓冲区大小
+# Buffer size
+# 共享缓冲区可以存储的最大数据条数
+# Maximum number of data items that can be stored in shared buffer
+buffer_size = 1000
+
+# 是否启用模拟传感器
+# Enable simulated sensors
+# true: 使用模拟数据 / Use simulated data
+# false: 使用真实传感器 / Use real sensors
+use_simulator = true
+
+# ========== 存储管道配置 ==========
+# Storage Pipeline Configuration
+
+[storage]
+# 存储间隔（毫秒）
+# Storage interval (milliseconds)
+# 控制批量存储运行数据的频率
+# Controls the frequency of batch storing runtime data
+interval_ms = 1000
+
+# 批量存储大小
+# Batch size
+# 每次批量存储的最大数据条数
+# Maximum number of data items per batch storage
+batch_size = 10
+
+# 失败重试次数
+# Maximum retry attempts
+# 存储失败时的最大重试次数
+# Maximum number of retry attempts on storage failure
+max_retries = 3
+
+# 重试延迟（毫秒）
+# Retry delay (milliseconds)
+# 存储失败后重试前的等待时间
+# Wait time before retry after storage failure
+retry_delay_ms = 100
+
+# 存储队列最大容量
+# Maximum queue size
+# 存储队列可以缓存的最大数据条数
+# Maximum number of data items that can be cached in storage queue
+max_queue_size = 1000
+
+# ========== 数据库配置 ==========
+# Database Configuration
+
+[database]
+# 数据库文件路径
+# Database file path
+# SQLite 数据库文件的存储路径
+# Storage path for SQLite database file
+path = "crane_data.db"
+
+# 是否启用 WAL 模式
+# Enable WAL mode
+# Write-Ahead Logging 模式可以提高并发性能
+# Write-Ahead Logging mode improves concurrent performance
+enable_wal = true
+
+# 连接池大小
+# Connection pool size
+# 数据库连接池的最大连接数
+# Maximum number of connections in database connection pool
+pool_size = 5
+
+# ========== 传感器模拟器配置 ==========
+# Sensor Simulator Configuration
+
+[simulator]
+# 重量传感器配置
+# Weight sensor configuration
+[simulator.weight]
+# 振幅（吨）
+amplitude = 5.0
+# 频率（Hz）
+frequency = 0.5
+# 偏移量（吨）
+offset = 15.0
+# 噪声水平
+noise_level = 0.1
+
+# 半径传感器配置
+# Radius sensor configuration
+[simulator.radius]
+amplitude = 3.0
+frequency = 0.3
+offset = 8.0
+noise_level = 0.05
+
+# 角度传感器配置
+# Angle sensor configuration
+[simulator.angle]
+amplitude = 10.0
+frequency = 0.2
+offset = 60.0
+noise_level = 0.5
+
+# ========== 性能监控配置 ==========
+# Performance Monitoring Configuration
+
+[monitoring]
+# 是否启用性能监控
+# Enable performance monitoring
+enable = true
+
+# 监控统计间隔（秒）
+# Monitoring statistics interval (seconds)
+stats_interval_sec = 5
+
+# 是否打印详细日志
+# Enable verbose logging
+verbose = false
+
+# ========== 配置示例 ==========
+# Configuration Examples
+
+# 示例 1：高频采集 + 快速存储
+# Example 1: High-frequency collection + Fast storage
+# [collection]
+# interval_ms = 50
+# buffer_size = 2000
+# [storage]
+# interval_ms = 500
+# batch_size = 20
+
+# 示例 2：低频采集 + 慢速存储（节省资源）
+# Example 2: Low-frequency collection + Slow storage (save resources)
+# [collection]
+# interval_ms = 500
+# buffer_size = 500
+# [storage]
+# interval_ms = 5000
+# batch_size = 50
+
+# 示例 3：生产环境配置
+# Example 3: Production environment configuration
+# [collection]
+# interval_ms = 100
+# buffer_size = 1000
+# use_simulator = false
+# [storage]
+# interval_ms = 1000
+# batch_size = 10
+# [database]
+# path = "/var/lib/crane/crane_data.db"
+# enable_wal = true
+# pool_size = 10
+# [monitoring]
+# enable = true
+# verbose = false
+
+# ========== 注意事项 ==========
+# Important Notes
+#
+# 1. 采集间隔不应小于 50ms，否则可能影响系统性能
+#    Collection interval should not be less than 50ms to avoid performance impact
+#
+# 2. 存储间隔应大于等于采集间隔
+#    Storage interval should be >= collection interval
+#
+# 3. 批量存储大小应根据存储间隔调整
+#    Batch size should be adjusted according to storage interval
+#
+# 4. 缓冲区大小应足够大以应对存储延迟
+#    Buffer size should be large enough to handle storage delays
+#
+# 5. 修改配置后需要重启程序才能生效
+#    Program must be restarted after configuration modification
+#
+# 6. 建议在修改前备份原配置文件
+#    Recommend backing up original configuration file before modification

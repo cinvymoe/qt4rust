@@ -62,6 +62,16 @@ else
 	echo -e "${YELLOW}⚠ 未找到 QML 目录${NC}"
 fi
 
+# 推送配置文件
+echo -e "${YELLOW}推送配置文件...${NC}"
+if [ -d "config" ]; then
+	adb shell "mkdir -p $DEVICE_DIR/config"
+	adb push config/. "$DEVICE_DIR/config/"
+	echo -e "${GREEN}✓ 配置文件已推送${NC}"
+else
+	echo -e "${YELLOW}⚠ 未找到 config 目录${NC}"
+fi
+
 # 收集并推送字体（解决 "Cannot load default config file" 及设备缺字体问题）
 echo -e "${YELLOW}收集并推送字体...${NC}"
 COLLECT_FONTS_SCRIPT="$(dirname "$0")/collect-fonts.sh"

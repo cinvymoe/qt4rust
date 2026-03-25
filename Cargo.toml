@@ -58,6 +58,18 @@ lto = true
 codegen-units = 1
 strip = true
 
+# 开发模式配置（加速编译）
+[profile.dev]
+opt-level = 0
+debug = true
+incremental = true
+
+# 依赖包在开发模式下使用基本优化
+[profile.dev.package."*"]
+opt-level = 1
+debug = false
+
+
 [[bin]]
 name = "qt-rust-demo"
 path = "src/main.rs"
@@ -66,6 +78,11 @@ required-features = ["qt-ui"]
 [[example]]
 name = "full_pipeline_demo"
 path = "examples/full_pipeline_demo.rs"
+required-features = ["no-qt"]
+
+[[example]]
+name = "test_storage_interval"
+path = "examples/test_storage_interval.rs"
 required-features = ["no-qt"]
 
 [features]

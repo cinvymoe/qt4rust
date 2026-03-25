@@ -29,5 +29,32 @@ PKG_CONFIG_SYSROOT_DIR = "/"
 # 部署时可取消注释以默认构建 ARM32 版本
 # target = "armv7-unknown-linux-gnueabihf"
 
-# 并行编译任务数（可选，提高构建速度）
-# jobs = 4
+# 并行编译任务数（根据 CPU 核心数调整，建议设置为核心数）
+jobs = 20
+
+# 增量编译（开发模式下加速重新编译）
+incremental = true
+
+[profile.dev]
+# 开发模式优化：加快编译速度
+opt-level = 0
+debug = true
+split-debuginfo = "unpacked"  # Linux 上加速调试信息生成
+incremental = true
+
+[profile.dev.package."*"]
+# 依赖包使用基本优化，加快运行速度但不影响编译速度
+opt-level = 1
+
+# 使用更快的链接器（需要安装 mold 或 lld）
+# 优先使用 mold（最快），其次 lld
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+# 如果 mold 不可用，可以改用 lld：
+# rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+# 或者使用传统的 lld（如果上面的不工作）：
+# linker = "clang"
+# rustflags = ["-C", "linker=clang", "-C", "link-arg=-fuse-ld=lld"]
