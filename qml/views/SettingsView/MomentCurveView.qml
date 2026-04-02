@@ -138,8 +138,14 @@ Flickable {
                                 anchors.verticalCenter: parent.verticalCenter
                                 
                                 background: Rectangle {
-                                    color: "#155dfc"
+                                    color: parent.pressed ? "#0d4ab8" : "#155dfc"
                                     radius: Theme.radiusMedium
+                                    
+                                    Behavior on color {
+                                        ColorAnimation {
+                                            duration: 100
+                                        }
+                                    }
                                 }
                                 
                                 contentItem: Text {
@@ -149,6 +155,13 @@ Flickable {
                                     color: Theme.textPrimary
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
+                                    opacity: parent.pressed ? 0.7 : 1.0
+                                    
+                                    Behavior on opacity {
+                                        NumberAnimation {
+                                            duration: 100
+                                        }
+                                    }
                                 }
                                 
                                 onClicked: console.log("力矩曲线导入")

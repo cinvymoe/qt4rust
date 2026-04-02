@@ -16,7 +16,7 @@ Item {
         
         // 左侧：传感器实时数据面板
         Rectangle {
-            width: 320
+            width: Math.max(240, Math.min(280, parent.width * 0.35))
             height: parent.height
             color: Theme.darkSurface
             border.color: Theme.darkBorder
@@ -70,7 +70,7 @@ Item {
         
         // 右侧：校准设置区域
         Rectangle {
-            width: parent.width - 320
+            width: parent.width - Math.max(240, Math.min(280, parent.width * 0.35))
             height: parent.height
             color: Theme.darkBackground
             
@@ -81,35 +81,37 @@ Item {
                 // 传感器类型 Tab 栏
                 Rectangle {
                     width: parent.width
-                    height: 49
+                    height: Math.max(36, Math.min(48, parent.height * 0.09))
                     color: Theme.darkSurface
                     border.color: Theme.darkBorder
                     border.width: Theme.borderThin
                     
                     Row {
-                        anchors.centerIn: parent
-                        height: parent.height
+                        anchors.fill: parent
                         spacing: 0
                         
                         Repeater {
                             model: [
-                                {text: "载荷传感器", width: 128},
-                                {text: "角度传感器", width: 128},
-                                {text: "半径传感器", width: 128},
-                                {text: "报警阈值", width: 112}
+                                {text: "载荷传感器"},
+                                {text: "角度传感器"},
+                                {text: "半径传感器"},
+                                {text: "报警阈值"}
                             ]
                             
                             Rectangle {
-                                width: modelData.width
-                                height: 48
+                                width: parent.width / 4
+                                height: parent.height - 1
                                 color: currentSensorTab === index ? Theme.darkBackground : "transparent"
                                 
                                 Text {
                                     anchors.centerIn: parent
                                     text: modelData.text
-                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.pixelSize: Theme.fontSizeSmall
                                     color: currentSensorTab === index ? Theme.textAccent : Theme.textTertiary
                                     font.family: Theme.fontFamilyDefault
+                                    elide: Text.ElideRight
+                                    width: parent.width - Theme.spacingSmall * 2
+                                    horizontalAlignment: Text.AlignHCenter
                                 }
                                 
                                 Rectangle {
@@ -132,7 +134,7 @@ Item {
                 // 校准内容区域
                 Item {
                     width: parent.width
-                    height: parent.height - 49 - 68
+                    height: parent.height - Math.max(36, Math.min(48, parent.height * 0.09)) - Math.max(52, Math.min(60, parent.height * 0.12))
                     
                     // 载荷传感器校准
                     LoadCalibrationContent {
@@ -162,22 +164,22 @@ Item {
                 // 底部操作按钮
                 Rectangle {
                     width: parent.width
-                    height: 68
+                    height: Math.max(52, Math.min(60, parent.height * 0.12))
                     color: Theme.darkSurface
                     border.color: Theme.darkBorder
                     border.width: Theme.borderThin
                     
                     Row {
                         anchors.left: parent.left
-                        anchors.leftMargin: Theme.spacingLarge
+                        anchors.leftMargin: Theme.spacingMedium
                         anchors.right: parent.right
-                        anchors.rightMargin: Theme.spacingLarge
+                        anchors.rightMargin: Theme.spacingMedium
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: Theme.spacingMedium
+                        spacing: Theme.spacingSmall
                         
                         Button {
-                            width: 140
-                            height: 48
+                            width: Math.max(100, 120)
+                            height: Math.max(36, Math.min(44, parent.parent.height * 0.7))
                             
                             background: Rectangle {
                                 color: "#314158"
@@ -197,7 +199,7 @@ Item {
                                 
                                 Text {
                                     text: "恢复默认"
-                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textPrimary
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
@@ -207,8 +209,8 @@ Item {
                         }
                         
                         Button {
-                            width: parent.width - 140 - Theme.spacingMedium
-                            height: 48
+                            width: parent.width - Math.max(100, 120) - Theme.spacingSmall
+                            height: Math.max(36, Math.min(44, parent.parent.height * 0.7))
                             
                             background: Rectangle {
                                 color: "#155dfc"
@@ -228,7 +230,7 @@ Item {
                                 
                                 Text {
                                     text: "保存设置"
-                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textPrimary
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
@@ -250,7 +252,7 @@ Item {
         property string unit: ""
         property bool isOnline: true
         
-        height: 203
+        height: Math.max(140, Math.min(180, 203))
         color: Theme.darkBackground
         border.color: "#45556c"
         border.width: Theme.borderThin
@@ -258,8 +260,8 @@ Item {
         
         Column {
             anchors.fill: parent
-            anchors.margins: 17
-            spacing: Theme.spacingSmall
+            anchors.margins: Theme.spacingSmall
+            spacing: Theme.spacingTiny
             
             // 传感器名称和状态
             Row {
@@ -313,7 +315,7 @@ Item {
                     
                     Text {
                         text: adValue
-                        font.pixelSize: Theme.fontSizeXXLarge
+                        font.pixelSize: Theme.fontSizeLarge
                         font.family: Theme.fontFamilyMono
                         color: Theme.textAccent
                     }
@@ -341,14 +343,14 @@ Item {
                         
                         Text {
                             text: calculatedValue
-                            font.pixelSize: Theme.fontSizeXXLarge
+                            font.pixelSize: Theme.fontSizeLarge
                             font.family: Theme.fontFamilyMono
                             color: "#05df72"
                         }
                         
                         Text {
                             text: unit
-                            font.pixelSize: Theme.fontSizeNormal
+                            font.pixelSize: Theme.fontSizeMedium
                             font.family: Theme.fontFamilyMono
                             color: "#05df72"
                             anchors.baseline: parent.children[0].baseline

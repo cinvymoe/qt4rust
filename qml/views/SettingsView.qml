@@ -21,7 +21,7 @@ Item {
             // 合并的标题和 Tab 栏区域
             Rectangle {
                 width: parent.width
-                height: 92.667
+                height: Math.max(70, 92.667)
                 color: Theme.darkSurface
                 
                 Rectangle {
@@ -33,34 +33,37 @@ Item {
                 
                 Row {
                     anchors.fill: parent
-                    anchors.leftMargin: 100
-                    anchors.rightMargin: 100
-                    spacing: Theme.spacingXLarge
+                    anchors.leftMargin: Theme.spacingLarge
+                    anchors.rightMargin: Theme.spacingLarge
+                    spacing: Theme.spacingMedium
                     
                     // 左侧：标题和描述
                     Column {
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: Theme.spacingSmall
-                        width: 300
+                        spacing: Theme.spacingTiny
+                        width: Math.min(300, parent.width * 0.3)
                         
                         Text {
                             text: getCurrentTabTitle()
-                            font.pixelSize: Theme.fontSizeXLarge
+                            font.pixelSize: Theme.fontSizeLarge
                             color: Theme.textPrimary
                             font.family: Theme.fontFamilyDefault
                         }
                         
                         Text {
                             text: getCurrentTabDescription()
-                            font.pixelSize: Theme.fontSizeSmall
+                            font.pixelSize: Theme.fontSizeTiny
                             color: Theme.textTertiary
                             font.family: Theme.fontFamilyDefault
+                            elide: Text.ElideRight
+                            width: parent.width
                         }
                     }
                     
                     // 右侧：Tab 栏
                     Row {
                         anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width - Math.min(300, parent.width * 0.3) - Theme.spacingMedium
                         spacing: 0
                         
                         Repeater {
@@ -72,8 +75,8 @@ Item {
                             ]
                             
                             Rectangle {
-                                width: 140
-                                height: 92.667
+                                width: parent.width / 4
+                                height: Math.max(70, 92.667)
                                 color: currentTabIndex === index ? Theme.darkBackground : "transparent"
                                 
                                 Row {
@@ -92,10 +95,11 @@ Item {
                                     
                                     Text {
                                         text: modelData.text
-                                        font.pixelSize: Theme.fontSizeMedium
+                                        font.pixelSize: Theme.fontSizeSmall
                                         color: currentTabIndex === index ? Theme.textAccent : Theme.textTertiary
                                         font.family: Theme.fontFamilyDefault
                                         anchors.verticalCenter: parent.verticalCenter
+                                        elide: Text.ElideRight
                                         
                                         Behavior on color {
                                             ColorAnimation {
@@ -127,7 +131,7 @@ Item {
             // 内容切换区域
             StackLayout {
                 width: parent.width
-                height: parent.height - 92.667
+                height: parent.height - Math.max(70, 92.667)
                 currentIndex: currentTabIndex
                 
                 // Tab 0: 系统状态

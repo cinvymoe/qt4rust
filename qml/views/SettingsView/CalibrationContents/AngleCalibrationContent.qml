@@ -266,7 +266,7 @@ Item {
         property string adValue: "0"
         property string angleValue: "0"
         
-        height: 104
+        height: Math.max(90, 104)
         color: Theme.darkBackground
         border.color: "#45556c"
         border.width: Theme.borderThin
