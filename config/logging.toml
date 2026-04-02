@@ -17,19 +17,19 @@ file_output = false
 log_file = "logs/app.log"
 
 # 只显示 PipelineManager 的日志
-[[modules]]
-module = "qt_rust_demo::pipeline::pipeline_manager"
-level = "trace"
+# [[modules]]
+# module = "qt_rust_demo::pipeline::pipeline_manager"
+# level = "trace"
 
-# 采集管道日志
-[[modules]]
-module = "qt_rust_demo::pipeline::collection_pipeline"
-level = "trace"
+# # 采集管道日志
+# [[modules]]
+# module = "qt_rust_demo::pipeline::collection_pipeline"
+# level = "trace"
 
-# 存储管道日志
-[[modules]]
-module = "qt_rust_demo::pipeline::storage_pipeline"
-level = "trace"
+# # 存储管道日志
+# [[modules]]
+# module = "qt_rust_demo::pipeline::storage_pipeline"
+# level = "trace"
 # 
 # [[modules]]
 # module = "qt_rust_demo::pipeline::*"

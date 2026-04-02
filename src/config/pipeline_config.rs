@@ -10,6 +10,7 @@ use std::time::Duration;
 pub struct PipelineConfig {
     pub collection: CollectionConfig,
     pub storage: StorageConfig,
+    pub display: DisplayConfig,
     pub database: DatabaseConfig,
     pub simulator: SimulatorConfig,
     pub monitoring: MonitoringConfig,
@@ -57,6 +58,29 @@ pub struct StorageConfig {
 
     /// 报警清理阈值（0 表示使用默认值 alarm_max_records * 1.1）
     pub alarm_purge_threshold: usize,
+}
+
+/// 显示管道配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DisplayConfig {
+    /// 采集间隔（毫秒）
+    pub interval_ms: u64,
+
+    /// 管道大小
+    pub pipeline_size: usize,
+
+    /// 每次采集数量
+    pub batch_size: usize,
+}
+
+impl Default for DisplayConfig {
+    fn default() -> Self {
+        Self {
+            interval_ms: 500,
+            pipeline_size: 10,
+            batch_size: 1,
+        }
+    }
 }
 
 /// 数据库配置
@@ -107,6 +131,7 @@ impl Default for PipelineConfig {
         Self {
             collection: CollectionConfig::default(),
             storage: StorageConfig::default(),
+            display: DisplayConfig::default(),
             database: DatabaseConfig::default(),
             simulator: SimulatorConfig::default(),
             monitoring: MonitoringConfig::default(),
@@ -270,6 +295,11 @@ impl PipelineConfig {
     /// 获取监控统计间隔 Duration
     pub fn stats_interval(&self) -> Duration {
         Duration::from_secs(self.monitoring.stats_interval_sec)
+    }
+
+    /// 获取显示间隔 Duration
+    pub fn display_interval(&self) -> Duration {
+        Duration::from_millis(self.display.interval_ms)
     }
 }
 

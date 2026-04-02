@@ -97,6 +97,28 @@ alarm_max_records = 150
 # Threshold for triggering alarm cleanup; cleanup runs when count exceeds this (0 = default alarm_max_records * 1.1)
 alarm_purge_threshold = 300
 
+# ========== 显示管道配置 ==========
+# Display Pipeline Configuration
+
+[display]
+# 采集间隔（毫秒）
+# Collection interval (milliseconds)
+# 控制从传感器读取数据显示的频率
+# Controls the frequency of reading data for display
+interval_ms = 1000
+
+# 管道大小
+# Pipeline size
+# 显示管道可以存储的最大数据条数
+# Maximum number of data items that can be stored in display pipeline
+pipeline_size = 10
+
+# 每次采集数量
+# Items per collection
+# 每次从传感器采集的数据条数
+# Number of data items collected per sampling
+batch_size = 1
+
 # ========== 数据库配置 ==========
 # Database Configuration
 

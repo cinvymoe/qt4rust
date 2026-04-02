@@ -7,6 +7,7 @@ use crate::repositories::storage_repository::StorageRepository;
 use crate::repositories::sqlite_storage_repository::SqliteStorageRepository;
 use super::shared_buffer::{ProcessedDataBuffer, SharedBuffer};
 use super::collection_pipeline::{CollectionPipeline, CollectionPipelineConfig};
+use super::display_pipeline::{DisplayPipeline, DisplayPipelineConfig};
 use super::storage_pipeline::{StoragePipeline, StoragePipelineConfig};
 
 /// 管道管理器
@@ -16,6 +17,9 @@ pub struct PipelineManager {
     
     /// 存储管道
     storage_pipeline: Option<StoragePipeline>,
+    
+    /// 显示管道（主线程）
+    display_pipeline: Option<DisplayPipeline>,
     
     /// 共享缓冲区
     shared_buffer: SharedBuffer,
@@ -39,6 +43,7 @@ impl PipelineManager {
         Self {
             collection_pipeline: None,
             storage_pipeline: None,
+            display_pipeline: None,
             shared_buffer,
             repository,
         }
@@ -87,6 +92,7 @@ impl PipelineManager {
         Ok(Self {
             collection_pipeline: None,
             storage_pipeline: Some(storage_pipeline),
+            display_pipeline: None,
             shared_buffer,
             repository,
         })
@@ -177,6 +183,48 @@ impl PipelineManager {
         }
     }
     
+    /// 启动显示管道（主线程）
+    pub fn start_display_pipeline(&mut self) {
+        if self.display_pipeline.is_some() {
+            warn!("显示管道已经启动，跳过重复启动");
+            return;
+        }
+        
+        info!("启动显示管道（主线程）...");
+        
+        // 从配置文件加载显示配置
+        let pipeline_config = crate::config::pipeline_config::PipelineConfig::load();
+        let config = DisplayPipelineConfig::from_display_config(&pipeline_config.display);
+        
+        info!("Display pipeline config: interval={}ms, pipeline_size={}, batch_size={}",
+              config.interval.as_millis(), config.pipeline_size, config.batch_size);
+        
+        // 创建显示管道
+        let mut pipeline = DisplayPipeline::new(
+            config,
+            Arc::clone(&self.shared_buffer),
+        );
+        
+        // 启动管道
+        pipeline.start();
+        
+        self.display_pipeline = Some(pipeline);
+        
+        info!("显示管道启动成功 - 间隔: {}ms, 管道大小: {}", 
+              pipeline_config.display.interval_ms, pipeline_config.display.pipeline_size);
+    }
+    
+    /// 停止显示管道
+    pub fn stop_display_pipeline(&mut self) {
+        if let Some(mut pipeline) = self.display_pipeline.take() {
+            info!("停止显示管道...");
+            pipeline.stop();
+            info!("显示管道已停止");
+        } else {
+            debug!("显示管道未运行，无需停止");
+        }
+    }
+    
     /// 启动所有管道
     pub fn start_all(&mut self) {
         info!("启动所有管道...");
@@ -187,7 +235,9 @@ impl PipelineManager {
         // 再启动采集管道（会自动连接报警回调）
         self.start_collection_pipeline();
         
-        // TODO: 启动显示管道（主线程）
+        // 启动显示管道（主线程）
+        self.start_display_pipeline();
+        
         info!("所有管道已启动");
     }
     
@@ -201,7 +251,9 @@ impl PipelineManager {
         // 再停止存储管道
         self.stop_storage_pipeline();
         
-        // TODO: 停止显示管道
+        // 停止显示管道
+        self.stop_display_pipeline();
+        
         info!("所有管道已停止");
     }
     
@@ -209,7 +261,19 @@ impl PipelineManager {
     pub fn get_shared_buffer(&self) -> SharedBuffer {
         Arc::clone(&self.shared_buffer)
     }
-    
+
+    /// 获取显示管道的可变引用
+    ///
+    /// 用于在主线程中通过 QTimer 驱动显示更新
+    pub fn get_display_pipeline_mut(&mut self) -> Option<&mut DisplayPipeline> {
+        self.display_pipeline.as_mut()
+    }
+
+    /// 检查显示管道是否运行中
+    pub fn is_display_running(&self) -> bool {
+        self.display_pipeline.is_some()
+    }
+
     /// 检查采集管道是否运行中
     pub fn is_collection_running(&self) -> bool {
         self.collection_pipeline.is_some()

@@ -24,28 +24,44 @@ if [ ! -f "$INIT_SCRIPT" ]; then
     exit 1
 fi
 
-echo -e "${YELLOW}备份原有启动脚本...${NC}"
-adb shell "[ -f /etc/init.d/S01hello_vanxaok ] && cp /etc/init.d/S01hello_vanxaok /etc/init.d/S01hello_vanxaok.bak" || true
-
 echo -e "${YELLOW}停止原有服务...${NC}"
-adb shell "/etc/init.d/S01hello_vanxaok stop" 2>/dev/null || true
+adb shell "/etc/init.d/pre_init/S10lv_demo stop" 2>/dev/null || true
+adb shell "/etc/init.d/pre_init/S01qt-rust-demo stop" 2>/dev/null || true
 
-echo -e "${YELLOW}推送新的启动脚本...${NC}"
-adb push "$INIT_SCRIPT" /etc/init.d/S01hello_vanxaok
-adb shell "chmod +x /etc/init.d/S01hello_vanxaok"
+echo -e "${YELLOW}检查并删除 /etc/init.d/pre_init/ 目录中的 S10lv_demo...${NC}"
+if adb shell "test -f /etc/init.d/pre_init/S10lv_demo"; then
+    echo -e "${YELLOW}发现 S10lv_demo，正在删除...${NC}"
+    adb shell "rm -f /etc/init.d/pre_init/S10lv_demo"
+    echo -e "${GREEN}✓ 已删除 /etc/init.d/pre_init/S10lv_demo${NC}"
+else
+    echo -e "${YELLOW}未在 pre_init 目录中发现 S10lv_demo${NC}"
+fi
+
+echo -e "${YELLOW}推送新的启动脚本到 /etc/init.d/pre_init/...${NC}"
+adb push "$INIT_SCRIPT" /etc/init.d/pre_init/S01qt-rust-demo
+adb shell "chmod +x /etc/init.d/pre_init/S01qt-rust-demo"
+echo -e "${GREEN}✓ 已安装到 /etc/init.d/pre_init/S01qt-rust-demo${NC}"
+
+echo -e "${YELLOW}删除旧的启动脚本...${NC}"
+adb shell "rm -f /etc/init.d/S01hello_vanxaok" 2>/dev/null || true
+adb shell "rm -f /etc/init.d/S01qt-rust-demo" 2>/dev/null || true
+
+echo -e "${YELLOW}同步文件系统...${NC}"
+adb shell "sync"
+echo -e "${GREEN}✓ 文件系统已同步${NC}"
 
 echo -e "${GREEN}✓ 启动脚本已安装${NC}"
 echo ""
 echo "现在可以使用以下命令控制应用："
-echo -e "${YELLOW}  启动: adb shell '/etc/init.d/S01hello_vanxaok start'${NC}"
-echo -e "${YELLOW}  停止: adb shell '/etc/init.d/S01hello_vanxaok stop'${NC}"
-echo -e "${YELLOW}  重启: adb shell '/etc/init.d/S01hello_vanxaok restart'${NC}"
+echo -e "${YELLOW}  启动: adb shell '/etc/init.d/pre_init/S01qt-rust-demo start'${NC}"
+echo -e "${YELLOW}  停止: adb shell '/etc/init.d/pre_init/S01qt-rust-demo stop'${NC}"
+echo -e "${YELLOW}  重启: adb shell '/etc/init.d/pre_init/S01qt-rust-demo restart'${NC}"
 echo ""
 echo "设备重启后将自动启动 qt-rust-demo"
 echo ""
 echo -e "${YELLOW}是否现在启动应用? (y/n)${NC}"
 read -r response
 if [[ "$response" =~ ^[Yy]$ ]]; then
-    adb shell "/etc/init.d/S01hello_vanxaok start"
+    adb shell "/etc/init.d/pre_init/S01qt-rust-demo start"
     echo -e "${GREEN}✓ 应用已启动${NC}"
 fi

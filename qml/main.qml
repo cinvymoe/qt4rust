@@ -12,8 +12,8 @@ import "styles"
 
 Window {
     id: root
-    width: 1024
-    height: 800
+    width: 800
+    height: 600
     visible: true
     title: "Crane Monitoring System"
     color: Theme.darkBackground
@@ -80,23 +80,25 @@ Window {
                         id: stackLayout
                         anchors.fill: parent
                         currentIndex: navigation.currentIndex
-                        
+
                         // 监控主界面
                         MonitoringView {
                             id: monitoringView
                             headerVisible: root.headerVisible
+                            pageIndex: 0
+                            currentIndex: stackLayout.currentIndex
                         }
-                        
+
                         // 数据曲线页面
                         ChartView {
                             id: chartView
                         }
-                        
+
                         // 报警记录页面
                         AlarmRecordView {
                             id: alarmRecordView
                         }
-                        
+
                         // 设置页面
                         SettingsView {
                             id: settingsView

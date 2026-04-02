@@ -14,20 +14,80 @@ Item {
     // 顶部栏显示状态（从父组件传递）
     property bool headerVisible: true
     
+    // 页面索引和当前索引（用于判断是否为活动页面）
+    property int pageIndex: 0
+    property int currentIndex: 0
+    
+    // 是否为当前活动页面
+    property bool isActivePage: currentIndex === pageIndex
+    
+    // 当页面激活/失活时控制定时器
+    onIsActivePageChanged: {
+        if (isActivePage) {
+            console.log("[QML] MonitoringView: Page activated, starting timer")
+            displayTimer.start()
+        } else {
+            console.log("[QML] MonitoringView: Page deactivated, stopping timer")
+            displayTimer.stop()
+        }
+    }
+    
     // 绑定 ViewModel
     MonitoringViewModel {
         id: viewModel
-        
-        // 组件创建完成后注册到管理器
+
+        // 组件创建完成后初始化显示管道
         Component.onCompleted: {
             console.log("[QML] MonitoringViewModel created")
-            
-            // 调试：列出所有可用的方法
+
+            // 初始化显示管道（从全局共享缓冲区）
+            viewModel.init_display_pipeline_from_global()
+            console.log("[QML] Display pipeline initialization called")
+
+            // 注意：定时器由 isActivePage 控制，不在初始化时启动
             console.log("[QML] Available methods:")
             for (var prop in viewModel) {
                 if (typeof viewModel[prop] === "function") {
                     console.log("[QML]   -", prop)
                 }
+            }
+        }
+
+        Component.onDestruction: {
+            displayTimer.stop()
+            console.log("[QML] Display timer stopped (destruction)")
+        }
+
+        // 监听属性变化（调试用）
+        onCurrent_loadChanged: {
+            console.log("[QML] current_load changed:", current_load)
+        }
+
+        onWorking_radiusChanged: {
+            console.log("[QML] working_radius changed:", working_radius)
+        }
+
+        onBoom_angleChanged: {
+            console.log("[QML] boom_angle changed:", boom_angle)
+        }
+
+        onMoment_percentageChanged: {
+            console.log("[QML] moment_percentage changed:", moment_percentage)
+        }
+    }
+
+    // 显示更新定时器（管道三：主线程显示管道）
+    Timer {
+        id: displayTimer
+        interval: 500  // 100ms = 10Hz，与采集管道频率匹配
+        running: false
+        repeat: true
+        onTriggered: {
+            // 调用 ViewModel 的 tick_display() 方法
+            // 从 DisplayPipeline 获取最新数据并更新 UI
+            var updated = viewModel.tick_display()
+            if (updated) {
+                console.log("[QML] tick_display returned true - data updated")
             }
         }
     }
@@ -56,14 +116,25 @@ Item {
     // 更新数据模型函数
     function updateDataModel() {
         monitoringDataModel.clear()
-        
+
         // 确保值不为 undefined（注意：属性名使用 snake_case）
         var currentLoad = viewModel.current_load || 0
         var ratedLoad = viewModel.rated_load || 25
         var workingRadius = viewModel.working_radius || 0
         var boomAngle = viewModel.boom_angle || 0
         var boomLength = viewModel.boom_length || 22.6
-        
+
+        // 每10次更新打印一次详细数据（避免日志过多）
+        if (!updateDataModel.counter) updateDataModel.counter = 0
+        updateDataModel.counter++
+        if (updateDataModel.counter % 10 === 1) {
+            console.log("[QML] updateDataModel #" + updateDataModel.counter +
+                        " - load:", currentLoad,
+                        "radius:", workingRadius,
+                        "angle:", boomAngle,
+                        "moment:", viewModel.moment_percentage || 0)
+        }
+
         monitoringDataModel.append({
             type: "dataCard",
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-weight.png",
@@ -74,7 +145,7 @@ Item {
             value: currentLoad,
             maxValue: ratedLoad
         })
-        
+
         monitoringDataModel.append({
             type: "dataCard",
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-radius.png",
@@ -85,7 +156,7 @@ Item {
             value: workingRadius,
             maxValue: 0.0
         })
-        
+
         monitoringDataModel.append({
             type: "dataCard",
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-angle.png",
@@ -96,7 +167,7 @@ Item {
             value: boomAngle,
             maxValue: 0.0
         })
-        
+
         monitoringDataModel.append({
             type: "boomLength",
             label: "臂长",

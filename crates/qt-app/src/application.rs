@@ -88,6 +88,10 @@ impl Application {
     /// 运行应用程序
     /// 启动 Qt 事件循环并返回退出码
     pub fn run(&mut self) -> i32 {
+        // 启动后台数据采集（在 QML 加载前，确保共享缓冲区已创建）
+        tracing::info!("Starting backend data collection...");
+        viewmodel_manager::start_global_data_collection();
+
         // 设置 QML 上下文
         if let Err(e) = self.setup_qml_context() {
             tracing::error!("{}", e);
@@ -103,10 +107,6 @@ impl Application {
                 _ => 4,                                    // QML 解析错误
             };
         }
-
-        // 启动后台数据采集（在 QML 加载后）
-        tracing::info!("Starting backend data collection...");
-        viewmodel_manager::start_global_data_collection();
 
         tracing::info!("Starting Qt event loop...");
 
