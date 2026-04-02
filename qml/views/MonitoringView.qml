@@ -57,23 +57,6 @@ Item {
             displayTimer.stop()
             console.log("[QML] Display timer stopped (destruction)")
         }
-
-        // 监听属性变化（调试用）
-        onCurrent_loadChanged: {
-            console.log("[QML] current_load changed:", current_load)
-        }
-
-        onWorking_radiusChanged: {
-            console.log("[QML] working_radius changed:", working_radius)
-        }
-
-        onBoom_angleChanged: {
-            console.log("[QML] boom_angle changed:", boom_angle)
-        }
-
-        onMoment_percentageChanged: {
-            console.log("[QML] moment_percentage changed:", moment_percentage)
-        }
     }
 
     // 显示更新定时器（管道三：主线程显示管道）
@@ -86,9 +69,6 @@ Item {
             // 调用 ViewModel 的 tick_display() 方法
             // 从 DisplayPipeline 获取最新数据并更新 UI
             var updated = viewModel.tick_display()
-            if (updated) {
-                console.log("[QML] tick_display returned true - data updated")
-            }
         }
     }
     
@@ -264,58 +244,37 @@ Item {
                 height: parent.height
                 spacing: Theme.spacingMedium
                 
-                // 轮播卡片容器
-                Item {
-                    id: carouselContainer
+                // 危险状态卡片 - 仅在 danger 时显示
+                DangerCard {
+                    id: dangerCard
                     width: parent.width
                     height: 96
+                    visible: viewModel.is_danger
+                    // 根据力矩百分比显示不同的消息
+                    title: viewModel.moment_percentage >= 100 ? "严重危险" : "危险状态"
+                    message: viewModel.moment_percentage >= 100 ? 
+                        "力矩严重超限！立即停止作业" : 
+                        "力矩超限！立即减载或降低幅度"
                     
-                    // 当前显示的卡片索引 (0: 危险状态, 1: 时间卡片)
-                    property int currentIndex: 0
-                    
-                    // 轮播定时器 (每5秒切换)
-                    Timer {
-                        id: carouselTimer
-                        interval: 5000
-                        running: true
-                        repeat: true
-                        onTriggered: {
-                            carouselContainer.currentIndex = (carouselContainer.currentIndex + 1) % 2
+                    Behavior on visible {
+                        NumberAnimation {
+                            duration: Theme.animationDuration
+                            easing.type: Easing.InOutQuad
                         }
                     }
+                }
+                
+                // 时间卡片 - danger 时隐藏
+                TimeCard {
+                    id: timeCard
+                    width: parent.width
+                    height: 96
+                    visible: !viewModel.is_danger
                     
-                    // 危险状态卡片 - 绑定 ViewModel
-                    DangerCard {
-                        id: dangerCard
-                        anchors.fill: parent
-                        opacity: carouselContainer.currentIndex === 0 ? 1 : 0
-                        visible: opacity > 0
-                        // 根据力矩百分比显示不同的消息
-                        title: viewModel.moment_percentage >= 100 ? "严重危险" : "危险状态"
-                        message: viewModel.moment_percentage >= 100 ? 
-                            "力矩严重超限！立即停止作业" : 
-                            "力矩超限！立即减载或降低幅度"
-                        
-                        Behavior on opacity {
-                            NumberAnimation {
-                                duration: Theme.animationDuration
-                                easing.type: Easing.InOutQuad
-                            }
-                        }
-                    }
-                    
-                    // 时间卡片
-                    TimeCard {
-                        id: timeCard
-                        anchors.fill: parent
-                        opacity: carouselContainer.currentIndex === 1 ? 1 : 0
-                        visible: opacity > 0
-                        
-                        Behavior on opacity {
-                            NumberAnimation {
-                                duration: Theme.animationDuration
-                                easing.type: Easing.InOutQuad
-                            }
+                    Behavior on visible {
+                        NumberAnimation {
+                            duration: Theme.animationDuration
+                            easing.type: Easing.InOutQuad
                         }
                     }
                 }

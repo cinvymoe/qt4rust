@@ -16,6 +16,25 @@ file_output = false
 # 日志文件路径（当 file_output = true 时生效）
 log_file = "logs/app.log"
 
+# MonitoringViewModel 日志（开启 trace 级别）
+[[modules]]
+module = "qt_rust_demo::monitoring_viewmodel"
+level = "trace"
+
+# Intent 和 Reducer 日志
+[[modules]]
+module = "qt_rust_demo::intents::*"
+level = "debug"
+
+[[modules]]
+module = "qt_rust_demo::reducers::*"
+level = "debug"
+
+# 显示管道日志
+[[modules]]
+module = "qt_rust_demo::pipeline::display_pipeline"
+level = "debug"
+
 # 只显示 PipelineManager 的日志
 # [[modules]]
 # module = "qt_rust_demo::pipeline::pipeline_manager"

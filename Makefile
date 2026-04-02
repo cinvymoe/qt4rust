@@ -1,4 +1,4 @@
-.PHONY: help build push push-qml push-config push-fonts push-no-plugins run stop clean deploy install-autostart push-no-plugins-with-build pull-db
+.PHONY: help build push push-qml push-config push-fonts push-no-plugins run stop clean deploy install-autostart push-no-plugins-with-build pull-db push-db
 
 # 脚本目录
 SCRIPTS_DIR := scripts
@@ -18,7 +18,8 @@ help:
 	@echo "  make stop              - 停止设备上的应用"
 	@echo "  make deploy            - 编译并推送到设备"
 	@echo "  make install-autostart - 安装自动启动脚本"
-	@echo "  make pull-db           - 从设备拉取数据库文件"
+	@echo "  make pull-db           - 从设备拉取数据库文件到 db/ 文件夹"
+	@echo "  make push-db           - 推送本地 db/ 文件夹的数据库到设备"
 	@echo "  make clean             - 清理编译产物"
 	@echo ""
 
@@ -82,22 +83,23 @@ install-autostart:
 	@echo "=== 安装自动启动脚本 ==="
 	@bash $(SCRIPTS_DIR)/install-autostart.sh
 
-# 从设备拉取数据库
+# 从设备拉取数据库到 db/ 文件夹
 pull-db:
-	@echo "=== 从设备拉取数据库 ==="
-	@adb pull /data/local/tmp/qt-rust-demo/crane_data.db ./crane_data_device.db
-	@echo "数据库已保存到: crane_data_device.db"
-	@echo ""
-	@echo "查看数据库统计信息:"
-	@sqlite3 crane_data_device.db "SELECT 'Runtime Data Records: ' || COUNT(*) FROM runtime_data;"
-	@sqlite3 crane_data_device.db "SELECT 'Alarm Records: ' || COUNT(*) FROM alarm_records;"
-	@sqlite3 crane_data_device.db "SELECT 'Latest Sequence: ' || MAX(sequence_number) FROM runtime_data;"
-	@echo ""
-	@echo "最新 5 条运行数据:"
-	@sqlite3 crane_data_device.db -header -column "SELECT sequence_number, current_load, working_radius, moment_percentage, datetime(timestamp, 'unixepoch', 'localtime') as time FROM runtime_data ORDER BY sequence_number DESC LIMIT 5;"
-	@echo ""
-	@echo "最新 5 条报警记录:"
-	@sqlite3 crane_data_device.db -header -column "SELECT id, moment_percentage, datetime(timestamp, 'unixepoch', 'localtime') as time FROM alarm_records ORDER BY id DESC LIMIT 5;"
+	@echo "=== 从设备拉取数据库到 db/ 文件夹 ==="
+	@mkdir -p db
+	@adb pull /data/local/tmp/qt-rust-demo/crane_data.db ./db/crane_data.db
+	@echo "数据库已保存到: db/crane_data.db"
+
+# 推送本地数据库到设备
+push-db:
+	@echo "=== 推送本地数据库到设备 ==="
+	@if [ ! -f db/crane_data.db ]; then \
+		echo "错误: db/crane_data.db 不存在"; \
+		echo "请先使用 'make pull-db' 拉取数据库，或手动创建数据库文件"; \
+		exit 1; \
+	fi
+	@adb push db/crane_data.db /data/local/tmp/qt-rust-demo/crane_data.db
+	@echo "数据库已推送到设备"
 
 # 清理
 clean:

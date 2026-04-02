@@ -97,6 +97,9 @@ impl Default for MonitoringViewModelRust {
 impl monitoring_viewmodel_bridge::MonitoringViewModel {
     /// 处理意图（公开方法，供后台线程调用）
     pub fn handle_intent(self: Pin<&mut Self>, intent: MonitoringIntent) {
+        // 打印 Intent 信息
+        tracing::debug!("[MonitoringViewModel] Handling intent: {:?}", intent);
+
         // 构建当前状态
         let current_state = MonitoringState {
             current_load: *self.as_ref().current_load(),
@@ -119,7 +122,13 @@ impl monitoring_viewmodel_bridge::MonitoringViewModel {
         };
 
         // 调用 Reducer 计算新状态
+        tracing::trace!("[MonitoringViewModel] Current state before reduce: current_load={:.2}, radius={:.2}, angle={:.2}, moment={:.2}%", 
+            current_state.current_load, current_state.working_radius, current_state.boom_angle, current_state.moment_percentage);
+
         let new_state = self.reducer.reduce(current_state, intent);
+
+        tracing::trace!("[MonitoringViewModel] New state after reduce: current_load={:.2}, radius={:.2}, angle={:.2}, moment={:.2}%", 
+            new_state.current_load, new_state.working_radius, new_state.boom_angle, new_state.moment_percentage);
 
         // 更新状态
         self.update_state(new_state);
@@ -127,30 +136,62 @@ impl monitoring_viewmodel_bridge::MonitoringViewModel {
 
     /// 更新状态并触发 Qt 属性变化信号
     fn update_state(mut self: Pin<&mut Self>, new_state: MonitoringState) {
+        tracing::trace!("[MonitoringViewModel] Updating state...");
+
         // 只更新变化的属性，避免不必要的 UI 刷新
         if *self.as_ref().current_load() != new_state.current_load {
+            tracing::trace!(
+                "[MonitoringViewModel] Updating current_load: {:.2} -> {:.2}",
+                *self.as_ref().current_load(),
+                new_state.current_load
+            );
             self.as_mut().set_current_load(new_state.current_load);
         }
         if *self.as_ref().rated_load() != new_state.rated_load {
             self.as_mut().set_rated_load(new_state.rated_load);
         }
         if *self.as_ref().working_radius() != new_state.working_radius {
+            tracing::trace!(
+                "[MonitoringViewModel] Updating working_radius: {:.2} -> {:.2}",
+                *self.as_ref().working_radius(),
+                new_state.working_radius
+            );
             self.as_mut().set_working_radius(new_state.working_radius);
         }
         if *self.as_ref().boom_angle() != new_state.boom_angle {
+            tracing::trace!(
+                "[MonitoringViewModel] Updating boom_angle: {:.2} -> {:.2}",
+                *self.as_ref().boom_angle(),
+                new_state.boom_angle
+            );
             self.as_mut().set_boom_angle(new_state.boom_angle);
         }
         if *self.as_ref().boom_length() != new_state.boom_length {
             self.as_mut().set_boom_length(new_state.boom_length);
         }
         if *self.as_ref().moment_percentage() != new_state.moment_percentage {
+            tracing::trace!(
+                "[MonitoringViewModel] Updating moment_percentage: {:.2}% -> {:.2}%",
+                *self.as_ref().moment_percentage(),
+                new_state.moment_percentage
+            );
             self.as_mut()
                 .set_moment_percentage(new_state.moment_percentage);
         }
         if *self.as_ref().is_danger() != new_state.is_danger {
+            tracing::info!(
+                "[MonitoringViewModel] Danger state changed: {} -> {}",
+                *self.as_ref().is_danger(),
+                new_state.is_danger
+            );
             self.as_mut().set_is_danger(new_state.is_danger);
         }
         if *self.as_ref().sensor_connected() != new_state.sensor_connected {
+            tracing::info!(
+                "[MonitoringViewModel] Sensor connection changed: {} -> {}",
+                *self.as_ref().sensor_connected(),
+                new_state.sensor_connected
+            );
             self.as_mut()
                 .set_sensor_connected(new_state.sensor_connected);
         }
@@ -158,17 +199,26 @@ impl monitoring_viewmodel_bridge::MonitoringViewModel {
         let current_error = self.as_ref().error_message().to_string();
         let new_error = new_state.error_message.clone().unwrap_or_default();
         if current_error != new_error {
+            if !new_error.is_empty() {
+                tracing::warn!("[MonitoringViewModel] Error message: {}", new_error);
+            } else {
+                tracing::debug!("[MonitoringViewModel] Error cleared");
+            }
             self.as_mut().set_error_message(QString::from(&new_error));
         }
+
+        tracing::trace!("[MonitoringViewModel] State update completed");
     }
 
     /// 清除错误
     pub fn clear_error(mut self: Pin<&mut Self>) {
+        tracing::info!("[MonitoringViewModel] User action: clear_error");
         self.as_mut().handle_intent(MonitoringIntent::ClearError);
     }
 
     /// 重置报警
     pub fn reset_alarm(mut self: Pin<&mut Self>) {
+        tracing::info!("[MonitoringViewModel] User action: reset_alarm");
         self.as_mut().handle_intent(MonitoringIntent::ResetAlarm);
     }
 
@@ -200,6 +250,8 @@ impl monitoring_viewmodel_bridge::MonitoringViewModel {
 
     /// 手动触发显示更新（供 QML Timer 调用）
     pub fn tick_display(self: Pin<&mut Self>) -> bool {
+        tracing::trace!("[MonitoringViewModel] tick_display called");
+
         let mut pipeline_ref = self.display_pipeline.borrow_mut();
         match pipeline_ref.as_mut() {
             Some(pipeline) => {
@@ -210,17 +262,25 @@ impl monitoring_viewmodel_bridge::MonitoringViewModel {
                             data.working_radius,
                             data.boom_angle,
                         );
-                        tracing::debug!("tick_display: data retrieved - load={:.2}, radius={:.2}, angle={:.2}", 
+                        tracing::debug!("[MonitoringViewModel] tick_display: data retrieved - load={:.2}, radius={:.2}, angle={:.2}", 
                             data.current_load, data.working_radius, data.boom_angle);
                         drop(pipeline_ref);
                         self.handle_intent(MonitoringIntent::SensorDataUpdated(sensor_data));
                         return true;
+                    } else {
+                        tracing::trace!(
+                            "[MonitoringViewModel] tick_display: no new data available"
+                        );
                     }
+                } else {
+                    tracing::trace!(
+                        "[MonitoringViewModel] tick_display: pipeline tick returned false"
+                    );
                 }
                 false
             }
             None => {
-                tracing::warn!("tick_display: pipeline not initialized!");
+                tracing::warn!("[MonitoringViewModel] tick_display: pipeline not initialized!");
                 false
             }
         }
