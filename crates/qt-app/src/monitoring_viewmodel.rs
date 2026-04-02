@@ -28,23 +28,34 @@ pub mod monitoring_viewmodel_bridge {
         /// 重置报警（Intent）
         #[qinvokable]
         unsafe fn reset_alarm(self: Pin<&mut MonitoringViewModel>);
-        
+
         /// 测试方法：更新模拟数据（仅用于开发测试）
         #[qinvokable]
         unsafe fn update_test_data(
             self: Pin<&mut MonitoringViewModel>,
             load: f64,
             radius: f64,
-            angle: f64
+            angle: f64,
         );
+
+        /// 手动触发显示更新（供 QML Timer 调用）
+        #[qinvokable]
+        unsafe fn tick_display(self: Pin<&mut MonitoringViewModel>) -> bool;
+
+        /// 初始化显示管道（从全局共享缓冲区）
+        #[qinvokable]
+        unsafe fn init_display_pipeline_from_global(self: Pin<&mut MonitoringViewModel>);
     }
 }
 
 use core::pin::Pin;
 use cxx_qt_lib::QString;
-use qt_rust_demo::states::monitoring_state::MonitoringState;
 use qt_rust_demo::intents::monitoring_intent::MonitoringIntent;
+use qt_rust_demo::models::SensorData;
+use qt_rust_demo::pipeline::shared_buffer::SharedBuffer;
+use qt_rust_demo::pipeline::DisplayPipeline;
 use qt_rust_demo::reducers::monitoring_reducer::MonitoringReducer;
+use qt_rust_demo::states::monitoring_state::MonitoringState;
 
 /// MonitoringViewModel 实现
 pub struct MonitoringViewModelRust {
@@ -58,9 +69,10 @@ pub struct MonitoringViewModelRust {
     is_danger: bool,
     sensor_connected: bool,
     error_message: QString,
-    
+
     // 内部状态（不暴露给 QML）
     reducer: MonitoringReducer,
+    display_pipeline: std::cell::RefCell<Option<Box<DisplayPipeline>>>,
 }
 
 impl Default for MonitoringViewModelRust {
@@ -77,6 +89,7 @@ impl Default for MonitoringViewModelRust {
             sensor_connected: state.sensor_connected,
             error_message: QString::from(""),
             reducer: MonitoringReducer::new(),
+            display_pipeline: std::cell::RefCell::new(None),
         }
     }
 }
@@ -96,18 +109,22 @@ impl monitoring_viewmodel_bridge::MonitoringViewModel {
             sensor_connected: *self.as_ref().sensor_connected(),
             error_message: {
                 let msg = self.as_ref().error_message().to_string();
-                if msg.is_empty() { None } else { Some(msg) }
+                if msg.is_empty() {
+                    None
+                } else {
+                    Some(msg)
+                }
             },
             last_update_time: std::time::SystemTime::now(),
         };
-        
+
         // 调用 Reducer 计算新状态
         let new_state = self.reducer.reduce(current_state, intent);
-        
+
         // 更新状态
         self.update_state(new_state);
     }
-    
+
     /// 更新状态并触发 Qt 属性变化信号
     fn update_state(mut self: Pin<&mut Self>, new_state: MonitoringState) {
         // 只更新变化的属性，避免不必要的 UI 刷新
@@ -127,38 +144,103 @@ impl monitoring_viewmodel_bridge::MonitoringViewModel {
             self.as_mut().set_boom_length(new_state.boom_length);
         }
         if *self.as_ref().moment_percentage() != new_state.moment_percentage {
-            self.as_mut().set_moment_percentage(new_state.moment_percentage);
+            self.as_mut()
+                .set_moment_percentage(new_state.moment_percentage);
         }
         if *self.as_ref().is_danger() != new_state.is_danger {
             self.as_mut().set_is_danger(new_state.is_danger);
         }
         if *self.as_ref().sensor_connected() != new_state.sensor_connected {
-            self.as_mut().set_sensor_connected(new_state.sensor_connected);
+            self.as_mut()
+                .set_sensor_connected(new_state.sensor_connected);
         }
-        
+
         let current_error = self.as_ref().error_message().to_string();
         let new_error = new_state.error_message.clone().unwrap_or_default();
         if current_error != new_error {
             self.as_mut().set_error_message(QString::from(&new_error));
         }
     }
-    
+
     /// 清除错误
     pub fn clear_error(mut self: Pin<&mut Self>) {
         self.as_mut().handle_intent(MonitoringIntent::ClearError);
     }
-    
+
     /// 重置报警
     pub fn reset_alarm(mut self: Pin<&mut Self>) {
         self.as_mut().handle_intent(MonitoringIntent::ResetAlarm);
     }
-    
+
     /// 测试方法：更新模拟数据（仅用于开发测试）
     pub fn update_test_data(mut self: Pin<&mut Self>, load: f64, radius: f64, angle: f64) {
         // 创建模拟的传感器数据
         let sensor_data = qt_rust_demo::models::SensorData::new(load, radius, angle);
-        
+
         // 通过 Intent 更新状态
-        self.as_mut().handle_intent(MonitoringIntent::SensorDataUpdated(sensor_data));
+        self.as_mut()
+            .handle_intent(MonitoringIntent::SensorDataUpdated(sensor_data));
+    }
+
+    /// 初始化显示管道（通过 Pin 访问内部字段）
+    fn init_display_pipeline(self: Pin<&mut Self>, buffer: SharedBuffer) {
+        use qt_rust_demo::pipeline::DisplayPipelineConfig;
+        use std::time::Duration;
+
+        let config = DisplayPipelineConfig {
+            interval: Duration::from_millis(100),
+            pipeline_size: 10,
+            batch_size: 1,
+        };
+        let mut pipeline = DisplayPipeline::new(config, buffer);
+        pipeline.start(); // 启动显示管道
+        *self.display_pipeline.borrow_mut() = Some(Box::new(pipeline));
+        tracing::info!("Display pipeline initialized and started in ViewModel");
+    }
+
+    /// 手动触发显示更新（供 QML Timer 调用）
+    pub fn tick_display(self: Pin<&mut Self>) -> bool {
+        let mut pipeline_ref = self.display_pipeline.borrow_mut();
+        match pipeline_ref.as_mut() {
+            Some(pipeline) => {
+                if pipeline.tick() {
+                    if let Some(data) = pipeline.get_latest() {
+                        let sensor_data = SensorData::new(
+                            data.current_load,
+                            data.working_radius,
+                            data.boom_angle,
+                        );
+                        tracing::debug!("tick_display: data retrieved - load={:.2}, radius={:.2}, angle={:.2}", 
+                            data.current_load, data.working_radius, data.boom_angle);
+                        drop(pipeline_ref);
+                        self.handle_intent(MonitoringIntent::SensorDataUpdated(sensor_data));
+                        return true;
+                    }
+                }
+                false
+            }
+            None => {
+                tracing::warn!("tick_display: pipeline not initialized!");
+                false
+            }
+        }
+    }
+
+    /// 从全局管理器获取共享缓冲区并初始化显示管道
+    pub fn init_display_pipeline_from_global(self: Pin<&mut Self>) {
+        use crate::viewmodel_manager::get_global_shared_buffer;
+
+        tracing::debug!("init_display_pipeline_from_global called");
+
+        match get_global_shared_buffer() {
+            Some(buffer) => {
+                tracing::info!("Got shared buffer, initializing display pipeline");
+                self.init_display_pipeline(buffer);
+                tracing::info!("Display pipeline initialized successfully");
+            }
+            None => {
+                tracing::error!("Global shared buffer not available!");
+            }
+        }
     }
 }

@@ -2,14 +2,13 @@
 
 use qt_rust_demo::repositories::CraneDataRepository;
 use qt_rust_demo::pipeline::PipelineManager;
+use qt_rust_demo::pipeline::shared_buffer::SharedBuffer;
 use std::sync::{Arc, Mutex};
 
 /// ViewModel 管理器
 pub struct ViewModelManager {
-    /// 管道管理器（三后台管道架构）
     pipeline_manager: Option<PipelineManager>,
-    
-    /// ViewModel 是否已准备好
+    shared_buffer: Option<SharedBuffer>,
     viewmodel_ready: bool,
 }
 
@@ -18,6 +17,7 @@ impl ViewModelManager {
     pub fn new() -> Self {
         Self {
             pipeline_manager: None,
+            shared_buffer: None,
             viewmodel_ready: false,
         }
     }
@@ -58,21 +58,33 @@ impl ViewModelManager {
         // 启动所有管道（管道1 + 管道2）
         let mut manager = manager;
         manager.start_all();
-        
+
+        // 获取共享缓冲区供 ViewModel 使用
+        let shared_buffer = manager.get_shared_buffer();
+
         self.pipeline_manager = Some(manager);
-        self.viewmodel_ready = true;  // 标记为已准备好
-        
+        self.shared_buffer = Some(shared_buffer.clone());
+        self.viewmodel_ready = true;
+
         tracing::info!("Three-pipeline data collection started");
         tracing::info!("Backend Thread 1 (Collection Pipeline) is now running at 10Hz");
         tracing::info!("Backend Thread 2 (Storage Pipeline) is now running at 1Hz");
+        tracing::info!("Shared buffer created and ready for display pipeline");
     }
-    
+
+    /// 获取共享缓冲区（用于初始化 ViewModel 的显示管道）
+    pub fn get_shared_buffer(&self) -> Option<SharedBuffer> {
+        self.shared_buffer.clone()
+    }
+
     /// 停止数据采集
     pub fn stop_data_collection(&mut self) {
         if let Some(mut manager) = self.pipeline_manager.take() {
             manager.stop_all();
             tracing::info!("Data collection stopped");
         }
+        self.shared_buffer = None;
+        self.viewmodel_ready = false;
     }
 }
 
@@ -120,5 +132,20 @@ pub fn stop_global_data_collection() {
     let mut manager = VIEWMODEL_MANAGER.lock().unwrap();
     if let Some(mgr) = manager.as_mut() {
         mgr.stop_data_collection();
+    }
+}
+
+/// 获取全局共享缓冲区（供 ViewModel 初始化显示管道）
+pub fn get_global_shared_buffer() -> Option<SharedBuffer> {
+    let manager = VIEWMODEL_MANAGER.lock().unwrap();
+    match manager.as_ref().and_then(|mgr| mgr.get_shared_buffer()) {
+        Some(buffer) => {
+            tracing::debug!("get_global_shared_buffer: returning buffer");
+            Some(buffer)
+        }
+        None => {
+            tracing::warn!("get_global_shared_buffer: NO BUFFER AVAILABLE");
+            None
+        }
     }
 }
