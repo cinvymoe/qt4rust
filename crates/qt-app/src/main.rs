@@ -6,6 +6,7 @@ mod application;
 mod monitoring_viewmodel;
 mod data_collection_controller;
 mod viewmodel_manager;
+mod settings_viewmodel;
 
 use application::Application;
 
