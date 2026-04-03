@@ -104,17 +104,6 @@ Item {
         var boomAngle = viewModel.boom_angle || 0
         var boomLength = viewModel.boom_length || 22.6
 
-        // 每10次更新打印一次详细数据（避免日志过多）
-        if (!updateDataModel.counter) updateDataModel.counter = 0
-        updateDataModel.counter++
-        if (updateDataModel.counter % 10 === 1) {
-            console.log("[QML] updateDataModel #" + updateDataModel.counter +
-                        " - load:", currentLoad,
-                        "radius:", workingRadius,
-                        "angle:", boomAngle,
-                        "moment:", viewModel.moment_percentage || 0)
-        }
-
         monitoringDataModel.append({
             type: "dataCard",
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-weight.png",

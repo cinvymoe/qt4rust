@@ -97,7 +97,7 @@ async fn main() -> Result<(), String> {
     println!("[INFO] 存储管道创建完成");
     
     // 7. 启动存储管道
-    storage_pipeline.start();
+    let _ = storage_pipeline.start();
     println!("[INFO] 存储管道已启动\n");
     
     // 8. 模拟数据采集（使用配置的采集间隔）

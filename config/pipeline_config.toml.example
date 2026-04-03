@@ -21,7 +21,7 @@
 # Collection interval (milliseconds)
 # 控制从传感器读取数据的频率
 # Controls the frequency of reading data from sensors
-interval_ms = 100
+interval_ms = 10
 
 # 缓冲区大小
 # Buffer size
@@ -34,6 +34,26 @@ buffer_size = 1000
 # true: 使用模拟数据 / Use simulated data
 # false: 使用真实传感器 / Use real sensors
 use_simulator = true
+
+# ========== 滤波管道配置 ==========
+# Filter Pipeline Configuration
+# 多速率架构: 采集(10ms) → 滤波缓冲 → 计算(100ms) → 存储(500ms)
+
+[filter]
+# 滤波类型: "None", "Mean", "Median"
+filter_type = "Mean"
+# 滤波窗口大小（采集次数）
+# window_size × collection.interval_ms = 滤波周期
+# 例: 10 × 10ms = 100ms
+window_size = 10
+
+# ========== 计算管道配置 ==========
+# Process Pipeline Configuration
+
+[process]
+# 计算间隔（毫秒）
+# 计算层从滤波层提取数据并进行标定转换、力矩计算
+interval_ms = 100
 
 # ========== 存储管道配置 ==========
 # Storage Pipeline Configuration

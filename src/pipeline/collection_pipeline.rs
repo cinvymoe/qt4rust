@@ -2,11 +2,14 @@
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::Mutex;
 use std::time::Duration;
 use tokio::task::JoinHandle;
 use crate::repositories::CraneDataRepository;
 use crate::models::{ProcessedData, SensorData};
 use super::shared_buffer::SharedBuffer;
+use super::event_channel::StorageEventSender;
+use super::filter_buffer::FilterBuffer;
 
 /// 采集管道配置
 #[derive(Debug, Clone)]
@@ -47,16 +50,14 @@ impl Default for CollectionPipelineConfig {
 pub struct CollectionPipeline {
     config: CollectionPipelineConfig,
     repository: Arc<CraneDataRepository>,
-    buffer: SharedBuffer,
+    display_buffer: SharedBuffer,
+    filter_buffer: Option<Arc<Mutex<FilterBuffer>>>,
     running: Arc<AtomicBool>,
     sequence_number: Arc<AtomicU64>,
     handle: Option<JoinHandle<()>>,
-    /// 报警回调（可选）
     alarm_callback: Option<Arc<dyn Fn(ProcessedData) + Send + Sync>>,
-    /// 报警解除回调（可选）
     danger_cleared_callback: Option<Arc<dyn Fn() + Send + Sync>>,
-    /// 上次报警状态
-    previous_danger: bool,
+    storage_event_sender: Option<StorageEventSender>,
 }
 
 impl CollectionPipeline {
@@ -64,18 +65,62 @@ impl CollectionPipeline {
     pub fn new(
         config: CollectionPipelineConfig,
         repository: Arc<CraneDataRepository>,
-        buffer: SharedBuffer,
+        display_buffer: SharedBuffer,
     ) -> Self {
         Self {
             config,
             repository,
-            buffer,
+            display_buffer,
+            filter_buffer: None,
             running: Arc::new(AtomicBool::new(false)),
             sequence_number: Arc::new(AtomicU64::new(0)),
             handle: None,
             alarm_callback: None,
             danger_cleared_callback: None,
-            previous_danger: false,
+            storage_event_sender: None,
+        }
+    }
+
+    /// 创建采集管道并附带事件发送器
+    pub fn with_event_sender(
+        config: CollectionPipelineConfig,
+        repository: Arc<CraneDataRepository>,
+        display_buffer: SharedBuffer,
+        storage_event_sender: StorageEventSender,
+    ) -> Self {
+        Self {
+            config,
+            repository,
+            display_buffer,
+            filter_buffer: None,
+            running: Arc::new(AtomicBool::new(false)),
+            sequence_number: Arc::new(AtomicU64::new(0)),
+            handle: None,
+            alarm_callback: None,
+            danger_cleared_callback: None,
+            storage_event_sender: Some(storage_event_sender),
+        }
+    }
+
+    /// 创建采集管道（写入滤波缓冲区，用于多速率架构）
+    pub fn with_filter_buffer(
+        config: CollectionPipelineConfig,
+        repository: Arc<CraneDataRepository>,
+        filter_buffer: Arc<Mutex<FilterBuffer>>,
+    ) -> Self {
+        Self {
+            config,
+            repository,
+            display_buffer: Arc::new(std::sync::RwLock::new(
+                super::shared_buffer::ProcessedDataBuffer::new(100)
+            )),
+            filter_buffer: Some(filter_buffer),
+            running: Arc::new(AtomicBool::new(false)),
+            sequence_number: Arc::new(AtomicU64::new(0)),
+            handle: None,
+            alarm_callback: None,
+            danger_cleared_callback: None,
+            storage_event_sender: None,
         }
     }
     
@@ -107,7 +152,6 @@ impl CollectionPipeline {
         tracing::info!(" Collection pipeline sequence initialized to {}", sequence);
     }
     
-    /// 启动管道
     pub fn start(&mut self) {
         if self.running.load(Ordering::Relaxed) {
             tracing::warn!(" Collection pipeline already running");
@@ -115,115 +159,95 @@ impl CollectionPipeline {
         }
         
         self.running.store(true, Ordering::Relaxed);
-        
+
         let config = self.config.clone();
         let repository = Arc::clone(&self.repository);
-        let buffer = Arc::clone(&self.buffer);
+        let display_buffer = Arc::clone(&self.display_buffer);
+        let filter_buffer = self.filter_buffer.clone();
         let running = Arc::clone(&self.running);
         let sequence_number = Arc::clone(&self.sequence_number);
-        let alarm_callback = self.alarm_callback.clone();  // 克隆回调
-        let danger_cleared_callback = self.danger_cleared_callback.clone();  // 克隆回调
-        
-        // 使用全局运行时生成任务
+        let alarm_callback = self.alarm_callback.clone();
+        let danger_cleared_callback = self.danger_cleared_callback.clone();
+        let storage_event_sender = self.storage_event_sender.clone();
+
         let handle = qt_threading_utils::runtime::global_runtime().spawn(async move {
-            tracing::info!(" Collection pipeline started");
+            tracing::info!(" Collection pipeline started (mode: {})", 
+                if filter_buffer.is_some() { "filter" } else { "legacy" });
             let mut consecutive_failures = 0;
             let mut interval_timer = tokio::time::interval(config.interval);
-            let mut previous_danger = false;  // 跟踪上次报警状态
-            
+            let mut previous_danger = false;
+
             while running.load(Ordering::Relaxed) {
                 interval_timer.tick().await;
-                
-                // 在阻塞线程池中执行同步采集
+
                 let repo = Arc::clone(&repository);
                 let cfg = config.clone();
                 let result = tokio::task::spawn_blocking(move || {
                     Self::collect_with_retry(&repo, &cfg)
                 }).await;
-                
+
                 match result {
                     Ok(Ok(sensor_data)) => {
-                        // 采集成功
                         consecutive_failures = 0;
-                        
-                        let seq = sequence_number.fetch_add(1, Ordering::Relaxed);
-                        let processed = ProcessedData::from_sensor_data(sensor_data, seq);
-                        
-                        let current_danger = processed.is_danger;
-                        
-                        // 检测报警状态，触发回调
-                        if current_danger {
-                            if let Some(ref callback) = alarm_callback {
+
+                        if let Some(ref fb) = filter_buffer {
+                            // 多速率模式: 只写入滤波缓冲区
+                            if let Ok(mut fb_guard) = fb.lock() {
+                                fb_guard.push(sensor_data);
+                            }
+                        } else {
+                            // 遗留模式: 处理数据并写入显示缓冲区和存储
+                            let seq = sequence_number.fetch_add(1, Ordering::Relaxed);
+                            let processed = ProcessedData::from_sensor_data(sensor_data, seq);
+
+                            if let Some(ref sender) = storage_event_sender {
+                                if let Err(e) = sender.try_send_data(vec![processed.clone()]) {
+                                    tracing::warn!("Failed to send data to storage: {}", e);
+                                }
+                            }
+
+                            let current_danger = processed.is_danger;
+
+                            if current_danger && !previous_danger {
                                 tracing::warn!("[ALARM] Danger detected! Moment: {:.1}%", processed.moment_percentage);
-                                callback(processed.clone());
-                            }
-                        } else if previous_danger {
-                            // 上次是报警，本次不是报警，触发解除回调
-                            if let Some(ref callback) = danger_cleared_callback {
+                                if let Some(ref callback) = alarm_callback {
+                                    callback(processed.clone());
+                                }
+                            } else if !current_danger && previous_danger {
                                 tracing::info!("[ALARM] Danger cleared");
-                                callback();
+                                if let Some(ref callback) = danger_cleared_callback {
+                                    callback();
+                                }
                             }
-                        }
-                        
-                        previous_danger = current_danger;
-                        
-                        // 使用 try_write 避免死锁
-                        match buffer.try_write() {
-                            Ok(mut buf) => {
-                                buf.push(processed);
-                            }
-                            Err(_) => {
-                                tracing::warn!(" Failed to acquire buffer lock, skipping write");
-                                // 跳过本次写入，避免阻塞
+
+                            previous_danger = current_danger;
+
+                            match display_buffer.try_write() {
+                                Ok(mut buf) => { buf.push(processed); }
+                                Err(_) => { tracing::warn!(" Failed to acquire buffer lock, skipping write"); }
                             }
                         }
                     }
                     Ok(Err(e)) => {
-                        // 采集失败
                         consecutive_failures += 1;
-                        tracing::error!(" Collection failed: {} (consecutive: {})", 
-                                  e, consecutive_failures);
+                        tracing::error!(" Collection failed: {} (consecutive: {})", e, consecutive_failures);
                         
-                        match buffer.try_write() {
-                            Ok(mut buf) => {
-                                buf.record_error();
-                            }
-                            Err(_) => {
-                                tracing::warn!(" Failed to acquire buffer lock for error recording");
+                        if filter_buffer.is_none() {
+                            match display_buffer.try_write() {
+                                Ok(mut buf) => { buf.record_error(); }
+                                Err(_) => {}
                             }
                         }
                         
-                        // 检测断连
                         if consecutive_failures >= config.disconnect_threshold {
                             tracing::error!(" Sensor disconnected (threshold reached)");
-                            // TODO: 触发断连事件
                         }
                     }
                     Err(e) => {
-                        // 任务 panic 检测
                         if e.is_panic() {
                             tracing::error!("[PANIC] Collection task panicked: {:?}", e);
-                            // 记录 panic 信息到 stderr
-                            let panic_payload = e.into_panic();
-                            if let Some(panic_msg) = panic_payload.downcast_ref::<&str>() {
-                                tracing::error!("[PANIC] Panic message: {}", panic_msg);
-                            } else if let Some(panic_msg) = panic_payload.downcast_ref::<String>() {
-                                tracing::error!("[PANIC] Panic message: {}", panic_msg);
-                            } else {
-                                tracing::error!("[PANIC] Panic message: <unknown type>");
-                            }
                         } else {
                             tracing::error!(" Collection task cancelled: {}", e);
-                        }
-                        
-                        // 在 buffer 中记录错误
-                        match buffer.try_write() {
-                            Ok(mut buf) => {
-                                buf.record_error();
-                            }
-                            Err(_) => {
-                                tracing::warn!(" Failed to acquire buffer lock for panic error recording");
-                            }
                         }
                     }
                 }

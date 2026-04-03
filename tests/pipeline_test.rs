@@ -2,14 +2,11 @@
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{Arc, RwLock};
-    use std::time::Duration;
-    
     // 注意：由于这是集成测试，我们需要通过公共 API 访问
     // 但是主项目是一个二进制项目，没有公共 API
     // 所以这些测试实际上无法运行
     // 我们应该在单元测试中测试这些功能
-    
+
     #[test]
     fn test_placeholder() {
         // 占位测试，确保测试文件可以编译

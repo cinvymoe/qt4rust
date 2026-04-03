@@ -1,51 +1,52 @@
-// 管道管理器 - 统一管理三个管道
+// 管道管理器 - 统一管理多个管道
 
 use std::sync::Arc;
-use tracing::{trace, debug, info, warn};
+use std::sync::Mutex;
+use tracing::{trace, debug, info, warn, error};
 use crate::repositories::CraneDataRepository;
 use crate::repositories::storage_repository::StorageRepository;
 use crate::repositories::sqlite_storage_repository::SqliteStorageRepository;
+use crate::models::crane_config::CraneConfig;
 use super::shared_buffer::{ProcessedDataBuffer, SharedBuffer};
 use super::collection_pipeline::{CollectionPipeline, CollectionPipelineConfig};
 use super::display_pipeline::{DisplayPipeline, DisplayPipelineConfig};
 use super::storage_pipeline::{StoragePipeline, StoragePipelineConfig};
+use super::event_channel::{StorageEventSender, create_storage_channels};
+use super::filter_buffer::{FilterBuffer, FilterBufferConfig};
+use super::process_pipeline::{ProcessPipeline, ProcessPipelineConfig};
 
-/// 管道管理器
 pub struct PipelineManager {
-    /// 采集管道
     collection_pipeline: Option<CollectionPipeline>,
-    
-    /// 存储管道
+    process_pipeline: Option<ProcessPipeline>,
     storage_pipeline: Option<StoragePipeline>,
-    
-    /// 显示管道（主线程）
     display_pipeline: Option<DisplayPipeline>,
-    
-    /// 共享缓冲区
     shared_buffer: SharedBuffer,
-    
-    /// 数据仓库
+    #[allow(dead_code)]
+    filter_buffer: Option<Arc<Mutex<FilterBuffer>>>,
     repository: Arc<CraneDataRepository>,
+    #[allow(dead_code)]
+    crane_config: Arc<CraneConfig>,
+    #[allow(dead_code)]
+    storage_event_sender: Option<StorageEventSender>,
 }
 
 impl PipelineManager {
-    /// 创建管道管理器
     pub fn new(repository: Arc<CraneDataRepository>) -> Self {
         info!("创建管道管理器");
-        
-        // 创建共享缓冲区（保留最近 1000 条数据）
         let shared_buffer = Arc::new(std::sync::RwLock::new(
             ProcessedDataBuffer::new(1000)
         ));
-        
         debug!("共享缓冲区已创建，容量: 1000");
-        
         Self {
             collection_pipeline: None,
+            process_pipeline: None,
             storage_pipeline: None,
             display_pipeline: None,
             shared_buffer,
+            filter_buffer: None,
             repository,
+            crane_config: Arc::new(CraneConfig::default()),
+            storage_event_sender: None,
         }
     }
     
@@ -54,100 +55,129 @@ impl PipelineManager {
     /// # 参数
     /// - `repository`: 数据仓库
     /// - `db_path`: SQLite 数据库路径
-    /// 
-    /// # 返回
-    /// - `Ok(PipelineManager)`: 创建成功
-    /// - `Err(String)`: 错误信息
     pub async fn new_with_storage(
         repository: Arc<CraneDataRepository>,
         db_path: &str,
     ) -> Result<Self, String> {
-        // 创建共享缓冲区（保留最近 1000 条数据）
         let shared_buffer = Arc::new(std::sync::RwLock::new(
             ProcessedDataBuffer::new(1000)
         ));
-        
-        // 创建存储仓库
+
         let storage_repo = SqliteStorageRepository::new(db_path).await?;
-        
-        // 从配置文件加载存储配置
-        let pipeline_config = crate::config::pipeline_config::PipelineConfig::load();
-        let config = StoragePipelineConfig::from_pipeline_config(&pipeline_config.storage);
-        
-        info!("Storage pipeline config loaded:");
-        info!("  - Interval: {}ms", config.interval.as_millis());
-        info!("  - Batch size: {}", config.batch_size);
-        info!("  - Max retries: {}", config.max_retries);
-        info!("  - Retry delay: {}ms", config.retry_delay.as_millis());
-        info!("  - Max queue size: {}", config.max_queue_size);
-        
-        // 创建存储管道（async）
         let storage_repo_arc = Arc::new(storage_repo) as Arc<dyn StorageRepository>;
-        let storage_pipeline = StoragePipeline::new(
-            config,
-            storage_repo_arc,
+
+        let pipeline_config = crate::config::pipeline_config::PipelineConfig::load();
+        let storage_config = StoragePipelineConfig::from_pipeline_config(&pipeline_config.storage);
+
+        info!("Storage pipeline: interval={}ms, batch_size={}", 
+            storage_config.interval.as_millis(), storage_config.batch_size);
+
+        let (storage_sender, storage_receiver) = create_storage_channels(storage_config.max_queue_size);
+
+        let mut storage_pipeline = StoragePipeline::with_event_channel(
+            storage_config,
+            Arc::clone(&storage_repo_arc),
+            storage_receiver,
+        );
+
+        storage_pipeline.initialize_sequence().await?;
+
+        let crane_config = Arc::new(CraneConfig::default());
+
+        let filter_config = FilterBufferConfig::from_str(
+            &pipeline_config.filter.filter_type,
+            pipeline_config.filter.window_size,
+        ).map_err(|e| format!("Invalid filter config: {}", e))?;
+
+        let fb = Arc::new(Mutex::new(FilterBuffer::new(filter_config)));
+
+        let process_config = ProcessPipelineConfig {
+            interval: pipeline_config.process_interval(),
+        };
+        let process_pipeline = ProcessPipeline::with_event_sender(
+            process_config,
+            Arc::clone(&fb),
             Arc::clone(&shared_buffer),
-        ).await?;
-        
+            Arc::clone(&crane_config),
+            storage_sender.clone(),
+        );
+
+        let collection_config = CollectionPipelineConfig {
+            interval: pipeline_config.collection_interval(),
+            max_retries: 3,
+            retry_delay: std::time::Duration::from_millis(10),
+            disconnect_threshold: 10,
+            enable_panic_recovery: true,
+            max_restarts: 5,
+        };
+
+        let collection_pipeline = CollectionPipeline::with_filter_buffer(
+            collection_config,
+            Arc::clone(&repository),
+            Arc::clone(&fb),
+        );
+
+        info!("Pipeline: collection={}ms, filter={}/{}, process={}ms, storage={}ms",
+            pipeline_config.collection.interval_ms,
+            pipeline_config.filter.filter_type,
+            pipeline_config.filter.window_size,
+            pipeline_config.process.interval_ms,
+            pipeline_config.storage.interval_ms);
+
         Ok(Self {
-            collection_pipeline: None,
+            collection_pipeline: Some(collection_pipeline),
+            process_pipeline: Some(process_pipeline),
             storage_pipeline: Some(storage_pipeline),
             display_pipeline: None,
             shared_buffer,
+            filter_buffer: Some(fb),
             repository,
+            crane_config,
+            storage_event_sender: Some(storage_sender),
         })
     }
     
     /// 启动采集管道（后台线程 1）
     pub fn start_collection_pipeline(&mut self) {
         if self.collection_pipeline.is_some() {
-            warn!("采集管道已经启动，跳过重复启动");
+            // Pipeline already exists (from new_with_storage), just start it
+            info!("启动采集管道（后台线程 1）...");
+
+            if let Some(ref mut pipeline) = self.collection_pipeline {
+                // 从存储管道获取最后存储的序列号
+                if let Some(storage_pipeline) = &self.storage_pipeline {
+                    let last_seq = storage_pipeline.last_stored_sequence();
+                    if last_seq > 0 {
+                        pipeline.set_initial_sequence(last_seq);
+                        info!("采集管道序列号初始化为: {}", last_seq);
+                    }
+                }
+
+                pipeline.start();
+                info!("采集管道启动成功 - 频率: 10Hz (100ms), 最大重试: 3, 断连阈值: 10");
+            }
             return;
         }
-        
+
         info!("启动采集管道（后台线程 1）...");
-        
-        // 创建配置
+
+        // 创建配置（legacy mode - no storage connection）
         let config = CollectionPipelineConfig::default();
-        debug!("采集管道配置: interval={}ms, max_retries={}", 
+        debug!("采集管道配置: interval={}ms, max_retries={}",
                config.interval.as_millis(), config.max_retries);
-        
-        // 创建采集管道
+
+        // 创建采集管道（无存储连接，legacy模式）
         let mut pipeline = CollectionPipeline::new(
             config,
             Arc::clone(&self.repository),
             Arc::clone(&self.shared_buffer),
         );
-        
-        // 从存储管道获取最后存储的序列号，初始化采集管道的序列号生成器
-        if let Some(storage_pipeline) = &self.storage_pipeline {
-            let last_seq = storage_pipeline.last_stored_sequence();
-            if last_seq > 0 {
-                pipeline.set_initial_sequence(last_seq);
-                info!("采集管道序列号初始化为: {}", last_seq);
-            }
-            
-            // 设置报警回调
-            let storage_clone = storage_pipeline.clone_for_callback();
-            pipeline.set_alarm_callback(Box::new(move |data| {
-                storage_clone.save_alarm_async(data);
-            }));
-            info!("报警回调已连接到存储管道");
-            
-            // 设置报警解除回调
-            let storage_for_reset = storage_pipeline.clone_for_callback();
-            pipeline.set_danger_cleared_callback(Box::new(move || {
-                storage_for_reset.notify_danger_cleared();
-            }));
-            info!("报警解除回调已连接到存储管道");
-        }
-        
+
         // 启动管道
         pipeline.start();
-        
         self.collection_pipeline = Some(pipeline);
-        
-        info!("采集管道启动成功 - 频率: 10Hz (100ms), 最大重试: 3, 断连阈值: 10");
+
+        info!("采集管道启动成功（无存储连接）- 频率: 10Hz (100ms), 最大重试: 3, 断连阈值: 10");
     }
     
     /// 停止采集管道
@@ -165,7 +195,10 @@ impl PipelineManager {
     pub fn start_storage_pipeline(&mut self) {
         if let Some(pipeline) = &mut self.storage_pipeline {
             info!("启动存储管道（后台线程 2）...");
-            pipeline.start();
+            if let Err(e) = pipeline.start() {
+                error!("存储管道启动失败: {}", e);
+                return;
+            }
             info!("存储管道启动成功");
         } else {
             warn!("存储管道未初始化，请使用 new_with_storage() 创建管理器");
@@ -182,7 +215,23 @@ impl PipelineManager {
             debug!("存储管道未运行，无需停止");
         }
     }
-    
+
+    pub fn start_process_pipeline(&mut self) {
+        if let Some(ref mut pipeline) = self.process_pipeline {
+            info!("启动计算管道...");
+            pipeline.start();
+            info!("计算管道启动成功");
+        }
+    }
+
+    pub fn stop_process_pipeline(&mut self) {
+        if let Some(mut pipeline) = self.process_pipeline.take() {
+            info!("停止计算管道...");
+            pipeline.stop();
+            info!("计算管道已停止");
+        }
+    }
+
     /// 启动显示管道（主线程）
     pub fn start_display_pipeline(&mut self) {
         if self.display_pipeline.is_some() {
@@ -228,25 +277,28 @@ impl PipelineManager {
     /// 启动所有管道
     pub fn start_all(&mut self) {
         info!("启动所有管道...");
-        
-        // 先启动存储管道
         self.start_storage_pipeline();
-        
-        // 再启动采集管道（会自动连接报警回调）
+
+        if let Some(ref mut pp) = self.process_pipeline {
+            if let Some(ref sp) = self.storage_pipeline {
+                let last_seq = sp.last_stored_sequence();
+                if last_seq > 0 {
+                    pp.set_initial_sequence(last_seq);
+                    info!("Process pipeline sequence initialized to {}", last_seq);
+                }
+            }
+        }
+        self.start_process_pipeline();
         self.start_collection_pipeline();
-        
-        // 启动显示管道（主线程）
         self.start_display_pipeline();
-        
         info!("所有管道已启动");
     }
-    
+
     /// 停止所有管道
     pub fn stop_all(&mut self) {
         info!("停止所有管道...");
-        
-        // 先停止采集管道
         self.stop_collection_pipeline();
+        self.stop_process_pipeline();
         
         // 再停止存储管道
         self.stop_storage_pipeline();

@@ -9,6 +9,8 @@ use std::time::Duration;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PipelineConfig {
     pub collection: CollectionConfig,
+    pub filter: FilterConfig,
+    pub process: ProcessConfig,
     pub storage: StorageConfig,
     pub display: DisplayConfig,
     pub database: DatabaseConfig,
@@ -27,6 +29,22 @@ pub struct CollectionConfig {
 
     /// 是否使用模拟传感器
     pub use_simulator: bool,
+}
+
+/// 滤波层配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FilterConfig {
+    /// 滤波类型: "None", "Mean", "Median"
+    pub filter_type: String,
+    /// 滤波窗口大小（采集次数）
+    pub window_size: usize,
+}
+
+/// 计算层配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProcessConfig {
+    /// 计算间隔（毫秒）
+    pub interval_ms: u64,
 }
 
 /// 存储管道配置
@@ -56,8 +74,9 @@ pub struct StorageConfig {
     /// 报警记录最大条数（0 表示不限制）
     pub alarm_max_records: usize,
 
-    /// 报警清理阈值（0 表示使用默认值 alarm_max_records * 1.1）
     pub alarm_purge_threshold: usize,
+
+    pub save_only_latest: bool,
 }
 
 /// 显示管道配置
@@ -130,6 +149,8 @@ impl Default for PipelineConfig {
     fn default() -> Self {
         Self {
             collection: CollectionConfig::default(),
+            filter: FilterConfig::default(),
+            process: ProcessConfig::default(),
             storage: StorageConfig::default(),
             display: DisplayConfig::default(),
             database: DatabaseConfig::default(),
@@ -149,6 +170,21 @@ impl Default for CollectionConfig {
     }
 }
 
+impl Default for FilterConfig {
+    fn default() -> Self {
+        Self {
+            filter_type: "Mean".to_string(),
+            window_size: 10,
+        }
+    }
+}
+
+impl Default for ProcessConfig {
+    fn default() -> Self {
+        Self { interval_ms: 100 }
+    }
+}
+
 impl Default for StorageConfig {
     fn default() -> Self {
         Self {
@@ -161,6 +197,7 @@ impl Default for StorageConfig {
             purge_threshold: 0,
             alarm_max_records: 0,
             alarm_purge_threshold: 0,
+            save_only_latest: false,
         }
     }
 }
@@ -242,62 +279,58 @@ impl PipelineConfig {
         }
     }
 
-    /// 验证配置参数
     fn validate(&self) -> Result<(), String> {
-        // 验证采集间隔
-        if self.collection.interval_ms < 50 {
-            return Err("Collection interval must be >= 50ms".to_string());
+        if self.collection.interval_ms < 10 {
+            return Err("Collection interval must be >= 10ms".to_string());
         }
-
-        // 验证缓冲区大小
         if self.collection.buffer_size == 0 {
             return Err("Buffer size must be > 0".to_string());
         }
-
-        // 验证存储间隔
-        if self.storage.interval_ms < self.collection.interval_ms {
-            return Err("Storage interval should be >= collection interval".to_string());
+        if self.filter.window_size == 0 {
+            return Err("Filter window size must be > 0".to_string());
         }
-
-        // 验证批量大小
+        if self.process.interval_ms < 50 {
+            return Err("Process interval must be >= 50ms".to_string());
+        }
+        if self.storage.interval_ms < 100 {
+            return Err("Storage interval must be >= 100ms".to_string());
+        }
         if self.storage.batch_size == 0 {
             return Err("Batch size must be > 0".to_string());
         }
-
-        // 验证队列大小
         if self.storage.max_queue_size == 0 {
             return Err("Queue size must be > 0".to_string());
         }
-
-        // 验证数据库路径
         if self.database.path.is_empty() {
             return Err("Database path cannot be empty".to_string());
         }
-
         Ok(())
     }
 
-    /// 获取采集间隔 Duration
     pub fn collection_interval(&self) -> Duration {
         Duration::from_millis(self.collection.interval_ms)
     }
 
-    /// 获取存储间隔 Duration
+    pub fn filter_interval(&self) -> Duration {
+        Duration::from_millis(self.collection.interval_ms * self.filter.window_size as u64)
+    }
+
+    pub fn process_interval(&self) -> Duration {
+        Duration::from_millis(self.process.interval_ms)
+    }
+
     pub fn storage_interval(&self) -> Duration {
         Duration::from_millis(self.storage.interval_ms)
     }
 
-    /// 获取重试延迟 Duration
     pub fn retry_delay(&self) -> Duration {
         Duration::from_millis(self.storage.retry_delay_ms)
     }
 
-    /// 获取监控统计间隔 Duration
     pub fn stats_interval(&self) -> Duration {
         Duration::from_secs(self.monitoring.stats_interval_sec)
     }
 
-    /// 获取显示间隔 Duration
     pub fn display_interval(&self) -> Duration {
         Duration::from_millis(self.display.interval_ms)
     }
@@ -324,7 +357,7 @@ mod tests {
     #[test]
     fn test_validate_collection_interval_too_small() {
         let mut config = PipelineConfig::default();
-        config.collection.interval_ms = 10;
+        config.collection.interval_ms = 5;
         assert!(config.validate().is_err());
     }
 

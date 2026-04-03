@@ -43,7 +43,7 @@ async fn main() {
         tracing::info!("Buffer 中最新 10 条数据:");
         for data in history.iter().rev().take(10) {
             tracing::info!("  seq={}, load={:.1}, moment={:.1}%", 
-                data.sequence_number, data.ad1_load, data.moment_percentage);
+                data.sequence_number, data.current_load, data.moment_percentage);
         }
         
         if let Some(latest) = history.last() {

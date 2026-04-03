@@ -43,6 +43,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 # 存储管道依赖
 async-trait = "0.1"
 rusqlite = { version = "0.31", features = ["bundled"] }
+thiserror = "1.0"
+rand = "0.8"
 
 [build-dependencies]
 # lib 不需要 cxx-qt-build

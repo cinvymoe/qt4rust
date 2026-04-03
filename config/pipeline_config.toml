@@ -21,7 +21,7 @@
 # Collection interval (milliseconds)
 # 控制从传感器读取数据的频率
 # Controls the frequency of reading data from sensors
-interval_ms = 100
+interval_ms = 10
 
 # 缓冲区大小
 # Buffer size
@@ -35,6 +35,26 @@ buffer_size = 1000
 # false: 使用真实传感器 / Use real sensors
 use_simulator = true
 
+# ========== 滤波管道配置 ==========
+# Filter Pipeline Configuration
+# 多速率架构: 采集(10ms) → 滤波缓冲 → 计算(100ms) → 存储(500ms)
+
+[filter]
+# 滤波类型: "None", "Mean", "Median"
+filter_type = "Mean"
+# 滤波窗口大小（采集次数）
+# window_size × collection.interval_ms = 滤波周期
+# 例: 10 × 10ms = 100ms
+window_size = 10
+
+# ========== 计算管道配置 ==========
+# Process Pipeline Configuration
+
+[process]
+# 计算间隔（毫秒）
+# 计算层从滤波层提取数据并进行标定转换、力矩计算
+interval_ms = 100
+
 # ========== 存储管道配置 ==========
 # Storage Pipeline Configuration
 
@@ -43,13 +63,13 @@ use_simulator = true
 # Storage interval (milliseconds)
 # 控制批量存储运行数据的频率
 # Controls the frequency of batch storing runtime data
-interval_ms = 5000
+interval_ms = 1000
 
 # 批量存储大小
 # Batch size
 # 每次批量存储的最大数据条数
 # Maximum number of data items per batch storage
-batch_size = 1
+batch_size = 10
 
 # 失败重试次数
 # Maximum retry attempts
@@ -96,6 +116,16 @@ alarm_max_records = 150
 # 触发报警清理的阈值，超过此值时执行清理（0 表示使用默认值 alarm_max_records * 1.1）
 # Threshold for triggering alarm cleanup; cleanup runs when count exceeds this (0 = default alarm_max_records * 1.1)
 alarm_purge_threshold = 300
+
+# 只保存最新数据
+# Save only latest data
+# 当达到批量大小时，只保存最新的一条数据，丢弃其余数据
+# When batch_size is reached, only save the latest data and discard the rest
+# 适用于高频采集场景，减少数据库写入
+# Useful for high-frequency collection scenarios to reduce database writes
+# false: 保存批次中的所有数据 (default)
+# true: 只保存最新的一条数据
+save_only_latest = true
 
 # ========== 显示管道配置 ==========
 # Display Pipeline Configuration
