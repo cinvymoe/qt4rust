@@ -103,7 +103,7 @@ impl ProcessPipeline {
 
                 let sensor_data = {
                     let fb = filter_buffer.lock().unwrap();
-                    fb.get_filtered()
+                    fb.get_filtered().clone()
                 };
 
                 if let Some(raw_data) = sensor_data {

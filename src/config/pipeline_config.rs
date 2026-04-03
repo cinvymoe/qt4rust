@@ -16,6 +16,7 @@ pub struct PipelineConfig {
     pub database: DatabaseConfig,
     pub simulator: SimulatorConfig,
     pub monitoring: MonitoringConfig,
+    pub sensor_storage: SensorDataStorageConfig,
 }
 
 /// 数据采集管道配置
@@ -145,6 +146,22 @@ pub struct MonitoringConfig {
     pub verbose: bool,
 }
 
+/// SensorData 存储配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SensorDataStorageConfig {
+    /// 是否启用 SensorData 存储
+    pub enabled: bool,
+
+    /// 批量存储大小（攒够 N 条触发一次存储）
+    pub batch_size: usize,
+
+    /// 间隔存储（每 N 秒触发一次存储）
+    pub interval_secs: u64,
+
+    /// 最大保留记录数（0 表示不限制，启用 LRU 清理）
+    pub max_records: usize,
+}
+
 impl Default for PipelineConfig {
     fn default() -> Self {
         Self {
@@ -156,6 +173,7 @@ impl Default for PipelineConfig {
             database: DatabaseConfig::default(),
             simulator: SimulatorConfig::default(),
             monitoring: MonitoringConfig::default(),
+            sensor_storage: SensorDataStorageConfig::default(),
         }
     }
 }
@@ -247,6 +265,17 @@ impl Default for MonitoringConfig {
     }
 }
 
+impl Default for SensorDataStorageConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            batch_size: 100,
+            interval_secs: 60,
+            max_records: 0,
+        }
+    }
+}
+
 impl PipelineConfig {
     /// 从 TOML 文件加载配置
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, String> {
@@ -304,6 +333,12 @@ impl PipelineConfig {
         if self.database.path.is_empty() {
             return Err("Database path cannot be empty".to_string());
         }
+        if self.sensor_storage.batch_size == 0 {
+            return Err("Sensor storage batch size must be > 0".to_string());
+        }
+        if self.sensor_storage.interval_secs == 0 {
+            return Err("Sensor storage interval must be > 0".to_string());
+        }
         Ok(())
     }
 
@@ -333,6 +368,10 @@ impl PipelineConfig {
 
     pub fn display_interval(&self) -> Duration {
         Duration::from_millis(self.display.interval_ms)
+    }
+
+    pub fn sensor_storage_interval(&self) -> Duration {
+        Duration::from_secs(self.sensor_storage.interval_secs)
     }
 }
 
@@ -374,5 +413,34 @@ mod tests {
         assert_eq!(config.collection_interval(), Duration::from_millis(100));
         assert_eq!(config.storage_interval(), Duration::from_millis(1000));
         assert_eq!(config.retry_delay(), Duration::from_millis(100));
+    }
+
+    #[test]
+    fn test_sensor_storage_default() {
+        let config = PipelineConfig::default();
+        assert!(config.sensor_storage.enabled);
+        assert_eq!(config.sensor_storage.batch_size, 100);
+        assert_eq!(config.sensor_storage.interval_secs, 60);
+        assert_eq!(config.sensor_storage.max_records, 0);
+    }
+
+    #[test]
+    fn test_sensor_storage_interval() {
+        let config = PipelineConfig::default();
+        assert_eq!(config.sensor_storage_interval(), Duration::from_secs(60));
+    }
+
+    #[test]
+    fn test_validate_sensor_storage_batch_size_zero() {
+        let mut config = PipelineConfig::default();
+        config.sensor_storage.batch_size = 0;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_validate_sensor_storage_interval_zero() {
+        let mut config = PipelineConfig::default();
+        config.sensor_storage.interval_secs = 0;
+        assert!(config.validate().is_err());
     }
 }

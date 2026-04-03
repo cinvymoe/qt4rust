@@ -3,12 +3,14 @@
 use qt_rust_demo::repositories::CraneDataRepository;
 use qt_rust_demo::pipeline::PipelineManager;
 use qt_rust_demo::pipeline::shared_buffer::SharedBuffer;
+use qt_rust_demo::pipeline::shared_sensor_buffer::SharedSensorBuffer;
 use std::sync::{Arc, Mutex};
 
 /// ViewModel 管理器
 pub struct ViewModelManager {
     pipeline_manager: Option<PipelineManager>,
     shared_buffer: Option<SharedBuffer>,
+    shared_sensor_buffer: Option<SharedSensorBuffer>,
     viewmodel_ready: bool,
 }
 
@@ -18,6 +20,7 @@ impl ViewModelManager {
         Self {
             pipeline_manager: None,
             shared_buffer: None,
+            shared_sensor_buffer: None,
             viewmodel_ready: false,
         }
     }
@@ -61,9 +64,13 @@ impl ViewModelManager {
 
         // 获取共享缓冲区供 ViewModel 使用
         let shared_buffer = manager.get_shared_buffer();
+        
+        // 获取传感器原始数据缓冲区（如果 PipelineManager 支持）
+        let shared_sensor_buffer = manager.get_shared_sensor_buffer();
 
         self.pipeline_manager = Some(manager);
         self.shared_buffer = Some(shared_buffer.clone());
+        self.shared_sensor_buffer = shared_sensor_buffer;
         self.viewmodel_ready = true;
 
         tracing::info!("Three-pipeline data collection started");
@@ -75,6 +82,11 @@ impl ViewModelManager {
     /// 获取共享缓冲区（用于初始化 ViewModel 的显示管道）
     pub fn get_shared_buffer(&self) -> Option<SharedBuffer> {
         self.shared_buffer.clone()
+    }
+
+    /// 获取传感器原始数据共享缓冲区
+    pub fn get_shared_sensor_buffer(&self) -> Option<SharedSensorBuffer> {
+        self.shared_sensor_buffer.clone()
     }
 
     /// 停止数据采集
@@ -145,6 +157,21 @@ pub fn get_global_shared_buffer() -> Option<SharedBuffer> {
         }
         None => {
             tracing::warn!("get_global_shared_buffer: NO BUFFER AVAILABLE");
+            None
+        }
+    }
+}
+
+/// 获取全局传感器原始数据共享缓冲区
+pub fn get_global_shared_sensor_buffer() -> Option<SharedSensorBuffer> {
+    let manager = VIEWMODEL_MANAGER.lock().unwrap();
+    match manager.as_ref().and_then(|mgr| mgr.get_shared_sensor_buffer()) {
+        Some(buffer) => {
+            tracing::debug!("get_global_shared_sensor_buffer: returning buffer");
+            Some(buffer)
+        }
+        None => {
+            tracing::warn!("get_global_shared_sensor_buffer: NO BUFFER AVAILABLE");
             None
         }
     }

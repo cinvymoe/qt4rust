@@ -2,6 +2,7 @@
 
 use super::shared_buffer::SharedBuffer;
 use crate::models::ProcessedData;
+use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 
 /// 显示管道配置
@@ -45,7 +46,7 @@ pub struct DisplayPipeline {
     config: DisplayPipelineConfig,
     buffer: SharedBuffer,
     /// 内部显示缓冲区
-    display_buffer: Vec<ProcessedData>,
+    display_buffer: VecDeque<ProcessedData>,
     /// 上次更新时间
     last_update: Option<Instant>,
     /// 是否运行中
@@ -58,7 +59,7 @@ impl DisplayPipeline {
         Self {
             config,
             buffer,
-            display_buffer: Vec::with_capacity(pipeline_size),
+            display_buffer: VecDeque::with_capacity(pipeline_size),
             last_update: None,
             running: false,
         }
@@ -107,9 +108,9 @@ impl DisplayPipeline {
             if let Some(latest) = buf.get_latest() {
                 // 添加到显示缓冲区
                 if self.display_buffer.len() >= self.config.pipeline_size {
-                    self.display_buffer.remove(0);
+                    self.display_buffer.pop_front();
                 }
-                self.display_buffer.push(latest);
+                self.display_buffer.push_back(latest);
 
                 tracing::debug!(
                     "Display pipeline: fetched latest data, buffer size = {}",
@@ -124,13 +125,13 @@ impl DisplayPipeline {
 
     /// 获取最新数据
     pub fn get_latest(&self) -> Option<ProcessedData> {
-        self.display_buffer.last().cloned()
+        self.display_buffer.back().cloned()
     }
 
     /// 获取历史数据
     pub fn get_history(&self, count: usize) -> Vec<ProcessedData> {
         let start = self.display_buffer.len().saturating_sub(count);
-        self.display_buffer[start..].to_vec()
+        self.display_buffer.iter().skip(start).cloned().collect()
     }
 
     /// 获取显示缓冲区大小

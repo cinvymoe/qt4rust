@@ -9,6 +9,7 @@ use crate::repositories::CraneDataRepository;
 use crate::models::{ProcessedData, SensorData};
 use super::shared_buffer::SharedBuffer;
 use super::event_channel::StorageEventSender;
+use super::sensor_data_event_channel::SensorDataEventSender;
 use super::filter_buffer::FilterBuffer;
 
 /// 采集管道配置
@@ -58,6 +59,7 @@ pub struct CollectionPipeline {
     alarm_callback: Option<Arc<dyn Fn(ProcessedData) + Send + Sync>>,
     danger_cleared_callback: Option<Arc<dyn Fn() + Send + Sync>>,
     storage_event_sender: Option<StorageEventSender>,
+    sensor_storage_sender: Option<SensorDataEventSender>,
 }
 
 impl CollectionPipeline {
@@ -78,6 +80,7 @@ impl CollectionPipeline {
             alarm_callback: None,
             danger_cleared_callback: None,
             storage_event_sender: None,
+            sensor_storage_sender: None,
         }
     }
 
@@ -99,6 +102,30 @@ impl CollectionPipeline {
             alarm_callback: None,
             danger_cleared_callback: None,
             storage_event_sender: Some(storage_event_sender),
+            sensor_storage_sender: None,
+        }
+    }
+
+    /// 创建采集管道并附带存储发送器和传感器存储发送器
+    pub fn with_storage_sender(
+        config: CollectionPipelineConfig,
+        repository: Arc<CraneDataRepository>,
+        display_buffer: SharedBuffer,
+        storage_event_sender: StorageEventSender,
+        sensor_storage_sender: SensorDataEventSender,
+    ) -> Self {
+        Self {
+            config,
+            repository,
+            display_buffer,
+            filter_buffer: None,
+            running: Arc::new(AtomicBool::new(false)),
+            sequence_number: Arc::new(AtomicU64::new(0)),
+            handle: None,
+            alarm_callback: None,
+            danger_cleared_callback: None,
+            storage_event_sender: Some(storage_event_sender),
+            sensor_storage_sender: Some(sensor_storage_sender),
         }
     }
 
@@ -121,6 +148,7 @@ impl CollectionPipeline {
             alarm_callback: None,
             danger_cleared_callback: None,
             storage_event_sender: None,
+            sensor_storage_sender: None,
         }
     }
     
@@ -169,6 +197,7 @@ impl CollectionPipeline {
         let alarm_callback = self.alarm_callback.clone();
         let danger_cleared_callback = self.danger_cleared_callback.clone();
         let storage_event_sender = self.storage_event_sender.clone();
+        let sensor_storage_sender = self.sensor_storage_sender.clone();
 
         let handle = qt_threading_utils::runtime::global_runtime().spawn(async move {
             tracing::info!(" Collection pipeline started (mode: {})", 
@@ -198,7 +227,14 @@ impl CollectionPipeline {
                         } else {
                             // 遗留模式: 处理数据并写入显示缓冲区和存储
                             let seq = sequence_number.fetch_add(1, Ordering::Relaxed);
-                            let processed = ProcessedData::from_sensor_data(sensor_data, seq);
+                            let processed = ProcessedData::from_sensor_data(sensor_data.clone(), seq);
+
+                            // Send raw sensor data to storage pipeline if configured
+                            if let Some(ref sender) = sensor_storage_sender {
+                                if let Err(e) = sender.try_send_data(vec![sensor_data]) {
+                                    tracing::warn!("Failed to send sensor data to storage: {}", e);
+                                }
+                            }
 
                             if let Some(ref sender) = storage_event_sender {
                                 if let Err(e) = sender.try_send_data(vec![processed.clone()]) {

@@ -80,6 +80,15 @@ impl FilterBuffer {
 
     pub fn push(&mut self, data: SensorData) {
         self.raw_data.push_back(data);
+        // Warn if approaching overflow (get_filtered not called fast enough)
+        if self.raw_data.len() > self.config.window_size * 2 {
+            tracing::warn!(
+                "FilterBuffer overflow: {} items (window_size={}). \
+                 Process pipeline may be stalled.",
+                self.raw_data.len(),
+                self.config.window_size
+            );
+        }
         while self.raw_data.len() > self.config.window_size * 2 {
             self.raw_data.pop_front();
         }

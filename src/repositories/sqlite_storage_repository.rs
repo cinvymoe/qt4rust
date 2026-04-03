@@ -6,7 +6,8 @@ use std::time::SystemTime;
 use tokio::sync::Mutex;
 use rusqlite::{Connection, params};
 use crate::repositories::storage_repository::StorageRepository;
-use crate::models::{ProcessedData, AlarmRecord, AlarmType};
+use crate::repositories::sensor_data_repository::SensorDataRepository;
+use crate::models::{ProcessedData, AlarmRecord, AlarmType, SensorData};
 
 /// SQLite 存储仓库
 pub struct SqliteStorageRepository {
@@ -87,6 +88,26 @@ impl SqliteStorageRepository {
             .map_err(|e| format!("Failed to create index: {}", e))?;
         conn.execute("CREATE INDEX IF NOT EXISTS idx_alarm_acknowledged ON alarm_records(acknowledged)", [])
             .map_err(|e| format!("Failed to create index: {}", e))?;
+        
+        // 创建传感器数据表
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS sensor_data (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp INTEGER NOT NULL,
+                sequence_number INTEGER NOT NULL UNIQUE,
+                ad1_load REAL NOT NULL,
+                ad2_radius REAL NOT NULL,
+                ad3_angle REAL NOT NULL,
+                created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+            )",
+            [],
+        ).map_err(|e| format!("Failed to create sensor_data table: {}", e))?;
+        
+        // 创建传感器数据表索引
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_sensor_timestamp ON sensor_data(timestamp)", [])
+            .map_err(|e| format!("Failed to create sensor_data index: {}", e))?;
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_sensor_sequence ON sensor_data(sequence_number)", [])
+            .map_err(|e| format!("Failed to create sensor_data index: {}", e))?;
         
         tracing::info!("Database tables initialized");
         Ok(())
@@ -461,6 +482,165 @@ impl StorageRepository for SqliteStorageRepository {
     }
 }
 
+#[async_trait]
+impl SensorDataRepository for SqliteStorageRepository {
+    async fn save_sensor_data_batch(&self, data: &[SensorData]) -> Result<usize, String> {
+        if data.is_empty() {
+            return Ok(0);
+        }
+
+        let conn = self.connection.lock().await;
+
+        conn.execute("BEGIN TRANSACTION", [])
+            .map_err(|e| format!("Failed to begin transaction: {}", e))?;
+
+        let mut saved_count = 0;
+
+        for (idx, item) in data.iter().enumerate() {
+            let timestamp = SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs() as i64)
+                .unwrap_or(0);
+
+            let result = conn.execute(
+                "INSERT OR IGNORE INTO sensor_data
+                 (timestamp, sequence_number, ad1_load, ad2_radius, ad3_angle)
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
+                params![
+                    timestamp,
+                    idx as i64,
+                    item.ad1_load,
+                    item.ad2_radius,
+                    item.ad3_angle,
+                ],
+            );
+
+            match result {
+                Ok(rows) => {
+                    saved_count += rows;
+                }
+                Err(e) => {
+                    let _ = conn.execute("ROLLBACK", []);
+                    return Err(format!("Failed to insert sensor data: {}", e));
+                }
+            }
+        }
+
+        conn.execute("COMMIT", [])
+            .map_err(|e| format!("Failed to commit transaction: {}", e))?;
+
+        Ok(saved_count)
+    }
+
+    async fn query_recent_sensor_data(&self, limit: usize) -> Result<Vec<SensorData>, String> {
+        let conn = self.connection.lock().await;
+
+        let mut stmt = conn
+            .prepare(
+                "SELECT ad1_load, ad2_radius, ad3_angle
+                 FROM sensor_data
+                 ORDER BY timestamp DESC
+                 LIMIT ?1",
+            )
+            .map_err(|e| format!("Failed to prepare statement: {}", e))?;
+
+        let rows = stmt
+            .query_map([limit], |row| {
+                Ok(SensorData {
+                    ad1_load: row.get(0)?,
+                    ad2_radius: row.get(1)?,
+                    ad3_angle: row.get(2)?,
+                })
+            })
+            .map_err(|e| format!("Failed to query: {}", e))?;
+
+        let mut data = Vec::new();
+        for row in rows {
+            data.push(row.map_err(|e| format!("Failed to parse row: {}", e))?);
+        }
+
+        Ok(data)
+    }
+
+    async fn get_latest_sensor_data(&self) -> Result<Option<SensorData>, String> {
+        let conn = self.connection.lock().await;
+
+        let result: Result<SensorData, _> = conn.query_row(
+            "SELECT ad1_load, ad2_radius, ad3_angle
+             FROM sensor_data
+             ORDER BY timestamp DESC
+             LIMIT 1",
+            [],
+            |row| {
+                Ok(SensorData {
+                    ad1_load: row.get(0)?,
+                    ad2_radius: row.get(1)?,
+                    ad3_angle: row.get(2)?,
+                })
+            },
+        );
+
+        match result {
+            Ok(data) => Ok(Some(data)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(format!("Failed to get latest sensor data: {}", e)),
+        }
+    }
+
+    async fn get_sensor_data_count(&self) -> Result<i64, String> {
+        let conn = self.connection.lock().await;
+
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM sensor_data", [], |row| row.get(0))
+            .map_err(|e| format!("Failed to get sensor data count: {}", e))?;
+
+        Ok(count)
+    }
+
+    async fn purge_old_sensor_data(&self, max_records: usize) -> Result<usize, String> {
+        if max_records == 0 {
+            return Ok(0);
+        }
+
+        let conn = self.connection.lock().await;
+
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM sensor_data", [], |row| row.get(0))
+            .map_err(|e| format!("Failed to count sensor data: {}", e))?;
+
+        let threshold = std::cmp::min(
+            (max_records as f64 * 1.1) as usize,
+            max_records.saturating_add(1000),
+        );
+
+        if count as usize <= threshold {
+            return Ok(0);
+        }
+
+        let to_delete = count as usize - max_records;
+
+        let deleted = conn
+            .execute(
+                "DELETE FROM sensor_data WHERE id IN (
+                    SELECT id FROM sensor_data ORDER BY id ASC LIMIT ?1
+                )",
+                params![to_delete as i64],
+            )
+            .map_err(|e| format!("Failed to purge old sensor data: {}", e))?;
+
+        Ok(deleted)
+    }
+
+    async fn health_check(&self) -> Result<(), String> {
+        let conn = self.connection.lock().await;
+
+        conn.query_row("SELECT 1", [], |_| Ok(()))
+            .map_err(|e| format!("Health check failed: {}", e))?;
+
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -547,6 +727,6 @@ mod tests {
     #[tokio::test]
     async fn test_health_check() {
         let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
-        assert!(repo.health_check().await.is_ok());
+        assert!(crate::repositories::storage_repository::StorageRepository::health_check(&repo).await.is_ok());
     }
 }

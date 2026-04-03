@@ -3,7 +3,6 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::Duration;
-use super::storage_queue::StorageQueue;
 use super::event_channel::{StorageEventReceiver, create_storage_channels};
 use super::retry_policy::{RetryConfig, with_retry};
 use crate::repositories::storage_repository::StorageRepository;
@@ -79,7 +78,6 @@ impl StoragePipelineConfig {
 /// 存储管道（事件驱动架构）
 pub struct StoragePipeline {
     config: StoragePipelineConfig,
-    storage_queue: Arc<StorageQueue>,
     repository: Arc<dyn StorageRepository>,
     running: Arc<AtomicBool>,
     handle: Option<tokio::task::JoinHandle<()>>,
@@ -102,7 +100,6 @@ impl StoragePipeline {
         let batch_size = config.batch_size;
         Self {
             config,
-            storage_queue: Arc::new(StorageQueue::new(1000)),
             repository,
             event_receiver,
             pending_batch: Vec::with_capacity(batch_size),
@@ -124,7 +121,6 @@ impl StoragePipeline {
         
         if let Ok(last_seq) = pipeline.repository.get_last_stored_sequence().await {
             pipeline.last_stored_sequence.store(last_seq, Ordering::Relaxed);
-            pipeline.storage_queue.set_last_stored_sequence(last_seq);
         }
         
         Ok(pipeline)
@@ -152,7 +148,6 @@ impl StoragePipeline {
     pub async fn initialize_sequence(&mut self) -> Result<(), String> {
         if let Ok(last_seq) = self.repository.get_last_stored_sequence().await {
             self.last_stored_sequence.store(last_seq, Ordering::Relaxed);
-            self.storage_queue.set_last_stored_sequence(last_seq);
             tracing::info!("Storage last_seq initialized to {}", last_seq);
         }
         Ok(())
@@ -218,7 +213,7 @@ impl StoragePipeline {
         config: &StoragePipelineConfig,
         repository: &Arc<dyn StorageRepository>,
     ) {
-        let last_seq_val = last_seq.load(Ordering::Relaxed);
+        let last_seq_val = last_seq.load(Ordering::Acquire);
         
         for data in data_list {
             // Filter already stored
@@ -311,7 +306,7 @@ impl StoragePipeline {
         match result {
             Ok(saved) => {
                 tracing::info!("Saved {} records (seq <= {})", saved, max_seq);
-                last_seq.store(max_seq, Ordering::Relaxed);
+                last_seq.store(max_seq, Ordering::Release);
                 
                 // Trigger purge in background
                 if max_records > 0 {
@@ -378,9 +373,9 @@ impl StoragePipeline {
         }
     }
     
-    /// Get storage queue length
+    /// Get pending batch length
     pub fn queue_len(&self) -> usize {
-        self.storage_queue.len()
+        self.pending_batch.len()
     }
     
     /// Get last stored sequence
@@ -392,7 +387,6 @@ impl StoragePipeline {
     pub fn clone_for_callback(&self) -> Self {
         Self {
             config: self.config.clone(),
-            storage_queue: Arc::clone(&self.storage_queue),
             repository: Arc::clone(&self.repository),
             event_receiver: StorageEventReceiver {
                 data_rx: self.event_receiver.data_rx.clone(),

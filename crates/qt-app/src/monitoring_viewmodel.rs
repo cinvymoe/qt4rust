@@ -19,6 +19,9 @@ pub mod monitoring_viewmodel_bridge {
         #[qproperty(bool, is_danger)]
         #[qproperty(bool, sensor_connected)]
         #[qproperty(QString, error_message)]
+        #[qproperty(f64, raw_ad1_load)]
+        #[qproperty(f64, raw_ad2_radius)]
+        #[qproperty(f64, raw_ad3_angle)]
         type MonitoringViewModel = super::MonitoringViewModelRust;
 
         /// 清除错误（Intent）
@@ -45,6 +48,10 @@ pub mod monitoring_viewmodel_bridge {
         /// 初始化显示管道（从全局共享缓冲区）
         #[qinvokable]
         unsafe fn init_display_pipeline_from_global(self: Pin<&mut MonitoringViewModel>);
+
+        /// 从全局传感器缓冲区更新原始传感器数据
+        #[qinvokable]
+        unsafe fn update_raw_sensor_data(self: Pin<&mut MonitoringViewModel>);
     }
 }
 
@@ -73,6 +80,10 @@ pub struct MonitoringViewModelRust {
     // 内部状态（不暴露给 QML）
     reducer: MonitoringReducer,
     display_pipeline: std::cell::RefCell<Option<Box<DisplayPipeline>>>,
+
+    raw_ad1_load: f64,
+    raw_ad2_radius: f64,
+    raw_ad3_angle: f64,
 }
 
 impl Default for MonitoringViewModelRust {
@@ -90,6 +101,9 @@ impl Default for MonitoringViewModelRust {
             error_message: QString::from(""),
             reducer: MonitoringReducer::new(),
             display_pipeline: std::cell::RefCell::new(None),
+            raw_ad1_load: 0.0,
+            raw_ad2_radius: 0.0,
+            raw_ad3_angle: 0.0,
         }
     }
 }
@@ -207,6 +221,8 @@ impl monitoring_viewmodel_bridge::MonitoringViewModel {
             self.as_mut().set_error_message(QString::from(&new_error));
         }
 
+        self.update_raw_sensor_data();
+
         tracing::trace!("[MonitoringViewModel] State update completed");
     }
 
@@ -301,6 +317,34 @@ impl monitoring_viewmodel_bridge::MonitoringViewModel {
             None => {
                 tracing::error!("Global shared buffer not available!");
             }
+        }
+    }
+
+    /// 从全局传感器缓冲区更新原始传感器数据
+    pub fn update_raw_sensor_data(mut self: Pin<&mut Self>) {
+        use crate::viewmodel_manager::get_global_shared_sensor_buffer;
+        let buffer = match get_global_shared_sensor_buffer() {
+            Some(b) => b,
+            None => return,
+        };
+        let guard = match buffer.read() {
+            Ok(g) => g,
+            Err(_) => return,
+        };
+        let raw_data = guard.get_latest_raw();
+        let (ad1, ad2, ad3) = match raw_data {
+            Some(data) => data,
+            None => return,
+        };
+
+        if *self.as_ref().raw_ad1_load() != ad1 {
+            self.as_mut().set_raw_ad1_load(ad1);
+        }
+        if *self.as_ref().raw_ad2_radius() != ad2 {
+            self.as_mut().set_raw_ad2_radius(ad2);
+        }
+        if *self.as_ref().raw_ad3_angle() != ad3 {
+            self.as_mut().set_raw_ad3_angle(ad3);
         }
     }
 }

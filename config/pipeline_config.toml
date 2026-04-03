@@ -125,7 +125,9 @@ alarm_purge_threshold = 300
 # Useful for high-frequency collection scenarios to reduce database writes
 # false: 保存批次中的所有数据 (default)
 # true: 只保存最新的一条数据
-save_only_latest = true
+# 注意: save_only_latest=true + batch_size=10 会导致 90% 数据丢失
+# Note: save_only_latest=true + batch_size=10 causes 90% data loss
+save_only_latest = false
 
 # ========== 显示管道配置 ==========
 # Display Pipeline Configuration
@@ -218,6 +220,35 @@ stats_interval_sec = 5
 # 是否打印详细日志
 # Enable verbose logging
 verbose = false
+
+# ========== SensorData 存储配置 ==========
+# SensorData Storage Configuration
+# 原始传感器数据的持久化配置
+
+[sensor_storage]
+# 是否启用 SensorData 存储
+# Enable SensorData storage
+enabled = true
+
+# 批量存储大小
+# Batch size
+# 攒够 N 条数据触发一次存储
+# Triggers storage when N records accumulated
+batch_size = 100
+
+# 间隔存储（秒）
+# Interval storage (seconds)
+# 每 N 秒触发一次存储（即使 batch_size 未达到）
+# Triggers storage every N seconds (even if batch_size not reached)
+interval_secs = 60
+
+# 最大保留记录数
+# Maximum records to keep
+# 超出此数量后自动清理旧数据（LRU）
+# Auto-purge old data when exceeding this count (LRU)
+# 设置为 0 表示不限制
+# Set to 0 for unlimited
+max_records = 10000
 
 # ========== 配置示例 ==========
 # Configuration Examples

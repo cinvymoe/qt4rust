@@ -6,6 +6,7 @@ use tracing::{trace, debug, info, warn, error};
 use crate::repositories::CraneDataRepository;
 use crate::repositories::storage_repository::StorageRepository;
 use crate::repositories::sqlite_storage_repository::SqliteStorageRepository;
+use crate::repositories::sensor_data_repository::SensorDataRepository;
 use crate::models::crane_config::CraneConfig;
 use super::shared_buffer::{ProcessedDataBuffer, SharedBuffer};
 use super::collection_pipeline::{CollectionPipeline, CollectionPipelineConfig};
@@ -14,6 +15,9 @@ use super::storage_pipeline::{StoragePipeline, StoragePipelineConfig};
 use super::event_channel::{StorageEventSender, create_storage_channels};
 use super::filter_buffer::{FilterBuffer, FilterBufferConfig};
 use super::process_pipeline::{ProcessPipeline, ProcessPipelineConfig};
+use super::sensor_storage_pipeline::SensorStoragePipeline;
+use super::sensor_data_event_channel::create_sensor_data_channels;
+use super::shared_sensor_buffer::SharedSensorBuffer;
 
 pub struct PipelineManager {
     collection_pipeline: Option<CollectionPipeline>,
@@ -28,6 +32,8 @@ pub struct PipelineManager {
     crane_config: Arc<CraneConfig>,
     #[allow(dead_code)]
     storage_event_sender: Option<StorageEventSender>,
+    sensor_storage_pipeline: Option<SensorStoragePipeline>,
+    shared_sensor_buffer: Option<SharedSensorBuffer>,
 }
 
 impl PipelineManager {
@@ -47,6 +53,8 @@ impl PipelineManager {
             repository,
             crane_config: Arc::new(CraneConfig::default()),
             storage_event_sender: None,
+            sensor_storage_pipeline: None,
+            shared_sensor_buffer: None,
         }
     }
     
@@ -102,8 +110,12 @@ impl PipelineManager {
             storage_sender.clone(),
         );
 
+        let collection_interval = pipeline_config.collection_interval();
+        debug!("Collection pipeline config: interval={}ms from TOML (interval_ms={})",
+               collection_interval.as_millis(), pipeline_config.collection.interval_ms);
+        
         let collection_config = CollectionPipelineConfig {
-            interval: pipeline_config.collection_interval(),
+            interval: collection_interval,
             max_retries: 3,
             retry_delay: std::time::Duration::from_millis(10),
             disconnect_threshold: 10,
@@ -111,29 +123,61 @@ impl PipelineManager {
             max_restarts: 5,
         };
 
-        let collection_pipeline = CollectionPipeline::with_filter_buffer(
-            collection_config,
-            Arc::clone(&repository),
-            Arc::clone(&fb),
-        );
+        // Check if sensor storage is enabled
+        let (collection_pipeline, sensor_storage_pipeline, shared_sensor_buffer) = if pipeline_config.sensor_storage.enabled {
+            let sensor_repo = Arc::new(SqliteStorageRepository::new(db_path).await?) as Arc<dyn SensorDataRepository>;
+            let (sensor_tx, sensor_rx) = create_sensor_data_channels(1000);
+            
+            let mut sensor_pipeline = SensorStoragePipeline::with_event_channel(
+                pipeline_config.sensor_storage.clone(),
+                sensor_repo,
+                sensor_rx,
+            );
+            sensor_pipeline.start().map_err(|e| format!("Sensor storage pipeline start failed: {}", e))?;
+            
+            let sensor_buffer = Arc::new(std::sync::RwLock::new(
+                super::shared_sensor_buffer::SensorDataBuffer::new(100)
+            ));
+            
+            // Use with_storage_sender when sensor storage is enabled
+            let collection = CollectionPipeline::with_storage_sender(
+                collection_config,
+                Arc::clone(&repository),
+                Arc::clone(&shared_buffer),
+                storage_sender.clone(),
+                sensor_tx,
+            );
+            
+            (Some(collection), Some(sensor_pipeline), Some(sensor_buffer))
+        } else {
+            let collection = CollectionPipeline::with_filter_buffer(
+                collection_config,
+                Arc::clone(&repository),
+                Arc::clone(&fb),
+            );
+            (Some(collection), None, None)
+        };
 
-        info!("Pipeline: collection={}ms, filter={}/{}, process={}ms, storage={}ms",
+        info!("Pipeline: collection={}ms, filter={}/{}, process={}ms, storage={}ms, sensor_storage={}",
             pipeline_config.collection.interval_ms,
             pipeline_config.filter.filter_type,
             pipeline_config.filter.window_size,
             pipeline_config.process.interval_ms,
-            pipeline_config.storage.interval_ms);
+            pipeline_config.storage.interval_ms,
+            pipeline_config.sensor_storage.enabled);
 
         Ok(Self {
-            collection_pipeline: Some(collection_pipeline),
+            collection_pipeline,
             process_pipeline: Some(process_pipeline),
             storage_pipeline: Some(storage_pipeline),
             display_pipeline: None,
             shared_buffer,
-            filter_buffer: Some(fb),
+            filter_buffer: if sensor_storage_pipeline.is_some() { None } else { Some(fb) },
             repository,
             crane_config,
             storage_event_sender: Some(storage_sender),
+            sensor_storage_pipeline,
+            shared_sensor_buffer,
         })
     }
     
@@ -277,6 +321,10 @@ impl PipelineManager {
     /// 启动所有管道
     pub fn start_all(&mut self) {
         info!("启动所有管道...");
+        
+        // Start sensor storage pipeline first
+        self.start_sensor_storage_pipeline();
+        
         self.start_storage_pipeline();
 
         if let Some(ref mut pp) = self.process_pipeline {
@@ -294,9 +342,34 @@ impl PipelineManager {
         info!("所有管道已启动");
     }
 
+    /// 启动传感器存储管道
+    pub fn start_sensor_storage_pipeline(&mut self) {
+        if let Some(pipeline) = &mut self.sensor_storage_pipeline {
+            info!("启动传感器存储管道...");
+            if let Err(e) = pipeline.start() {
+                error!("传感器存储管道启动失败: {}", e);
+                return;
+            }
+            info!("传感器存储管道启动成功");
+        }
+    }
+
+    /// 停止传感器存储管道
+    pub fn stop_sensor_storage_pipeline(&mut self) {
+        if let Some(pipeline) = &mut self.sensor_storage_pipeline {
+            info!("停止传感器存储管道...");
+            pipeline.stop();
+            info!("传感器存储管道已停止");
+        }
+    }
+
     /// 停止所有管道
     pub fn stop_all(&mut self) {
         info!("停止所有管道...");
+        
+        // Stop sensor storage pipeline first
+        self.stop_sensor_storage_pipeline();
+        
         self.stop_collection_pipeline();
         self.stop_process_pipeline();
         
@@ -312,6 +385,11 @@ impl PipelineManager {
     /// 获取共享缓冲区（用于调试和显示管道）
     pub fn get_shared_buffer(&self) -> SharedBuffer {
         Arc::clone(&self.shared_buffer)
+    }
+
+    /// 获取共享传感器数据缓冲区
+    pub fn get_shared_sensor_buffer(&self) -> Option<SharedSensorBuffer> {
+        self.shared_sensor_buffer.clone()
     }
 
     /// 获取显示管道的可变引用
