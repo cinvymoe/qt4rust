@@ -18,47 +18,40 @@ pub mod moment_curve_bridge {
         type MomentCurveViewModel = super::MomentCurveViewModelRust;
 
         #[qinvokable]
-        unsafe fn load_data(self: Pin<&mut MomentCurveViewModel>);
+        unsafe fn loadData(self: Pin<&mut MomentCurveViewModel>);
 
         #[qinvokable]
-        unsafe fn get_curve_data_json(
+        unsafe fn getCurveDataJson(
             self: Pin<&mut MomentCurveViewModel>,
             boom_length: f64,
         ) -> QString;
 
         #[qinvokable]
-        unsafe fn get_max_load_for_boom(
+        unsafe fn getMaxLoadForBoom(self: Pin<&mut MomentCurveViewModel>, boom_length: f64) -> f64;
+
+        #[qinvokable]
+        unsafe fn getMaxRadiusForBoom(
             self: Pin<&mut MomentCurveViewModel>,
             boom_length: f64,
         ) -> f64;
 
         #[qinvokable]
-        unsafe fn get_max_radius_for_boom(
-            self: Pin<&mut MomentCurveViewModel>,
-            boom_length: f64,
-        ) -> f64;
+        unsafe fn getDataPointCount(self: Pin<&mut MomentCurveViewModel>, boom_length: f64) -> i32;
 
         #[qinvokable]
-        unsafe fn get_data_point_count(
-            self: Pin<&mut MomentCurveViewModel>,
-            boom_length: f64,
-        ) -> i32;
+        unsafe fn getAverageLoad(self: Pin<&mut MomentCurveViewModel>, boom_length: f64) -> f64;
 
         #[qinvokable]
-        unsafe fn get_average_load(self: Pin<&mut MomentCurveViewModel>, boom_length: f64) -> f64;
+        unsafe fn getLoadRange(self: Pin<&mut MomentCurveViewModel>, boom_length: f64) -> QString;
 
         #[qinvokable]
-        unsafe fn get_load_range(self: Pin<&mut MomentCurveViewModel>, boom_length: f64)
-            -> QString;
+        unsafe fn selectBoomByIndex(self: Pin<&mut MomentCurveViewModel>, index: i32);
 
         #[qinvokable]
-        unsafe fn select_boom_by_index(self: Pin<&mut MomentCurveViewModel>, index: i32);
+        unsafe fn getGlobalMaxRadius(self: Pin<&mut MomentCurveViewModel>) -> f64;
 
         #[qinvokable]
-        unsafe fn get_global_max_radius(self: Pin<&mut MomentCurveViewModel>) -> f64;
-
-        #[qinvokable]
-        unsafe fn get_global_max_load(self: Pin<&mut MomentCurveViewModel>) -> f64;
+        unsafe fn getGlobalMaxLoad(self: Pin<&mut MomentCurveViewModel>) -> f64;
     }
 }
 
@@ -104,12 +97,11 @@ impl Default for MomentCurveViewModelRust {
     }
 }
 
-fn boom_to_key(boom_length: f64) -> i64 {
-    (boom_length * 1000.0).round() as i64
-}
-
 impl moment_curve_bridge::MomentCurveViewModel {
-    pub fn load_data(mut self: Pin<&mut Self>) {
+    fn boom_to_key(boom_length: f64) -> i64 {
+        (boom_length * 1000.0).round() as i64
+    }
+    pub fn loadData(mut self: Pin<&mut Self>) {
         tracing::info!("Loading rated load table from: {}", self.config_path);
 
         let manager = LoadTableManager::new(&self.config_path);
@@ -160,7 +152,7 @@ impl moment_curve_bridge::MomentCurveViewModel {
                     }
                 }
 
-                let key = boom_to_key(*boom_length);
+                let key = Self::boom_to_key(*boom_length);
                 self.curve_data_cache.borrow_mut().insert(key, points);
 
                 tracing::debug!(
@@ -204,8 +196,8 @@ impl moment_curve_bridge::MomentCurveViewModel {
         );
     }
 
-    pub fn get_curve_data_json(self: Pin<&mut Self>, boom_length: f64) -> QString {
-        let key = boom_to_key(boom_length);
+    pub fn getCurveDataJson(self: Pin<&mut Self>, boom_length: f64) -> QString {
+        let key = Self::boom_to_key(boom_length);
 
         if let Some(points) = self.curve_data_cache.borrow().get(&key) {
             let mut json_parts = Vec::new();
@@ -222,8 +214,8 @@ impl moment_curve_bridge::MomentCurveViewModel {
         }
     }
 
-    pub fn get_max_load_for_boom(self: Pin<&mut Self>, boom_length: f64) -> f64 {
-        let key = boom_to_key(boom_length);
+    pub fn getMaxLoadForBoom(self: Pin<&mut Self>, boom_length: f64) -> f64 {
+        let key = Self::boom_to_key(boom_length);
 
         if let Some(points) = self.curve_data_cache.borrow().get(&key) {
             points.iter().map(|p| p.load).fold(0.0, f64::max)
@@ -232,8 +224,8 @@ impl moment_curve_bridge::MomentCurveViewModel {
         }
     }
 
-    pub fn get_max_radius_for_boom(self: Pin<&mut Self>, boom_length: f64) -> f64 {
-        let key = boom_to_key(boom_length);
+    pub fn getMaxRadiusForBoom(self: Pin<&mut Self>, boom_length: f64) -> f64 {
+        let key = Self::boom_to_key(boom_length);
 
         if let Some(points) = self.curve_data_cache.borrow().get(&key) {
             points.iter().map(|p| p.radius).fold(0.0, f64::max)
@@ -242,8 +234,8 @@ impl moment_curve_bridge::MomentCurveViewModel {
         }
     }
 
-    pub fn get_data_point_count(self: Pin<&mut Self>, boom_length: f64) -> i32 {
-        let key = boom_to_key(boom_length);
+    pub fn getDataPointCount(self: Pin<&mut Self>, boom_length: f64) -> i32 {
+        let key = Self::boom_to_key(boom_length);
 
         if let Some(points) = self.curve_data_cache.borrow().get(&key) {
             points.len() as i32
@@ -252,8 +244,8 @@ impl moment_curve_bridge::MomentCurveViewModel {
         }
     }
 
-    pub fn get_average_load(self: Pin<&mut Self>, boom_length: f64) -> f64 {
-        let key = boom_to_key(boom_length);
+    pub fn getAverageLoad(self: Pin<&mut Self>, boom_length: f64) -> f64 {
+        let key = Self::boom_to_key(boom_length);
 
         if let Some(points) = self.curve_data_cache.borrow().get(&key) {
             if points.is_empty() {
@@ -266,8 +258,8 @@ impl moment_curve_bridge::MomentCurveViewModel {
         }
     }
 
-    pub fn get_load_range(self: Pin<&mut Self>, boom_length: f64) -> QString {
-        let key = boom_to_key(boom_length);
+    pub fn getLoadRange(self: Pin<&mut Self>, boom_length: f64) -> QString {
+        let key = Self::boom_to_key(boom_length);
 
         if let Some(points) = self.curve_data_cache.borrow().get(&key) {
             if points.is_empty() {
@@ -281,7 +273,7 @@ impl moment_curve_bridge::MomentCurveViewModel {
         }
     }
 
-    pub fn select_boom_by_index(mut self: Pin<&mut Self>, index: i32) {
+    pub fn selectBoomByIndex(mut self: Pin<&mut Self>, index: i32) {
         let idx = index as usize;
         if idx < self.boom_lengths.borrow().len() {
             let boom_length = self.boom_lengths.borrow()[idx];
@@ -297,11 +289,11 @@ impl moment_curve_bridge::MomentCurveViewModel {
         }
     }
 
-    pub fn get_global_max_radius(self: Pin<&mut Self>) -> f64 {
+    pub fn getGlobalMaxRadius(self: Pin<&mut Self>) -> f64 {
         *self.global_max_radius.borrow()
     }
 
-    pub fn get_global_max_load(self: Pin<&mut Self>) -> f64 {
+    pub fn getGlobalMaxLoad(self: Pin<&mut Self>) -> f64 {
         *self.global_max_load.borrow()
     }
 }
