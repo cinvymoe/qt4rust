@@ -4,9 +4,24 @@
 // Qt 相关模块
 mod application;
 mod monitoring_viewmodel;
+mod calibration_viewmodel;
 mod data_collection_controller;
 mod viewmodel_manager;
 mod settings_viewmodel;
+
+// Settings ViewModels (在 src/ 根目录以满足 cxx-qt 构建限制)
+mod load_calibration_viewmodel;
+
+// MVI 架构模块
+mod states {
+    pub mod calibration_state;
+}
+mod intents {
+    pub mod calibration_intent;
+}
+mod reducers {
+    pub mod calibration_reducer;
+}
 
 use application::Application;
 

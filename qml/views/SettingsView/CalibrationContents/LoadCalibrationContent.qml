@@ -2,11 +2,27 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import qt.rust.demo
 import "../../../styles"
 import "../../../components/controls"
+import "../../../components/dialogs"
 
 Item {
     id: root
+    
+    // 暴露保存和重置函数给外部调用
+    function saveCalibration() {
+        return loadViewModel.save_calibration()
+    }
+    
+    function resetToDefault() {
+        loadViewModel.reset_to_default()
+    }
+    
+    // 绑定 LoadCalibrationViewModel
+    LoadCalibrationViewModel {
+        id: loadViewModel
+    }
     
     Flickable {
         id: flickable
@@ -75,17 +91,34 @@ Item {
                             
                             Repeater {
                                 model: [
-                                    {value: "1x", label: "标准倍率"},
-                                    {value: "2x", label: "2倍放大"},
-                                    {value: "4x", label: "4倍放大"},
-                                    {value: "customx", label: "自定义"}
+                                    {value: 1, label: "标准倍率"},
+                                    {value: 2, label: "2倍放大"},
+                                    {value: 4, label: "4倍放大"},
+                                    {value: 0, label: "自定义"}
                                 ]
                                 
                                 Rectangle {
                                     width: (parent.width - 3 * Theme.spacingSmall) / 4
                                     height: 92
-                                    color: index === 0 ? "#9810fa" : "#314158"
-                                    border.color: index === 0 ? "#ad46ff" : "#45556c"
+                                    color: {
+                                        if (modelData.value === 0) {
+                                            // 自定义：检查是否是非标准值
+                                            return (loadViewModel.calibration_multiplier !== 1 && 
+                                                    loadViewModel.calibration_multiplier !== 2 && 
+                                                    loadViewModel.calibration_multiplier !== 4) ? "#9810fa" : "#314158"
+                                        } else {
+                                            return loadViewModel.calibration_multiplier === modelData.value ? "#9810fa" : "#314158"
+                                        }
+                                    }
+                                    border.color: {
+                                        if (modelData.value === 0) {
+                                            return (loadViewModel.calibration_multiplier !== 1 && 
+                                                    loadViewModel.calibration_multiplier !== 2 && 
+                                                    loadViewModel.calibration_multiplier !== 4) ? "#ad46ff" : "#45556c"
+                                        } else {
+                                            return loadViewModel.calibration_multiplier === modelData.value ? "#ad46ff" : "#45556c"
+                                        }
+                                    }
                                     border.width: 2
                                     radius: Theme.radiusMedium
                                     
@@ -94,24 +127,60 @@ Item {
                                         spacing: 4
                                         
                                         Text {
-                                            text: modelData.value
-                                            font.pixelSize: Theme.fontSizeXXLarge
+                                            text: {
+                                                if (modelData.value === 0) {
+                                                    // 自定义：显示当前值或"自定义"
+                                                    if (loadViewModel.calibration_multiplier !== 1 && 
+                                                        loadViewModel.calibration_multiplier !== 2 && 
+                                                        loadViewModel.calibration_multiplier !== 4) {
+                                                        return loadViewModel.calibration_multiplier + "x"
+                                                    } else {
+                                                        return "自定义"
+                                                    }
+                                                } else {
+                                                    return modelData.value + "x"
+                                                }
+                                            }
+                                            font.pixelSize: modelData.value === 0 ? Theme.fontSizeLarge : Theme.fontSizeXXLarge
                                             font.family: Theme.fontFamilyMono
-                                            color: index === 0 ? Theme.textPrimary : Theme.textSecondary
+                                            color: {
+                                                if (modelData.value === 0) {
+                                                    return (loadViewModel.calibration_multiplier !== 1 && 
+                                                            loadViewModel.calibration_multiplier !== 2 && 
+                                                            loadViewModel.calibration_multiplier !== 4) ? Theme.textPrimary : Theme.textSecondary
+                                                } else {
+                                                    return loadViewModel.calibration_multiplier === modelData.value ? Theme.textPrimary : Theme.textSecondary
+                                                }
+                                            }
                                             anchors.horizontalCenter: parent.horizontalCenter
                                         }
                                         
                                         Text {
                                             text: modelData.label
                                             font.pixelSize: Theme.fontSizeTiny
-                                            color: index === 0 ? Theme.textPrimary : Theme.textSecondary
+                                            color: {
+                                                if (modelData.value === 0) {
+                                                    return (loadViewModel.calibration_multiplier !== 1 && 
+                                                            loadViewModel.calibration_multiplier !== 2 && 
+                                                            loadViewModel.calibration_multiplier !== 4) ? Theme.textPrimary : Theme.textSecondary
+                                                } else {
+                                                    return loadViewModel.calibration_multiplier === modelData.value ? Theme.textPrimary : Theme.textSecondary
+                                                }
+                                            }
                                             anchors.horizontalCenter: parent.horizontalCenter
                                         }
                                     }
                                     
                                     MouseArea {
                                         anchors.fill: parent
-                                        onClicked: console.log("选择倍率:", modelData.value)
+                                        onClicked: {
+                                            if (modelData.value === 0) {
+                                                // 自定义倍率，弹出对话框
+                                                customMultiplierDialog.open()
+                                            } else {
+                                                loadViewModel.set_multiplier(modelData.value)
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -173,16 +242,40 @@ Item {
                         CalibrationPoint {
                             width: parent.width
                             pointNumber: 1
-                            adValue: "0"
-                            weightValue: "0"
+                            adValue: loadViewModel.point1_ad.toFixed(2)
+                            weightValue: loadViewModel.point1_weight.toFixed(2)
+                            onAdValueEdited: function(newValue) {
+                                var value = parseFloat(newValue)
+                                if (!isNaN(value)) {
+                                    loadViewModel.point1_ad = value
+                                }
+                            }
+                            onWeightValueEdited: function(newValue) {
+                                var value = parseFloat(newValue)
+                                if (!isNaN(value)) {
+                                    loadViewModel.point1_weight = value
+                                }
+                            }
                         }
                         
                         // 标定点 2
                         CalibrationPoint {
                             width: parent.width
                             pointNumber: 2
-                            adValue: "10000"
-                            weightValue: "5"
+                            adValue: loadViewModel.point2_ad.toFixed(2)
+                            weightValue: loadViewModel.point2_weight.toFixed(2)
+                            onAdValueEdited: function(newValue) {
+                                var value = parseFloat(newValue)
+                                if (!isNaN(value)) {
+                                    loadViewModel.point2_ad = value
+                                }
+                            }
+                            onWeightValueEdited: function(newValue) {
+                                var value = parseFloat(newValue)
+                                if (!isNaN(value)) {
+                                    loadViewModel.point2_weight = value
+                                }
+                            }
                         }
                     }
                 }
@@ -266,11 +359,23 @@ Item {
         }
     }
     
+    // 自定义倍率选择对话框
+    CustomMultiplierDialog {
+        id: customMultiplierDialog
+        currentMultiplier: loadViewModel.calibration_multiplier
+        
+        onMultiplierSelected: function(multiplier) {
+            loadViewModel.set_multiplier(multiplier)
+        }
+    }
+
     // 标定点组件
     component CalibrationPoint: Rectangle {
         property int pointNumber: 1
         property string adValue: "0"
         property string weightValue: "0"
+        signal adValueEdited(string newValue)
+        signal weightValueEdited(string newValue)
         
         height: 104
         color: Theme.darkBackground
@@ -331,6 +436,10 @@ Item {
                             border.width: Theme.borderThin
                             radius: Theme.radiusSmall
                         }
+                        
+                        onEditingFinished: {
+                            adValueEdited(text)
+                        }
                     }
                 }
                 
@@ -358,6 +467,10 @@ Item {
                             border.color: "#45556c"
                             border.width: Theme.borderThin
                             radius: Theme.radiusSmall
+                        }
+                        
+                        onEditingFinished: {
+                            weightValueEdited(text)
                         }
                     }
                 }

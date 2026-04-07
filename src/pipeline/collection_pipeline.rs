@@ -11,6 +11,7 @@ use super::shared_buffer::SharedBuffer;
 use super::event_channel::StorageEventSender;
 use super::sensor_data_event_channel::SensorDataEventSender;
 use super::filter_buffer::FilterBuffer;
+use super::shared_sensor_buffer::SharedSensorBuffer;
 
 /// 采集管道配置
 #[derive(Debug, Clone)]
@@ -60,6 +61,7 @@ pub struct CollectionPipeline {
     danger_cleared_callback: Option<Arc<dyn Fn() + Send + Sync>>,
     storage_event_sender: Option<StorageEventSender>,
     sensor_storage_sender: Option<SensorDataEventSender>,
+    shared_sensor_buffer: Option<SharedSensorBuffer>,
 }
 
 impl CollectionPipeline {
@@ -81,6 +83,7 @@ impl CollectionPipeline {
             danger_cleared_callback: None,
             storage_event_sender: None,
             sensor_storage_sender: None,
+            shared_sensor_buffer: None,
         }
     }
 
@@ -103,6 +106,7 @@ impl CollectionPipeline {
             danger_cleared_callback: None,
             storage_event_sender: Some(storage_event_sender),
             sensor_storage_sender: None,
+            shared_sensor_buffer: None,
         }
     }
 
@@ -113,6 +117,7 @@ impl CollectionPipeline {
         display_buffer: SharedBuffer,
         storage_event_sender: StorageEventSender,
         sensor_storage_sender: SensorDataEventSender,
+        shared_sensor_buffer: SharedSensorBuffer,
     ) -> Self {
         Self {
             config,
@@ -126,6 +131,7 @@ impl CollectionPipeline {
             danger_cleared_callback: None,
             storage_event_sender: Some(storage_event_sender),
             sensor_storage_sender: Some(sensor_storage_sender),
+            shared_sensor_buffer: Some(shared_sensor_buffer),
         }
     }
 
@@ -149,6 +155,7 @@ impl CollectionPipeline {
             danger_cleared_callback: None,
             storage_event_sender: None,
             sensor_storage_sender: None,
+            shared_sensor_buffer: None,
         }
     }
     
@@ -198,6 +205,7 @@ impl CollectionPipeline {
         let danger_cleared_callback = self.danger_cleared_callback.clone();
         let storage_event_sender = self.storage_event_sender.clone();
         let sensor_storage_sender = self.sensor_storage_sender.clone();
+        let shared_sensor_buffer = self.shared_sensor_buffer.clone();
 
         let handle = qt_threading_utils::runtime::global_runtime().spawn(async move {
             tracing::info!(" Collection pipeline started (mode: {})", 
@@ -218,6 +226,13 @@ impl CollectionPipeline {
                 match result {
                     Ok(Ok(sensor_data)) => {
                         consecutive_failures = 0;
+
+                        // 写入共享传感器缓冲区（供校准界面使用）
+                        if let Some(ref buffer) = shared_sensor_buffer {
+                            if let Ok(mut buf) = buffer.write() {
+                                buf.push(sensor_data.clone());
+                            }
+                        }
 
                         if let Some(ref fb) = filter_buffer {
                             // 多速率模式: 只写入滤波缓冲区

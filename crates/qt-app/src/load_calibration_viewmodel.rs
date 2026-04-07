@@ -1,4 +1,5 @@
-// settings_viewmodel/calibration/load_calibration.rs - 载荷传感器校准 ViewModel
+// load_calibration_viewmodel.rs - 载荷传感器校准 ViewModel
+// 由于 cxx-qt 限制，需要在 src/ 根目录定义
 
 #[cxx_qt::bridge]
 pub mod load_calibration_bridge {

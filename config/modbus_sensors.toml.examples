@@ -1,0 +1,329 @@
+# Modbus TCP 传感器配置示例
+# 本文件包含多种配置场景的示例，供参考
+
+# ========================================
+# 示例 1: 标准配置（Float32，BigEndian）
+# ========================================
+# 适用场景: 标准 Modbus 设备，浮点数存储
+# 
+# [global]
+# mode = "modbus_tcp"
+# 
+# [server]
+# host = "192.168.1.100"
+# port = 502
+# timeout_ms = 1000
+# 
+# [ad1_load]
+# name = "Load Cell"
+# slave_id = 1
+# register_address = 0
+# register_count = 2
+# data_type = "Float32"
+# byte_order = "BigEndian"
+# 
+# [ad2_radius]
+# name = "Radius Sensor"
+# slave_id = 1
+# register_address = 2
+# register_count = 2
+# data_type = "Float32"
+# byte_order = "BigEndian"
+# 
+# [ad3_angle]
+# name = "Angle Sensor"
+# slave_id = 1
+# register_address = 4
+# register_count = 2
+# data_type = "Float32"
+# byte_order = "BigEndian"
+
+# ========================================
+# 示例 2: 整数类型配置（UInt16）
+# ========================================
+# 适用场景: 传感器输出 AD 原始值（0-4095）
+# 
+# [global]
+# mode = "modbus_tcp"
+# 
+# [server]
+# host = "192.168.1.100"
+# port = 502
+# timeout_ms = 1000
+# 
+# [ad1_load]
+# name = "Load Cell"
+# slave_id = 1
+# register_address = 0
+# register_count = 1        # UInt16 只需 1 个寄存器
+# data_type = "UInt16"
+# byte_order = "BigEndian"  # UInt16 不使用字节序
+# 
+# [ad2_radius]
+# name = "Radius Sensor"
+# slave_id = 1
+# register_address = 1
+# register_count = 1
+# data_type = "UInt16"
+# byte_order = "BigEndian"
+# 
+# [ad3_angle]
+# name = "Angle Sensor"
+# slave_id = 1
+# register_address = 2
+# register_count = 1
+# data_type = "UInt16"
+# byte_order = "BigEndian"
+
+# ========================================
+# 示例 3: 多 Slave 设备配置
+# ========================================
+# 适用场景: 传感器分布在不同的 Slave 设备上
+# 
+# [global]
+# mode = "modbus_tcp"
+# 
+# [server]
+# host = "192.168.1.100"
+# port = 502
+# timeout_ms = 1000
+# 
+# [ad1_load]
+# name = "Load Cell"
+# slave_id = 1              # 设备 1
+# register_address = 0
+# register_count = 2
+# data_type = "Float32"
+# byte_order = "BigEndian"
+# 
+# [ad2_radius]
+# name = "Radius Sensor"
+# slave_id = 2              # 设备 2
+# register_address = 0
+# register_count = 2
+# data_type = "Float32"
+# byte_order = "BigEndian"
+# 
+# [ad3_angle]
+# name = "Angle Sensor"
+# slave_id = 3              # 设备 3
+# register_address = 0
+# register_count = 2
+# data_type = "Float32"
+# byte_order = "BigEndian"
+
+# ========================================
+# 示例 4: LittleEndian 字节序
+# ========================================
+# 适用场景: 某些 PLC 或非标准设备使用 LittleEndian
+# 
+# [global]
+# mode = "modbus_tcp"
+# 
+# [server]
+# host = "192.168.1.100"
+# port = 502
+# timeout_ms = 1000
+# 
+# [ad1_load]
+# name = "Load Cell"
+# slave_id = 1
+# register_address = 0
+# register_count = 2
+# data_type = "Float32"
+# byte_order = "LittleEndian"  # 使用 LittleEndian
+# 
+# [ad2_radius]
+# name = "Radius Sensor"
+# slave_id = 1
+# register_address = 2
+# register_count = 2
+# data_type = "Float32"
+# byte_order = "LittleEndian"
+# 
+# [ad3_angle]
+# name = "Angle Sensor"
+# slave_id = 1
+# register_address = 4
+# register_count = 2
+# data_type = "Float32"
+# byte_order = "LittleEndian"
+
+# ========================================
+# 示例 5: 有符号整数（Int16）
+# ========================================
+# 适用场景: 传感器输出有符号整数（如 -1000 ~ 1000）
+# 
+# [global]
+# mode = "modbus_tcp"
+# 
+# [server]
+# host = "192.168.1.100"
+# port = 502
+# timeout_ms = 1000
+# 
+# [ad1_load]
+# name = "Load Cell"
+# slave_id = 1
+# register_address = 0
+# register_count = 1
+# data_type = "Int16"       # 有符号整数
+# byte_order = "BigEndian"
+# 
+# [ad2_radius]
+# name = "Radius Sensor"
+# slave_id = 1
+# register_address = 1
+# register_count = 1
+# data_type = "Int16"
+# byte_order = "BigEndian"
+# 
+# [ad3_angle]
+# name = "Angle Sensor"
+# slave_id = 1
+# register_address = 2
+# register_count = 1
+# data_type = "Int16"
+# byte_order = "BigEndian"
+
+# ========================================
+# 示例 6: 高性能配置（低延迟）
+# ========================================
+# 适用场景: 高频采集，要求低延迟
+# 
+# [global]
+# mode = "modbus_tcp"
+# 
+# [server]
+# host = "192.168.1.100"
+# port = 502
+# timeout_ms = 500          # 减小超时时间
+# 
+# [ad1_load]
+# name = "Load Cell"
+# slave_id = 1
+# register_address = 0
+# register_count = 2
+# data_type = "Float32"
+# byte_order = "BigEndian"
+# 
+# [ad2_radius]
+# name = "Radius Sensor"
+# slave_id = 1
+# register_address = 2
+# register_count = 2
+# data_type = "Float32"
+# byte_order = "BigEndian"
+# 
+# [ad3_angle]
+# name = "Angle Sensor"
+# slave_id = 1
+# register_address = 4
+# register_count = 2
+# data_type = "Float32"
+# byte_order = "BigEndian"
+
+# ========================================
+# 示例 7: 混合数据类型
+# ========================================
+# 适用场景: 不同传感器使用不同的数据类型
+# 
+# [global]
+# mode = "modbus_tcp"
+# 
+# [server]
+# host = "192.168.1.100"
+# port = 502
+# timeout_ms = 1000
+# 
+# [ad1_load]
+# name = "Load Cell"
+# slave_id = 1
+# register_address = 0
+# register_count = 2
+# data_type = "Float32"     # 浮点数
+# byte_order = "BigEndian"
+# 
+# [ad2_radius]
+# name = "Radius Sensor"
+# slave_id = 1
+# register_address = 2
+# register_count = 1
+# data_type = "UInt16"      # 无符号整数
+# byte_order = "BigEndian"
+# 
+# [ad3_angle]
+# name = "Angle Sensor"
+# slave_id = 1
+# register_address = 3
+# register_count = 1
+# data_type = "Int16"       # 有符号整数
+# byte_order = "BigEndian"
+
+# ========================================
+# 数据类型说明
+# ========================================
+# 
+# UInt16:
+#   - 寄存器数量: 1
+#   - 数值范围: 0 ~ 65535
+#   - 适用场景: AD 原始值、无符号整数
+# 
+# Int16:
+#   - 寄存器数量: 1
+#   - 数值范围: -32768 ~ 32767
+#   - 适用场景: 有符号整数、温度等
+# 
+# Float32:
+#   - 寄存器数量: 2
+#   - 数值范围: ±3.4E38
+#   - 适用场景: 浮点数、物理量（推荐）
+# 
+# ========================================
+# 字节序说明
+# ========================================
+# 
+# BigEndian (ABCD):
+#   - 高字节在前（Modbus 标准）
+#   - 大多数 Modbus 设备使用此字节序
+# 
+# LittleEndian (DCBA):
+#   - 低字节在前
+#   - 某些 PLC 或非标准设备使用
+# 
+# 如何确定字节序:
+#   1. 查看设备文档
+#   2. 先尝试 BigEndian
+#   3. 如果数值异常，尝试 LittleEndian
+# 
+# ========================================
+# 寄存器地址分配建议
+# ========================================
+# 
+# Float32 类型（每个占 2 个寄存器）:
+#   AD1: 地址 0-1
+#   AD2: 地址 2-3
+#   AD3: 地址 4-5
+# 
+# UInt16/Int16 类型（每个占 1 个寄存器）:
+#   AD1: 地址 0
+#   AD2: 地址 1
+#   AD3: 地址 2
+# 
+# ========================================
+# 故障排查
+# ========================================
+# 
+# 问题: 连接失败
+# 解决: 检查 IP、端口、防火墙
+# 
+# 问题: 读取超时
+# 解决: 增加 timeout_ms，检查 Slave ID
+# 
+# 问题: 数值异常（NaN）
+# 解决: 切换字节序，检查数据类型
+# 
+# 问题: 数值不更新
+# 解决: 检查设备数据是否变化
+# 
+# ========================================

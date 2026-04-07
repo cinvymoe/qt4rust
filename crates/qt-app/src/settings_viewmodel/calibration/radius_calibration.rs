@@ -62,12 +62,12 @@ impl Default for RadiusCalibrationViewModelRust {
         let calibration = manager.load().unwrap_or_default();
 
         Self {
-            min_radius: calibration.radius_zero_value,
-            max_radius: calibration.radius_scale_value,
-            point1_ad: calibration.radius_zero_ad,
-            point1_radius: calibration.radius_zero_value,
-            point2_ad: calibration.radius_scale_ad,
-            point2_radius: calibration.radius_scale_value,
+            min_radius: calibration.radius.zero_value,
+            max_radius: calibration.radius.scale_value,
+            point1_ad: calibration.radius.zero_ad,
+            point1_radius: calibration.radius.zero_value,
+            point2_ad: calibration.radius.scale_ad,
+            point2_radius: calibration.radius.scale_value,
             current_radius: 0.0,
             current_ad: 0.0,
             config_path,
@@ -91,10 +91,10 @@ impl radius_calibration_bridge::RadiusCalibrationViewModel {
             }
         };
 
-        calibration.radius_zero_ad = p1_ad;
-        calibration.radius_zero_value = p1_rad;
-        calibration.radius_scale_ad = p2_ad;
-        calibration.radius_scale_value = p2_rad;
+        calibration.radius.zero_ad = p1_ad;
+        calibration.radius.zero_value = p1_rad;
+        calibration.radius.scale_ad = p2_ad;
+        calibration.radius.scale_value = p2_rad;
 
         match manager.save(&calibration) {
             Ok(_) => {
@@ -110,14 +110,14 @@ impl radius_calibration_bridge::RadiusCalibrationViewModel {
 
     pub fn reset_to_default(mut self: Pin<&mut Self>) {
         let calibration = qt_rust_demo::models::sensor_calibration::SensorCalibration::default();
-        self.as_mut().set_point1_ad(calibration.radius_zero_ad);
+        self.as_mut().set_point1_ad(calibration.radius.zero_ad);
         self.as_mut()
-            .set_point1_radius(calibration.radius_zero_value);
-        self.as_mut().set_point2_ad(calibration.radius_scale_ad);
+            .set_point1_radius(calibration.radius.zero_value);
+        self.as_mut().set_point2_ad(calibration.radius.scale_ad);
         self.as_mut()
-            .set_point2_radius(calibration.radius_scale_value);
-        self.as_mut().set_min_radius(calibration.radius_zero_value);
-        self.as_mut().set_max_radius(calibration.radius_scale_value);
+            .set_point2_radius(calibration.radius.scale_value);
+        self.as_mut().set_min_radius(calibration.radius.zero_value);
+        self.as_mut().set_max_radius(calibration.radius.scale_value);
     }
 
     pub fn update_current_reading(mut self: Pin<&mut Self>, radius: f64, ad: f64) {

@@ -8,3 +8,6 @@ license = "MIT"
 
 [dependencies]
 thiserror = "1.0"
+tokio-modbus = { version = "0.17", features = ["tcp"] }
+tokio = { version = "1.42", features = ["rt", "net"] }
+byteorder = "1.5"

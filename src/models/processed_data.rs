@@ -60,67 +60,73 @@ impl ProcessedData {
 
     /// 从传感器原始数据和配置创建处理后的数据
     ///
-    /// # 参数
-    /// - `raw_data`: 传感器原始数据（AD 值）
-    /// - `config`: 起重机配置（包含标定参数和额定载荷表）
-    /// - `sequence_number`: 序列号
-    ///
-    /// # 返回
-    /// 处理后的数据，包含转换后的物理值和状态判断
+    /// 新逻辑：
+    /// 1. ad1 -> current_load (载荷)
+    /// 2. ad2 -> boom_length (臂长)
+    /// 3. ad3 -> boom_angle (臂角)
+    /// 4. working_radius = boom_length * cos(boom_angle) (工作幅度)
+    /// 5. rated_load = 从载荷表查找(boom_length, working_radius)
+    /// 6. moment_percentage = (current_load * working_radius) / (rated_load * working_radius)
     pub fn from_sensor_data_with_config(
         raw_data: SensorData,
         config: &CraneConfig,
         sequence_number: u64,
     ) -> Self {
-        // 使用配置的标定参数转换 AD 值为物理值
+        // ad1 -> current_load
         let current_load = config
             .sensor_calibration
             .convert_weight_ad_to_value(raw_data.ad1_load);
-        let working_radius = config
+
+        // ad2 -> boom_length (臂长)
+        let boom_length = config
             .sensor_calibration
             .convert_radius_ad_to_value(raw_data.ad2_radius);
+
+        // ad3 -> boom_angle (臂角，0° = 水平)
         let boom_angle = config
             .sensor_calibration
             .convert_angle_ad_to_value(raw_data.ad3_angle);
 
-        // 根据幅度查询额定载荷
-        let rated_load = config.rated_load_table.get_rated_load(working_radius);
+        // 计算工作幅度: working_radius = boom_length * cos(boom_angle)
+        let working_radius = Self::calculate_working_radius(boom_length, boom_angle);
+
+        // 根据臂长和幅度查询额定载荷
+        let rated_load = config
+            .rated_load_table
+            .get_rated_load(boom_length, working_radius);
 
         // 计算力矩百分比
         let moment_percentage =
             Self::calculate_moment_percentage_with_load(current_load, working_radius, rated_load);
 
-        // 使用配置的危险阈值判断（优先使用 SensorCalibration 中的力矩报警百分比）
-        let is_danger = config.sensor_calibration.is_moment_alarm(moment_percentage);
+        // 使用配置的危险阈值判断
+        let is_danger = config.alarm_thresholds.is_moment_alarm(moment_percentage);
 
         // 检查传感器值是否超过预警/报警阈值
         let mut validation_error = None;
 
-        // 检查力矩百分比（最高优先级）
-        if config.sensor_calibration.is_moment_alarm(moment_percentage) {
+        if config.alarm_thresholds.is_moment_alarm(moment_percentage) {
             validation_error = Some(format!(
                 "力矩报警: {:.1}% >= {:.1}%",
-                moment_percentage, config.sensor_calibration.moment_alarm_percentage
+                moment_percentage, config.alarm_thresholds.moment.alarm_percentage
             ));
         } else if config
-            .sensor_calibration
+            .alarm_thresholds
             .is_moment_warning(moment_percentage)
         {
             validation_error = Some(format!(
                 "力矩预警: {:.1}% >= {:.1}%",
-                moment_percentage, config.sensor_calibration.moment_warning_percentage
+                moment_percentage, config.alarm_thresholds.moment.warning_percentage
             ));
-        }
-        // 检查角度
-        else if config.sensor_calibration.is_angle_alarm(boom_angle) {
+        } else if config.alarm_thresholds.is_angle_alarm(boom_angle) {
             validation_error = Some(format!(
                 "角度报警: {:.1} 度 >= {:.1} 度",
-                boom_angle, config.sensor_calibration.angle_alarm_value
+                boom_angle, config.alarm_thresholds.angle.alarm
             ));
-        } else if config.sensor_calibration.is_angle_warning(boom_angle) {
+        } else if config.alarm_thresholds.is_angle_warning(boom_angle) {
             validation_error = Some(format!(
                 "角度预警: {:.1} 度 >= {:.1} 度",
-                boom_angle, config.sensor_calibration.angle_warning_value
+                boom_angle, config.alarm_thresholds.angle.warning
             ));
         }
 
@@ -134,6 +140,21 @@ impl ProcessedData {
             timestamp: SystemTime::now(),
             sequence_number,
         }
+    }
+
+    /// 计算工作幅度（working_radius）
+    ///
+    /// 公式: working_radius = boom_length * cos(boom_angle)
+    ///
+    /// - 0° = 吊臂水平（最大幅度）
+    /// - 90° = 吊臂垂直（幅度为0）
+    /// - >90° = 吊臂后仰，钳位到0
+    fn calculate_working_radius(boom_length: f64, boom_angle_degrees: f64) -> f64 {
+        let angle_rad = boom_angle_degrees.to_radians();
+        let cos_angle = angle_rad.cos();
+        // 钳位到0（吊臂后仰时幅度为0）
+        let effective_cos = cos_angle.max(0.0);
+        boom_length * effective_cos
     }
 
     /// 计算力矩百分比
@@ -216,16 +237,17 @@ mod tests {
         // 创建配置
         let config = CraneConfig::default();
 
-        // 创建传感器数据（AD 值：中点）
-        let sensor_data = SensorData::new(2047.5, 2047.5, 2047.5);
+        // 创建传感器数据（AD 值：中点，角度为0使工作半径=臂长）
+        // ad3=0 表示臂角为0°（水平），此时 working_radius = boom_length
+        let sensor_data = SensorData::new(2047.5, 2047.5, 0.0);
 
         // 使用配置处理数据
         let processed = ProcessedData::from_sensor_data_with_config(sensor_data, &config, 1);
 
         // 验证转换结果（默认配置：0-4095 AD -> 0-50吨, 0-20米, 0-90度）
         assert!((processed.current_load - 25.0).abs() < 0.5); // 约 25 吨
-        assert!((processed.working_radius - 10.0).abs() < 0.5); // 约 10 米
-        assert!((processed.boom_angle - 45.0).abs() < 0.5); // 约 45 度
+        assert!((processed.working_radius - 10.0).abs() < 0.5); // 约 10 米（臂角0°时等于臂长）
+        assert!((processed.boom_angle - 0.0).abs() < 0.5); // 0 度
         assert_eq!(processed.sequence_number, 1);
     }
 
@@ -235,8 +257,9 @@ mod tests {
         let config = CraneConfig::default();
 
         // 创建传感器数据，工作半径对应 5 米（AD 值约 1023.75）
+        // ad3=0 使臂角为0°，此时 working_radius = boom_length
         // 根据默认载荷表，5 米对应 40 吨额定载荷
-        let sensor_data = SensorData::new(2047.5, 1023.75, 2047.5);
+        let sensor_data = SensorData::new(2047.5, 1023.75, 0.0);
 
         let processed = ProcessedData::from_sensor_data_with_config(sensor_data, &config, 1);
 
@@ -252,10 +275,11 @@ mod tests {
         let config = CraneConfig::default();
 
         // 创建传感器数据，使力矩百分比达到预警阈值（90%）
-        // 假设工作半径 10 米，额定载荷 25 吨
+        // ad3=0 使臂角为0°，working_radius = boom_length = 10m
+        // 额定载荷 25 吨
         // 需要载荷 = 25 * 0.9 = 22.5 吨
         // AD 值 = 22.5 / 50 * 4095 ≈ 1842.75
-        let sensor_data = SensorData::new(1842.75, 2047.5, 2047.5);
+        let sensor_data = SensorData::new(1842.75, 2047.5, 0.0);
 
         let processed = ProcessedData::from_sensor_data_with_config(sensor_data, &config, 1);
 
@@ -271,10 +295,11 @@ mod tests {
         let config = CraneConfig::default();
 
         // 创建传感器数据，使力矩百分比达到报警阈值（100%）
-        // 假设工作半径 10 米，额定载荷 25 吨
+        // ad3=0 使臂角为0°，working_radius = boom_length = 10m
+        // 额定载荷 25 吨
         // 需要载荷 = 25 吨
         // AD 值 = 25 / 50 * 4095 ≈ 2047.5
-        let sensor_data = SensorData::new(2047.5, 2047.5, 2047.5);
+        let sensor_data = SensorData::new(2047.5, 2047.5, 0.0);
 
         let processed = ProcessedData::from_sensor_data_with_config(sensor_data, &config, 1);
 
@@ -348,5 +373,48 @@ mod tests {
         // 测试工作半径为 0 的情况
         let percentage = ProcessedData::calculate_moment_percentage_with_load(20.0, 0.0, 25.0);
         assert_eq!(percentage, 0.0);
+    }
+
+    #[test]
+    fn test_calculate_working_radius_horizontal() {
+        // 0° = 水平，幅度 = 臂长
+        let radius = ProcessedData::calculate_working_radius(10.0, 0.0);
+        assert!((radius - 10.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_calculate_working_radius_vertical() {
+        // 90° = 垂直，幅度 = 0
+        let radius = ProcessedData::calculate_working_radius(10.0, 90.0);
+        assert!((radius - 0.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_calculate_working_radius_45_degrees() {
+        // 45°，cos(45°) ≈ 0.707
+        let radius = ProcessedData::calculate_working_radius(10.0, 45.0);
+        let expected = 10.0 * 0.70710678;
+        assert!((radius - expected).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_calculate_working_radius_60_degrees() {
+        // 60°，cos(60°) = 0.5
+        let radius = ProcessedData::calculate_working_radius(10.0, 60.0);
+        assert!((radius - 5.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_calculate_working_radius_over_90_degrees() {
+        // >90° = 后仰，钳位到 0
+        let radius = ProcessedData::calculate_working_radius(10.0, 120.0);
+        assert!((radius - 0.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_calculate_working_radius_negative_clamped() {
+        // cos() 为负值时钳位到 0
+        let radius = ProcessedData::calculate_working_radius(10.0, 150.0);
+        assert!((radius - 0.0).abs() < 0.001);
     }
 }

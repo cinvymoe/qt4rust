@@ -14,65 +14,42 @@
 # 重量传感器使用 12 位 AD 转换器（0-4095）
 # 默认配置：0 AD -> 0 吨，4095 AD -> 50 吨
 
-# 重量零点 AD 值
-weight_zero_ad = 0.0
-
-# 重量零点物理值（吨）
-weight_zero_value = 0.0
-
-# 重量放大 AD 值（满量程）
-weight_scale_ad = 4095.0
-
-# 重量放大物理值（吨）
-weight_scale_value = 50.0
+[weight]
+# 零点 AD 值
+zero_ad = 0.0
+# 零点物理值（吨）
+zero_value = 0.0
+# 放大 AD 值（满量程）
+scale_ad = 4095.0
+# 放大物理值（吨）
+scale_value = 50.0
+# 标定倍率（1, 2, 4 或自定义值）
+multiplier = 1
 
 # ========== 角度传感器标定参数 ==========
 # 角度传感器使用 12 位 AD 转换器（0-4095）
 # 默认配置：0 AD -> 0 度，4095 AD -> 90 度
 
-# 角度零点 AD 值
-angle_zero_ad = 0.0
-
-# 角度零点物理值（度）
-angle_zero_value = 0.0
-
-# 角度放大 AD 值（满量程）
-angle_scale_ad = 4095.0
-
-# 角度放大物理值（度）
-angle_scale_value = 90.0
+[angle]
+# 零点 AD 值
+zero_ad = 0.0
+# 零点物理值（度）
+zero_value = 0.0
+# 放大 AD 值（满量程）
+scale_ad = 4095.0
+# 放大物理值（度）
+scale_value = 90.0
 
 # ========== 半径传感器标定参数 ==========
 # 半径传感器使用 12 位 AD 转换器（0-4095）
 # 默认配置：0 AD -> 0 米，4095 AD -> 20 米
 
-# 半径零点 AD 值
-radius_zero_ad = 0.0
-
-# 半径零点物理值（米）
-radius_zero_value = 0.0
-
-# 半径放大 AD 值（满量程）
-radius_scale_ad = 4095.0
-
-# 半径放大物理值（米）
-radius_scale_value = 20.0
-
-# ========== 预警值和报警值 ==========
-# 这些阈值用于判断起重机是否处于危险状态
-
-# 角度预警值（度）
-# 当吊臂角度达到此值时，系统将发出预警
-angle_warning_value = 75.0
-
-# 角度报警值（度）
-# 当吊臂角度达到此值时，系统将发出报警
-angle_alarm_value = 85.0
-
-# 力矩预警百分比（%）
-# 当实际力矩达到额定力矩的此百分比时，系统将发出预警
-moment_warning_percentage = 90.0
-
-# 力矩报警百分比（%）
-# 当实际力矩达到额定力矩的此百分比时，系统将发出报警
-moment_alarm_percentage = 100.0
+[radius]
+# 零点 AD 值
+zero_ad = 0.0
+# 零点物理值（米）
+zero_value = 0.0
+# 放大 AD 值（满量程）
+scale_ad = 4095.0
+# 放大物理值（米）
+scale_value = 20.0

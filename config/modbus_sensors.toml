@@ -1,0 +1,34 @@
+# ModbusTcp 传感器配置
+# 用于配置通过 ModbusTcp 协议读取真实传感器数据
+
+[global]
+mode = "modbus_tcp"
+
+[server]
+host = "192.168.110.62"
+port = 502
+timeout_ms = 1000
+
+[ad1_load]
+name = "Load Cell"
+slave_id = 1
+register_address = 0
+register_count = 1        # UInt16 只需 1 个寄存器
+data_type = "UInt16"
+byte_order = "BigEndian"  # UInt16 不使用字节序
+
+[ad2_radius]
+name = "Radius Sensor"
+slave_id = 1
+register_address = 1
+register_count = 1
+data_type = "UInt16"
+byte_order = "BigEndian"
+
+[ad3_angle]
+name = "Angle Sensor"
+slave_id = 1
+register_address = 2
+register_count = 1
+data_type = "UInt16"
+byte_order = "BigEndian"

@@ -2,5 +2,5 @@
 
 pub mod alarm_threshold;
 pub mod angle_calibration;
-pub mod load_calibration;
+// pub mod load_calibration;  // 已移至 src/load_calibration_viewmodel.rs
 pub mod radius_calibration;

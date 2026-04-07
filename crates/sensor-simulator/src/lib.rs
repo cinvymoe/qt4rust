@@ -7,6 +7,7 @@ pub mod error;
 pub mod traits;
 pub mod simulated;
 pub mod real;
+pub mod modbus_tcp;
 
 // 保留旧的 simulator 模块以保持向后兼容
 pub mod simulator;
@@ -17,6 +18,7 @@ pub mod prelude {
     pub use crate::traits::*;
     pub use crate::simulated::*;
     pub use crate::real::*;
+    pub use crate::modbus_tcp::*;
     
     // 向后兼容
     pub use crate::simulator::SineSimulator;

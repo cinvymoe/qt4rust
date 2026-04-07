@@ -37,16 +37,37 @@ fn main() {
         timeout_ms: 1000,
     };
     let mut serial_sensor = RealSensor::new(SensorType::Serial(serial_config));
-    
+
     // 连接传感器
     match serial_sensor.connect() {
         Ok(_) => println!("传感器连接成功"),
         Err(e) => println!("传感器连接失败: {}", e),
     }
-    
+
     demo_sensor(&serial_sensor);
 
-    // 示例 5: 向后兼容的旧 API
+    // 示例 5: ModbusTcp 传感器
+    println!("\n5. ModbusTcp 传感器:");
+    let modbus_config = ModbusTcpConfig {
+        host: "192.168.1.100".to_string(),
+        port: 502,
+        slave_id: 1,
+        register_address: 0,
+        register_count: 2,
+        data_type: ModbusDataType::Float32,
+        timeout_ms: 1000,
+        byte_order: ByteOrder::BigEndian,
+    };
+    let mut modbus_sensor = ModbusTcpSensor::new(modbus_config, "Load Cell ModbusTcp");
+
+    match modbus_sensor.connect() {
+        Ok(_) => println!("ModbusTcp 传感器连接成功"),
+        Err(e) => println!("ModbusTcp 传感器连接失败: {}", e),
+    }
+
+    demo_sensor(&modbus_sensor);
+
+    // 示例 6: 向后兼容的旧 API
     println!("\n5. 旧版 SineSimulator API (向后兼容):");
     let legacy_simulator = SineSimulator::default();
     println!("传感器名称: {}", legacy_simulator.name());
@@ -60,8 +81,15 @@ fn main() {
 /// 演示统一的传感器接口
 fn demo_sensor<S: SensorProvider>(sensor: &S) {
     println!("传感器名称: {}", sensor.name());
-    println!("连接状态: {}", if sensor.is_connected() { "已连接" } else { "未连接" });
-    
+    println!(
+        "连接状态: {}",
+        if sensor.is_connected() {
+            "已连接"
+        } else {
+            "未连接"
+        }
+    );
+
     // 读取多次数据
     for i in 0..3 {
         match sensor.read() {

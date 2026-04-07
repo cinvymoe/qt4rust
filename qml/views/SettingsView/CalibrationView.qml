@@ -2,6 +2,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import qt.rust.demo
 import "../../styles"
 import "CalibrationContents"
 
@@ -9,6 +10,26 @@ Item {
     id: calibrationView
     
     property int currentSensorTab: 0  // 0: 载荷, 1: 角度, 2: 半径, 3: 报警阈值
+    
+    // 绑定 CalibrationViewModel
+    CalibrationViewModel {
+        id: viewModel
+    }
+    
+    // 定时器：每 500ms 更新传感器数据
+    Timer {
+        id: sensorUpdateTimer
+        interval: 500
+        running: true
+        repeat: true
+        onTriggered: {
+            viewModel.update_sensor_data()
+        }
+    }
+    
+    Component.onCompleted: {
+        console.log("[CalibrationView] Initialized with timer interval:", sensorUpdateTimer.interval, "ms")
+    }
     
     Row {
         anchors.fill: parent
@@ -39,30 +60,30 @@ Item {
                     SensorDataCard {
                         width: parent.width - parent.leftPadding - parent.rightPadding
                         sensorName: "重量传感器"
-                        adValue: "21611"
-                        calculatedValue: "5.00"
+                        adValue: (viewModel.ad1_load || 0).toFixed(2)
+                        calculatedValue: (viewModel.ad1_load || 0).toFixed(2)
                         unit: "吨"
-                        isOnline: true
+                        isOnline: viewModel.sensor_connected
                     }
                     
                     // 角度传感器卡片
                     SensorDataCard {
                         width: parent.width - parent.leftPadding - parent.rightPadding
                         sensorName: "角度传感器"
-                        adValue: "14309"
-                        calculatedValue: "64.4"
+                        adValue: (viewModel.ad3_angle || 0).toFixed(2)
+                        calculatedValue: (viewModel.ad3_angle || 0).toFixed(1)
                         unit: "°"
-                        isOnline: true
+                        isOnline: viewModel.sensor_connected
                     }
                     
                     // 侧长传感器卡片
                     SensorDataCard {
                         width: parent.width - parent.leftPadding - parent.rightPadding
                         sensorName: "侧长传感器"
-                        adValue: "17459"
-                        calculatedValue: "17.46"
+                        adValue: (viewModel.ad2_radius || 0).toFixed(2)
+                        calculatedValue: (viewModel.ad2_radius || 0).toFixed(2)
                         unit: "m"
-                        isOnline: true
+                        isOnline: viewModel.sensor_connected
                     }
                 }
             }
@@ -138,24 +159,28 @@ Item {
                     
                     // 载荷传感器校准
                     LoadCalibrationContent {
+                        id: loadCalibrationContent
                         anchors.fill: parent
                         visible: currentSensorTab === 0
                     }
                     
                     // 角度传感器校准
                     AngleCalibrationContent {
+                        id: angleCalibrationContent
                         anchors.fill: parent
                         visible: currentSensorTab === 1
                     }
                     
                     // 半径传感器校准
                     RadiusCalibrationContent {
+                        id: radiusCalibrationContent
                         anchors.fill: parent
                         visible: currentSensorTab === 2
                     }
                     
                     // 报警阈值设置
                     AlarmThresholdContent {
+                        id: alarmThresholdContent
                         anchors.fill: parent
                         visible: currentSensorTab === 3
                     }
@@ -205,7 +230,32 @@ Item {
                                 }
                             }
                             
-                            onClicked: console.log("恢复默认")
+                            onClicked: {
+                                switch(currentSensorTab) {
+                                    case 0: // 载荷传感器
+                                        loadCalibrationContent.resetToDefault()
+                                        console.log("载荷传感器恢复默认")
+                                        break
+                                    case 1: // 角度传感器
+                                        if (angleCalibrationContent.resetToDefault) {
+                                            angleCalibrationContent.resetToDefault()
+                                        }
+                                        console.log("角度传感器恢复默认")
+                                        break
+                                    case 2: // 半径传感器
+                                        if (radiusCalibrationContent.resetToDefault) {
+                                            radiusCalibrationContent.resetToDefault()
+                                        }
+                                        console.log("半径传感器恢复默认")
+                                        break
+                                    case 3: // 报警阈值
+                                        if (alarmThresholdContent.resetToDefault) {
+                                            alarmThresholdContent.resetToDefault()
+                                        }
+                                        console.log("报警阈值恢复默认")
+                                        break
+                                }
+                            }
                         }
                         
                         Button {
@@ -236,7 +286,49 @@ Item {
                                 }
                             }
                             
-                            onClicked: console.log("保存设置")
+                            onClicked: {
+                                var success = false
+                                switch(currentSensorTab) {
+                                    case 0: // 载荷传感器
+                                        success = loadCalibrationContent.saveCalibration()
+                                        if (success) {
+                                            console.log("载荷传感器校准参数保存成功")
+                                        } else {
+                                            console.error("载荷传感器校准参数保存失败")
+                                        }
+                                        break
+                                    case 1: // 角度传感器
+                                        if (angleCalibrationContent.saveCalibration) {
+                                            success = angleCalibrationContent.saveCalibration()
+                                            if (success) {
+                                                console.log("角度传感器校准参数保存成功")
+                                            } else {
+                                                console.error("角度传感器校准参数保存失败")
+                                            }
+                                        }
+                                        break
+                                    case 2: // 半径传感器
+                                        if (radiusCalibrationContent.saveCalibration) {
+                                            success = radiusCalibrationContent.saveCalibration()
+                                            if (success) {
+                                                console.log("半径传感器校准参数保存成功")
+                                            } else {
+                                                console.error("半径传感器校准参数保存失败")
+                                            }
+                                        }
+                                        break
+                                    case 3: // 报警阈值
+                                        if (alarmThresholdContent.saveCalibration) {
+                                            success = alarmThresholdContent.saveCalibration()
+                                            if (success) {
+                                                console.log("报警阈值保存成功")
+                                            } else {
+                                                console.error("报警阈值保存失败")
+                                            }
+                                        }
+                                        break
+                                }
+                            }
                         }
                     }
                 }

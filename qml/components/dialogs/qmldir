@@ -1,0 +1,4 @@
+module dialogs
+InfoDialog 1.0 InfoDialog.qml
+CustomTimeRangeDialog 1.0 CustomTimeRangeDialog.qml
+CustomMultiplierDialog 1.0 CustomMultiplierDialog.qml

@@ -146,6 +146,7 @@ impl PipelineManager {
                 Arc::clone(&shared_buffer),
                 storage_sender.clone(),
                 sensor_tx,
+                sensor_buffer.clone(),
             );
             
             (Some(collection), Some(sensor_pipeline), Some(sensor_buffer))

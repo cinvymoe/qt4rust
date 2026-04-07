@@ -48,6 +48,7 @@ fn main() {
                 // 对话框
                 .qml_file("qml/components/dialogs/InfoDialog.qml")
                 .qml_file("qml/components/dialogs/CustomTimeRangeDialog.qml")
+                .qml_file("qml/components/dialogs/CustomMultiplierDialog.qml")
                 // 样式系统
                 .qml_file("qml/styles/Theme.qml"),
         )
@@ -56,6 +57,7 @@ fn main() {
             "qml/styles/qmldir",
             "qml/views/SettingsView/qmldir",
             "qml/views/SettingsView/CalibrationContents/qmldir",
+            "qml/components/dialogs/qmldir",
             "qml/assets/images/canvas-crane.png",
             "qml/assets/images/canvas.png",
             "qml/assets/images/icon-alarm-record.png",
@@ -87,6 +89,8 @@ fn main() {
         ])
         .qt_module("Network")
         .file("src/monitoring_viewmodel.rs")
+        .file("src/calibration_viewmodel.rs")
         .file("src/data_collection_controller.rs")
+        .file("src/load_calibration_viewmodel.rs")
         .build();
 }

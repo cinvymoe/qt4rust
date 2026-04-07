@@ -39,6 +39,12 @@ pub struct StoragePipelineConfig {
     pub alarm_purge_threshold: usize,
 
     pub save_only_latest: bool,
+    
+    /// 报警防抖计数阈值（连续多少次危险才触发报警，0 表示禁用防抖）
+    pub alarm_debounce_count: u32,
+    
+    /// 报警解除防抖计数阈值（连续多少次安全才解除报警，0 表示禁用防抖）
+    pub alarm_clear_debounce_count: u32,
 }
 
 impl Default for StoragePipelineConfig {
@@ -54,6 +60,8 @@ impl Default for StoragePipelineConfig {
             alarm_max_records: 0,
             alarm_purge_threshold: 0,
             save_only_latest: false,
+            alarm_debounce_count: 5,        // 默认：连续 5 次危险才报警 (500ms)
+            alarm_clear_debounce_count: 10, // 默认：连续 10 次安全才解除 (1s)
         }
     }
 }
@@ -71,6 +79,8 @@ impl StoragePipelineConfig {
             alarm_max_records: config.alarm_max_records,
             alarm_purge_threshold: config.alarm_purge_threshold,
             save_only_latest: config.save_only_latest,
+            alarm_debounce_count: 5,        // 默认值
+            alarm_clear_debounce_count: 10, // 默认值
         }
     }
 }
@@ -88,6 +98,10 @@ pub struct StoragePipeline {
     event_receiver: StorageEventReceiver,
     pending_batch: Vec<ProcessedData>,
     last_stored_sequence: Arc<AtomicU64>,
+    
+    // 报警防抖计数器
+    danger_count: Arc<std::sync::atomic::AtomicU32>,
+    safe_count: Arc<std::sync::atomic::AtomicU32>,
 }
 
 impl StoragePipeline {
@@ -107,6 +121,8 @@ impl StoragePipeline {
             running: Arc::new(AtomicBool::new(false)),
             handle: None,
             last_was_danger: Arc::new(AtomicBool::new(false)),
+            danger_count: Arc::new(std::sync::atomic::AtomicU32::new(0)),
+            safe_count: Arc::new(std::sync::atomic::AtomicU32::new(0)),
         }
     }
     
@@ -161,6 +177,8 @@ impl StoragePipeline {
         let pending_batch = tokio::sync::Mutex::new(self.pending_batch.clone());
         let last_seq = self.last_stored_sequence.clone();
         let last_was_danger = self.last_was_danger.clone();
+        let danger_count = self.danger_count.clone();
+        let safe_count = self.safe_count.clone();
         let config = self.config.clone();
         let repository = self.repository.clone();
         
@@ -181,9 +199,11 @@ impl StoragePipeline {
                             data_list, 
                             &pending_batch, 
                             &last_seq, 
-                            &last_was_danger, 
+                            &last_was_danger,
                             &config,
-                            &repository
+                            &repository,
+                            &danger_count,
+                            &safe_count,
                         ).await;
                     }
                 }
@@ -212,37 +232,63 @@ impl StoragePipeline {
         last_was_danger: &Arc<AtomicBool>,
         config: &StoragePipelineConfig,
         repository: &Arc<dyn StorageRepository>,
+        danger_count: &Arc<std::sync::atomic::AtomicU32>,
+        safe_count: &Arc<std::sync::atomic::AtomicU32>,
     ) {
         let last_seq_val = last_seq.load(Ordering::Acquire);
         
         for data in data_list {
             // Filter already stored
             if data.sequence_number > last_seq_val {
-                // Handle alarm state transitions
+                // Handle alarm state transitions with debounce
                 if data.is_danger {
-                    // Check if this is a NEW alarm (not continuous)
-                    // Use compare_exchange for atomic transition detection
-                    let expected = false;
-                    if last_was_danger.compare_exchange(
-                        expected, true, 
-                        Ordering::Relaxed, 
-                        Ordering::Relaxed
-                    ).is_ok() {
-                        // Transition: safe → danger, this is a NEW alarm
-                        tracing::info!("New alarm detected at sequence {}", data.sequence_number);
-                        Self::save_alarm_inner(data.clone(), config, repository).await;
+                    // 危险状态：增加危险计数，重置安全计数
+                    let current_danger_count = danger_count.fetch_add(1, Ordering::Relaxed) + 1;
+                    safe_count.store(0, Ordering::Relaxed);
+                    
+                    // 检查是否达到防抖阈值
+                    if config.alarm_debounce_count == 0 || current_danger_count >= config.alarm_debounce_count {
+                        // Check if this is a NEW alarm (not continuous)
+                        let expected = false;
+                        if last_was_danger.compare_exchange(
+                            expected, true, 
+                            Ordering::Relaxed, 
+                            Ordering::Relaxed
+                        ).is_ok() {
+                            // Transition: safe → danger, this is a NEW alarm
+                            tracing::warn!(
+                                "⚠️  NEW ALARM triggered at sequence {} (danger_count: {}, threshold: {})",
+                                data.sequence_number,
+                                current_danger_count,
+                                config.alarm_debounce_count
+                            );
+                            Self::save_alarm_inner(data.clone(), config, repository).await;
+                        }
                     }
-                    // else: already in danger state, skip (continuous alarm)
+                    // 移除高频 DEBUG 日志，避免日志刷屏
                 } else {
-                    // Check if alarm was cleared
-                    let expected = true;
-                    if last_was_danger.compare_exchange(
-                        expected, false,
-                        Ordering::Relaxed,
-                        Ordering::Relaxed
-                    ).is_ok() {
-                        tracing::info!("Alarm cleared at sequence {}", data.sequence_number);
+                    // 安全状态：增加安全计数，重置危险计数
+                    let current_safe_count = safe_count.fetch_add(1, Ordering::Relaxed) + 1;
+                    danger_count.store(0, Ordering::Relaxed);
+                    
+                    // 检查是否达到解除防抖阈值
+                    if config.alarm_clear_debounce_count == 0 || current_safe_count >= config.alarm_clear_debounce_count {
+                        // Check if alarm was cleared
+                        let expected = true;
+                        if last_was_danger.compare_exchange(
+                            expected, false,
+                            Ordering::Relaxed,
+                            Ordering::Relaxed
+                        ).is_ok() {
+                            tracing::info!(
+                                "✅ Alarm CLEARED at sequence {} (safe_count: {}, threshold: {})",
+                                data.sequence_number,
+                                current_safe_count,
+                                config.alarm_clear_debounce_count
+                            );
+                        }
                     }
+                    // 移除高频 DEBUG 日志，避免日志刷屏
                 }
                 
                 let mut batch = pending_batch.lock().await;
@@ -397,6 +443,8 @@ impl StoragePipeline {
             running: Arc::clone(&self.running),
             handle: None,
             last_was_danger: Arc::clone(&self.last_was_danger),
+            danger_count: Arc::clone(&self.danger_count),
+            safe_count: Arc::clone(&self.safe_count),
         }
     }
     

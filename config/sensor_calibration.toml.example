@@ -1,176 +1,55 @@
 # 起重机传感器标定配置文件示例
-# Example Sensor Calibration Configuration File
+# 复制此文件为 sensor_calibration.toml 并根据实际情况修改
 #
-# 说明 / Description:
+# 说明：
 # 本文件包含所有传感器的标定参数，用于将 AD 采集值转换为物理值
-# This file contains calibration parameters for all sensors to convert AD values to physical values
+# 转换公式: 物理值 = 零点物理值 + (AD值 - 零点AD) × (放大物理值 - 零点物理值) / (放大AD - 零点AD)
 #
-# 转换公式 / Conversion Formula:
-# 物理值 = 零点物理值 + (AD值 - 零点AD) × (放大物理值 - 零点物理值) / (放大AD - 零点AD)
-# Physical Value = Zero Physical + (AD Value - Zero AD) × (Scale Physical - Zero Physical) / (Scale AD - Zero AD)
-#
-# 标定方法 / Calibration Method:
+# 标定方法：
 # 1. 零点标定：传感器在零点位置时，记录 AD 值和对应的物理值
-#    Zero Point Calibration: Record AD value and physical value when sensor is at zero position
 # 2. 放大标定：传感器在已知物理值位置时，记录 AD 值和对应的物理值
-#    Scale Point Calibration: Record AD value and physical value at a known physical position
 # 3. 系统将使用这两个标定点进行线性插值，计算任意 AD 值对应的物理值
-#    System uses linear interpolation between these two points to calculate physical values
-#
-# 使用说明 / Usage Instructions:
-# 1. 复制此文件为 sensor_calibration.toml
-#    Copy this file to sensor_calibration.toml
-# 2. 根据实际传感器标定数据修改参数
-#    Modify parameters according to actual sensor calibration data
-# 3. 保存后可通过系统界面重新加载配置
-#    After saving, reload configuration through system interface
 
 # ========== 重量传感器标定参数 ==========
-# Weight Sensor Calibration Parameters
-#
 # 重量传感器使用 12 位 AD 转换器（0-4095）
-# Weight sensor uses 12-bit AD converter (0-4095)
 # 默认配置：0 AD -> 0 吨，4095 AD -> 50 吨
-# Default configuration: 0 AD -> 0 tons, 4095 AD -> 50 tons
 
-# 重量零点 AD 值
-# Weight zero point AD value
-weight_zero_ad = 0.0
-
-# 重量零点物理值（吨）
-# Weight zero point physical value (tons)
-weight_zero_value = 0.0
-
-# 重量放大 AD 值（满量程）
-# Weight scale AD value (full scale)
-weight_scale_ad = 4095.0
-
-# 重量放大物理值（吨）
-# Weight scale physical value (tons)
-weight_scale_value = 50.0
+[weight]
+# 零点 AD 值
+zero_ad = 0.0
+# 零点物理值（吨）
+zero_value = 0.0
+# 放大 AD 值（满量程）
+scale_ad = 4095.0
+# 放大物理值（吨）
+scale_value = 50.0
+# 标定倍率（1, 2, 4 或自定义值）
+multiplier = 1
 
 # ========== 角度传感器标定参数 ==========
-# Angle Sensor Calibration Parameters
-#
 # 角度传感器使用 12 位 AD 转换器（0-4095）
-# Angle sensor uses 12-bit AD converter (0-4095)
 # 默认配置：0 AD -> 0 度，4095 AD -> 90 度
-# Default configuration: 0 AD -> 0 degrees, 4095 AD -> 90 degrees
 
-# 角度零点 AD 值
-# Angle zero point AD value
-angle_zero_ad = 0.0
-
-# 角度零点物理值（度）
-# Angle zero point physical value (degrees)
-angle_zero_value = 0.0
-
-# 角度放大 AD 值（满量程）
-# Angle scale AD value (full scale)
-angle_scale_ad = 4095.0
-
-# 角度放大物理值（度）
-# Angle scale physical value (degrees)
-angle_scale_value = 90.0
+[angle]
+# 零点 AD 值
+zero_ad = 0.0
+# 零点物理值（度）
+zero_value = 0.0
+# 放大 AD 值（满量程）
+scale_ad = 4095.0
+# 放大物理值（度）
+scale_value = 90.0
 
 # ========== 半径传感器标定参数 ==========
-# Radius Sensor Calibration Parameters
-#
 # 半径传感器使用 12 位 AD 转换器（0-4095）
-# Radius sensor uses 12-bit AD converter (0-4095)
 # 默认配置：0 AD -> 0 米，4095 AD -> 20 米
-# Default configuration: 0 AD -> 0 meters, 4095 AD -> 20 meters
 
-# 半径零点 AD 值
-# Radius zero point AD value
-radius_zero_ad = 0.0
-
-# 半径零点物理值（米）
-# Radius zero point physical value (meters)
-radius_zero_value = 0.0
-
-# 半径放大 AD 值（满量程）
-# Radius scale AD value (full scale)
-radius_scale_ad = 4095.0
-
-# 半径放大物理值（米）
-# Radius scale physical value (meters)
-radius_scale_value = 20.0
-
-# ========== 预警值和报警值 ==========
-# Warning and Alarm Thresholds
-#
-# 这些阈值用于判断起重机是否处于危险状态
-# These thresholds are used to determine if the crane is in a dangerous state
-
-# 角度预警值（度）
-# Angle warning threshold (degrees)
-# 当吊臂角度达到此值时，系统将发出预警
-# System will issue a warning when boom angle reaches this value
-angle_warning_value = 75.0
-
-# 角度报警值（度）
-# Angle alarm threshold (degrees)
-# 当吊臂角度达到此值时，系统将发出报警
-# System will issue an alarm when boom angle reaches this value
-angle_alarm_value = 85.0
-
-# 力矩预警百分比（%）
-# Moment warning percentage (%)
-# 当实际力矩达到额定力矩的此百分比时，系统将发出预警
-# System will issue a warning when actual moment reaches this percentage of rated moment
-moment_warning_percentage = 90.0
-
-# 力矩报警百分比（%）
-# Moment alarm percentage (%)
-# 当实际力矩达到额定力矩的此百分比时，系统将发出报警
-# System will issue an alarm when actual moment reaches this percentage of rated moment
-moment_alarm_percentage = 100.0
-
-# ========== 标定示例 ==========
-# Calibration Examples
-#
-# 示例 1：重量传感器标定偏移
-# Example 1: Weight sensor with offset calibration
-# 如果传感器在 0 吨时输出 100 AD，在 50 吨时输出 4000 AD：
-# If sensor outputs 100 AD at 0 tons and 4000 AD at 50 tons:
-# weight_zero_ad = 100.0
-# weight_zero_value = 0.0
-# weight_scale_ad = 4000.0
-# weight_scale_value = 50.0
-#
-# 示例 2：角度传感器非零起点
-# Example 2: Angle sensor with non-zero starting point
-# 如果传感器在 10 度时输出 500 AD，在 80 度时输出 3500 AD：
-# If sensor outputs 500 AD at 10 degrees and 3500 AD at 80 degrees:
-# angle_zero_ad = 500.0
-# angle_zero_value = 10.0
-# angle_scale_ad = 3500.0
-# angle_scale_value = 80.0
-#
-# 示例 3：自定义预警阈值
-# Example 3: Custom warning thresholds
-# 如果需要更保守的预警策略：
-# For more conservative warning strategy:
-# angle_warning_value = 70.0
-# angle_alarm_value = 80.0
-# moment_warning_percentage = 85.0
-# moment_alarm_percentage = 95.0
-
-# ========== 注意事项 ==========
-# Important Notes
-#
-# 1. 标定参数必须确保 scale_ad ≠ zero_ad，否则会导致除零错误
-#    Calibration parameters must ensure scale_ad ≠ zero_ad to avoid division by zero
-#
-# 2. 报警值必须大于等于预警值
-#    Alarm thresholds must be greater than or equal to warning thresholds
-#
-# 3. 百分比阈值必须在 0-100 范围内
-#    Percentage thresholds must be within 0-100 range
-#
-# 4. 修改配置后需要重新加载才能生效
-#    Configuration must be reloaded after modification to take effect
-#
-# 5. 建议在修改前备份原配置文件
-#    It is recommended to backup the original configuration file before modification
+[radius]
+# 零点 AD 值
+zero_ad = 0.0
+# 零点物理值（米）
+zero_value = 0.0
+# 放大 AD 值（满量程）
+scale_ad = 4095.0
+# 放大物理值（米）
+scale_value = 20.0

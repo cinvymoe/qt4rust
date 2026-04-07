@@ -46,9 +46,9 @@ log_file = "logs/app.log"
 # level = "trace"
 
 # # 存储管道日志
-[[modules]]
-module = "qt_rust_demo::pipeline::storage_pipeline"
-level = "trace"
+# [[modules]]
+# module = "qt_rust_demo::pipeline::storage_pipeline"
+# level = "trace"
 # 
 # [[modules]]
 # module = "qt_rust_demo::pipeline::*"

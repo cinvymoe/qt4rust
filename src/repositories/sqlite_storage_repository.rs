@@ -729,4 +729,93 @@ mod tests {
         let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
         assert!(crate::repositories::storage_repository::StorageRepository::health_check(&repo).await.is_ok());
     }
+    
+    // ==================== SensorDataRepository Example Tests ====================
+    // These tests demonstrate how to persist raw sensor data (AD1/AD2/AD3) to SQL
+    
+    #[tokio::test]
+    async fn test_sensor_data_save_and_query() {
+        // Example: Save raw sensor data to SQLite and query it back
+        let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
+        
+        // Create sensor data (AD1=load, AD2=radius, AD3=angle)
+        let sensor_data = vec![
+            SensorData::new(20.0, 10.0, 60.0),
+            SensorData::new(21.0, 11.0, 61.0),
+            SensorData::new(22.0, 12.0, 62.0),
+        ];
+        
+        // Save batch to database
+        let saved = repo.save_sensor_data_batch(&sensor_data).await.unwrap();
+        assert_eq!(saved, 3);
+        
+        // Query recent data
+        let retrieved = repo.query_recent_sensor_data(10).await.unwrap();
+        assert_eq!(retrieved.len(), 3);
+        
+        // Verify data integrity (most recent first due to ORDER BY timestamp DESC)
+        assert_eq!(retrieved[0].ad1_load, 22.0);
+        assert_eq!(retrieved[1].ad1_load, 21.0);
+        assert_eq!(retrieved[2].ad1_load, 20.0);
+    }
+    
+    #[tokio::test]
+    async fn test_sensor_data_get_latest() {
+        let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
+        
+        // Initially no data
+        let latest = repo.get_latest_sensor_data().await.unwrap();
+        assert!(latest.is_none());
+        
+        // Save some data
+        let sensor_data = vec![
+            SensorData::new(10.0, 5.0, 45.0),
+            SensorData::new(20.0, 10.0, 60.0),
+        ];
+        repo.save_sensor_data_batch(&sensor_data).await.unwrap();
+        
+        // Get latest
+        let latest = repo.get_latest_sensor_data().await.unwrap();
+        assert!(latest.is_some());
+        let latest = latest.unwrap();
+        assert_eq!(latest.ad1_load, 20.0);
+        assert_eq!(latest.ad2_radius, 10.0);
+        assert_eq!(latest.ad3_angle, 60.0);
+    }
+    
+    #[tokio::test]
+    async fn test_sensor_data_count_and_purge() {
+        let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
+        
+        // Initial count is 0
+        let count = repo.get_sensor_data_count().await.unwrap();
+        assert_eq!(count, 0);
+        
+        // Save 5 records
+        let sensor_data = vec![
+            SensorData::new(10.0, 5.0, 45.0),
+            SensorData::new(11.0, 5.5, 46.0),
+            SensorData::new(12.0, 6.0, 47.0),
+            SensorData::new(13.0, 6.5, 48.0),
+            SensorData::new(14.0, 7.0, 49.0),
+        ];
+        repo.save_sensor_data_batch(&sensor_data).await.unwrap();
+        
+        let count = repo.get_sensor_data_count().await.unwrap();
+        assert_eq!(count, 5);
+        
+        // Purge old data, keep only 3
+        let purged = repo.purge_old_sensor_data(3).await.unwrap();
+        assert_eq!(purged, 2);
+        
+        let count = repo.get_sensor_data_count().await.unwrap();
+        assert_eq!(count, 3);
+    }
+    
+    #[tokio::test]
+    async fn test_sensor_data_health_check() {
+        use crate::repositories::sensor_data_repository::SensorDataRepository;
+        let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
+        assert!(SensorDataRepository::health_check(&repo).await.is_ok());
+    }
 }
