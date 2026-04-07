@@ -14,6 +14,7 @@ mod load_calibration_viewmodel;
 mod angle_calibration_viewmodel;
 mod radius_calibration_viewmodel;
 mod alarm_threshold_viewmodel;
+mod moment_curve_viewmodel;
 
 // MVI 架构模块
 mod states {
