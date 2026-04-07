@@ -92,5 +92,8 @@ fn main() {
         .file("src/calibration_viewmodel.rs")
         .file("src/data_collection_controller.rs")
         .file("src/load_calibration_viewmodel.rs")
+        .file("src/angle_calibration_viewmodel.rs")
+        .file("src/radius_calibration_viewmodel.rs")
+        .file("src/alarm_threshold_viewmodel.rs")
         .build();
 }

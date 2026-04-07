@@ -1,4 +1,5 @@
-// settings_viewmodel/calibration/radius_calibration.rs - 半径传感器校准 ViewModel
+// radius_calibration_viewmodel.rs - 半径传感器校准 ViewModel
+// 由于 cxx-qt 限制，需要在 src/ 根目录定义
 
 #[cxx_qt::bridge]
 pub mod radius_calibration_bridge {

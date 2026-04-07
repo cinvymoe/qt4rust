@@ -11,6 +11,9 @@ mod settings_viewmodel;
 
 // Settings ViewModels (在 src/ 根目录以满足 cxx-qt 构建限制)
 mod load_calibration_viewmodel;
+mod angle_calibration_viewmodel;
+mod radius_calibration_viewmodel;
+mod alarm_threshold_viewmodel;
 
 // MVI 架构模块
 mod states {

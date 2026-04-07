@@ -103,19 +103,6 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_invalid_angle_thresholds() {
-        let mut config = CraneConfig::default();
-
-        // 设置无效的角度阈值（报警值小于预警值）
-        config.alarm_thresholds.angle.alarm = 70.0;
-        config.alarm_thresholds.angle.warning = 75.0;
-
-        let result = config.validate();
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("angle.alarm"));
-    }
-
-    #[test]
     fn test_validate_invalid_moment_thresholds() {
         let mut config = CraneConfig::default();
 
@@ -172,11 +159,6 @@ mod tests {
     #[test]
     fn test_warning_and_alarm_checks() {
         let config = CraneConfig::default();
-
-        // 测试角度预警和报警
-        assert!(!config.alarm_thresholds.is_angle_warning(60.0));
-        assert!(config.alarm_thresholds.is_angle_warning(75.0));
-        assert!(config.alarm_thresholds.is_angle_alarm(85.0));
 
         // 测试力矩预警和报警
         assert!(!config.alarm_thresholds.is_moment_warning(80.0));

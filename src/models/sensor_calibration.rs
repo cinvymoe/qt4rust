@@ -125,8 +125,6 @@ impl SensorCalibration {
 /// 报警阈值配置
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AlarmThresholds {
-    /// 角度报警阈值
-    pub angle: AngleThresholds,
     /// 力矩报警阈值
     pub moment: MomentThresholds,
 }
@@ -134,26 +132,7 @@ pub struct AlarmThresholds {
 impl Default for AlarmThresholds {
     fn default() -> Self {
         Self {
-            angle: AngleThresholds::default(),
             moment: MomentThresholds::default(),
-        }
-    }
-}
-
-/// 角度报警阈值
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct AngleThresholds {
-    /// 预警值（度）
-    pub warning: f64,
-    /// 报警值（度）
-    pub alarm: f64,
-}
-
-impl Default for AngleThresholds {
-    fn default() -> Self {
-        Self {
-            warning: 75.0,
-            alarm: 85.0,
         }
     }
 }
@@ -177,16 +156,6 @@ impl Default for MomentThresholds {
 }
 
 impl AlarmThresholds {
-    /// 检查角度是否超过预警值
-    pub fn is_angle_warning(&self, angle: f64) -> bool {
-        angle >= self.angle.warning
-    }
-    
-    /// 检查角度是否超过报警值
-    pub fn is_angle_alarm(&self, angle: f64) -> bool {
-        angle >= self.angle.alarm
-    }
-    
     /// 检查力矩百分比是否超过预警值
     pub fn is_moment_warning(&self, moment_percentage: f64) -> bool {
         moment_percentage >= self.moment.warning_percentage
@@ -199,30 +168,6 @@ impl AlarmThresholds {
     
     /// 验证报警阈值的有效性
     pub fn validate(&self) -> Result<(), String> {
-        // 验证角度预警值范围
-        if self.angle.warning < 0.0 || self.angle.warning > 90.0 {
-            return Err(format!(
-                "angle.warning 必须在 0-90 范围内，当前值: {}",
-                self.angle.warning
-            ));
-        }
-        
-        // 验证角度报警值范围
-        if self.angle.alarm < 0.0 || self.angle.alarm > 90.0 {
-            return Err(format!(
-                "angle.alarm 必须在 0-90 范围内，当前值: {}",
-                self.angle.alarm
-            ));
-        }
-        
-        // 验证角度报警值必须大于等于预警值
-        if self.angle.alarm < self.angle.warning {
-            return Err(format!(
-                "angle.alarm ({}) 必须大于等于 angle.warning ({})",
-                self.angle.alarm, self.angle.warning
-            ));
-        }
-        
         // 验证力矩预警百分比范围
         if self.moment.warning_percentage < 0.0 || self.moment.warning_percentage > 100.0 {
             return Err(format!(
@@ -295,26 +240,6 @@ mod tests {
     }
     
     #[test]
-    fn test_alarm_thresholds_angle_warning() {
-        let thresholds = AlarmThresholds::default();
-        
-        assert!(!thresholds.is_angle_warning(60.0));
-        assert!(!thresholds.is_angle_warning(74.9));
-        assert!(thresholds.is_angle_warning(75.0));
-        assert!(thresholds.is_angle_warning(80.0));
-    }
-    
-    #[test]
-    fn test_alarm_thresholds_angle_alarm() {
-        let thresholds = AlarmThresholds::default();
-        
-        assert!(!thresholds.is_angle_alarm(60.0));
-        assert!(!thresholds.is_angle_alarm(84.9));
-        assert!(thresholds.is_angle_alarm(85.0));
-        assert!(thresholds.is_angle_alarm(88.0));
-    }
-    
-    #[test]
     fn test_alarm_thresholds_moment_warning() {
         let thresholds = AlarmThresholds::default();
         
@@ -338,16 +263,6 @@ mod tests {
     fn test_alarm_thresholds_validate_success() {
         let thresholds = AlarmThresholds::default();
         assert!(thresholds.validate().is_ok());
-    }
-    
-    #[test]
-    fn test_alarm_thresholds_validate_angle_range() {
-        let mut thresholds = AlarmThresholds::default();
-        thresholds.angle.warning = -10.0;
-        assert!(thresholds.validate().is_err());
-        
-        thresholds.angle.warning = 95.0;
-        assert!(thresholds.validate().is_err());
     }
     
     #[test]

@@ -74,7 +74,6 @@ impl AlarmThresholdManager {
              # 这些阈值可以根据实际工况动态调整\n\
              #\n\
              # 注意事项：\n\
-             # - 角度预警值和报警值必须在 0-90 范围内\n\
              # - 力矩百分比阈值必须在 0-100 范围内\n\
              # - 报警值必须大于等于预警值\n\n\
              {}",
@@ -120,8 +119,6 @@ mod tests {
         assert!(result.is_ok());
         
         let config = result.unwrap();
-        assert_eq!(config.angle.warning, 75.0);
-        assert_eq!(config.angle.alarm, 85.0);
         assert_eq!(config.moment.warning_percentage, 90.0);
         assert_eq!(config.moment.alarm_percentage, 100.0);
         
@@ -134,9 +131,8 @@ mod tests {
         let manager = AlarmThresholdManager::new(&config_path);
         
         let mut config = AlarmThresholds::default();
-        config.angle.warning = 70.0;
-        config.angle.alarm = 80.0;
         config.moment.warning_percentage = 85.0;
+        config.moment.alarm_percentage = 95.0;
         
         let save_result = manager.save(&config);
         assert!(save_result.is_ok());
@@ -145,9 +141,8 @@ mod tests {
         assert!(load_result.is_ok());
         
         let loaded_config = load_result.unwrap();
-        assert_eq!(loaded_config.angle.warning, 70.0);
-        assert_eq!(loaded_config.angle.alarm, 80.0);
         assert_eq!(loaded_config.moment.warning_percentage, 85.0);
+        assert_eq!(loaded_config.moment.alarm_percentage, 95.0);
     }
     
     #[test]
@@ -156,8 +151,8 @@ mod tests {
         let manager = AlarmThresholdManager::new(&config_path);
         
         let mut config = AlarmThresholds::default();
-        config.angle.alarm = 70.0;  // 小于 warning
-        config.angle.warning = 75.0;
+        config.moment.alarm_percentage = 80.0;  // 小于 warning
+        config.moment.warning_percentage = 90.0;
         
         let result = manager.save(&config);
         assert!(result.is_err());

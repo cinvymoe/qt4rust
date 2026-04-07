@@ -2,11 +2,26 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import qt.rust.demo
 import "../../../styles"
 import "../../../components/controls"
 
 Item {
     id: root
+    
+    // 暴露保存和重置函数给外部调用
+    function saveCalibration() {
+        return angleViewModel.save_calibration()
+    }
+    
+    function resetToDefault() {
+        angleViewModel.reset_to_default()
+    }
+    
+    // 绑定 AngleCalibrationViewModel
+    AngleCalibrationViewModel {
+        id: angleViewModel
+    }
     
     Flickable {
         id: flickable
@@ -21,112 +36,6 @@ Item {
             anchors.top: parent.top
             anchors.margins: Theme.spacingLarge
             spacing: Theme.spacingLarge
-            
-            // 角度范围设置
-            Rectangle {
-                width: parent.width
-                height: 206
-                color: Theme.darkSurface
-                border.color: Theme.darkBorder
-                border.width: Theme.borderThin
-                radius: Theme.radiusMedium
-                
-                Column {
-                    anchors.fill: parent
-                    anchors.margins: 25
-                    spacing: Theme.spacingMedium
-                    
-                    // 标题
-                    Row {
-                        width: parent.width
-                        height: 28
-                        spacing: Theme.spacingSmall
-                        
-                        Rectangle {
-                            width: 4
-                            height: 24
-                            color: "#f0b100"
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                        
-                        Text {
-                            text: "角度测量范围"
-                            font.pixelSize: Theme.fontSizeLarge
-                            color: Theme.textPrimary
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                    }
-                    
-                    Row {
-                        width: parent.width
-                        spacing: Theme.spacingMedium
-                        
-                        Column {
-                            width: (parent.width - Theme.spacingMedium) / 2
-                            spacing: Theme.spacingSmall
-                            
-                            Text {
-                                text: "最小角度（°）"
-                                font.pixelSize: Theme.fontSizeSmall
-                                color: Theme.textSecondary
-                            }
-                            
-                            CustomInput {
-                                id: minAngleField
-                                width: parent.width
-                                height: 42
-                                text: "0"
-                                font.pixelSize: Theme.fontSizeMedium
-                                font.family: Theme.fontFamilyMono
-                                color: Theme.textPrimary
-                                
-                                background: Rectangle {
-                                    color: "#314158"
-                                    border.color: "#45556c"
-                                    border.width: Theme.borderThin
-                                    radius: Theme.radiusSmall
-                                }
-                            }
-                        }
-                        
-                        Column {
-                            width: (parent.width - Theme.spacingMedium) / 2
-                            spacing: Theme.spacingSmall
-                            
-                            Text {
-                                text: "最大角度（°）"
-                                font.pixelSize: Theme.fontSizeSmall
-                                color: Theme.textSecondary
-                            }
-                            
-                            CustomInput {
-                                id: maxAngleField
-                                width: parent.width
-                                height: 42
-                                text: "85"
-                                font.pixelSize: Theme.fontSizeMedium
-                                font.family: Theme.fontFamilyMono
-                                color: Theme.textPrimary
-                                
-                                background: Rectangle {
-                                    color: "#314158"
-                                    border.color: "#45556c"
-                                    border.width: Theme.borderThin
-                                    radius: Theme.radiusSmall
-                                }
-                            }
-                        }
-                    }
-                    
-                    Text {
-                        text: "设置角度传感器的有效测量范围，超出范围将触发报警"
-                        font.pixelSize: Theme.fontSizeTiny
-                        color: "#62748e"
-                        wrapMode: Text.WordWrap
-                        width: parent.width
-                    }
-                }
-            }
             
             // 两点标定设置
             Rectangle {
@@ -173,16 +82,40 @@ Item {
                         AngleCalibrationPoint {
                             width: parent.width
                             pointNumber: 1
-                            adValue: "0"
-                            angleValue: "0"
+                            adValue: angleViewModel.point1_ad.toFixed(2)
+                            angleValue: angleViewModel.point1_angle.toFixed(2)
+                            onAdValueEdited: function(newValue) {
+                                var value = parseFloat(newValue)
+                                if (!isNaN(value)) {
+                                    angleViewModel.point1_ad = value
+                                }
+                            }
+                            onAngleValueEdited: function(newValue) {
+                                var value = parseFloat(newValue)
+                                if (!isNaN(value)) {
+                                    angleViewModel.point1_angle = value
+                                }
+                            }
                         }
                         
                         // 标定点 2
                         AngleCalibrationPoint {
                             width: parent.width
                             pointNumber: 2
-                            adValue: "20000"
-                            angleValue: "85"
+                            adValue: angleViewModel.point2_ad.toFixed(2)
+                            angleValue: angleViewModel.point2_angle.toFixed(2)
+                            onAdValueEdited: function(newValue) {
+                                var value = parseFloat(newValue)
+                                if (!isNaN(value)) {
+                                    angleViewModel.point2_ad = value
+                                }
+                            }
+                            onAngleValueEdited: function(newValue) {
+                                var value = parseFloat(newValue)
+                                if (!isNaN(value)) {
+                                    angleViewModel.point2_angle = value
+                                }
+                            }
                         }
                     }
                 }
@@ -265,8 +198,10 @@ Item {
         property int pointNumber: 1
         property string adValue: "0"
         property string angleValue: "0"
+        signal adValueEdited(string newValue)
+        signal angleValueEdited(string newValue)
         
-        height: Math.max(90, 104)
+        height: 104
         color: Theme.darkBackground
         border.color: "#45556c"
         border.width: Theme.borderThin
@@ -325,6 +260,10 @@ Item {
                             border.width: Theme.borderThin
                             radius: Theme.radiusSmall
                         }
+                        
+                        onEditingFinished: {
+                            adValueEdited(text)
+                        }
                     }
                 }
                 
@@ -352,6 +291,10 @@ Item {
                             border.color: "#45556c"
                             border.width: Theme.borderThin
                             radius: Theme.radiusSmall
+                        }
+                        
+                        onEditingFinished: {
+                            angleValueEdited(text)
                         }
                     }
                 }

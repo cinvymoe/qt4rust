@@ -1,4 +1,5 @@
-// settings_viewmodel/calibration/angle_calibration.rs - 角度传感器校准 ViewModel
+// angle_calibration_viewmodel.rs - 角度传感器校准 ViewModel
+// 由于 cxx-qt 限制，需要在 src/ 根目录定义
 
 #[cxx_qt::bridge]
 pub mod angle_calibration_bridge {

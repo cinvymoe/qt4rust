@@ -118,16 +118,6 @@ impl ProcessedData {
                 "力矩预警: {:.1}% >= {:.1}%",
                 moment_percentage, config.alarm_thresholds.moment.warning_percentage
             ));
-        } else if config.alarm_thresholds.is_angle_alarm(boom_angle) {
-            validation_error = Some(format!(
-                "角度报警: {:.1} 度 >= {:.1} 度",
-                boom_angle, config.alarm_thresholds.angle.alarm
-            ));
-        } else if config.alarm_thresholds.is_angle_warning(boom_angle) {
-            validation_error = Some(format!(
-                "角度预警: {:.1} 度 >= {:.1} 度",
-                boom_angle, config.alarm_thresholds.angle.warning
-            ));
         }
 
         Self {
@@ -308,44 +298,6 @@ mod tests {
         assert!(processed.validation_error.is_some());
         let error_msg = processed.validation_error.unwrap();
         assert!(error_msg.contains("力矩报警") || error_msg.contains("力矩预警"));
-    }
-
-    #[test]
-    fn test_from_sensor_data_with_config_angle_warning() {
-        // 创建配置
-        let config = CraneConfig::default();
-
-        // 创建传感器数据，使角度达到预警阈值（75 度）
-        // AD 值 = 75 / 90 * 4095 ≈ 3412.5
-        let sensor_data = SensorData::new(1000.0, 2047.5, 3412.5);
-
-        let processed = ProcessedData::from_sensor_data_with_config(sensor_data, &config, 1);
-
-        // 验证角度预警（如果力矩未报警）
-        if processed.validation_error.is_some() {
-            let error_msg = processed.validation_error.unwrap();
-            // 可能是力矩预警或角度预警
-            assert!(error_msg.contains("预警") || error_msg.contains("报警"));
-        }
-    }
-
-    #[test]
-    fn test_from_sensor_data_with_config_angle_alarm() {
-        // 创建配置
-        let config = CraneConfig::default();
-
-        // 创建传感器数据，使角度达到报警阈值（85 度）
-        // AD 值 = 85 / 90 * 4095 ≈ 3867.5
-        let sensor_data = SensorData::new(1000.0, 2047.5, 3867.5);
-
-        let processed = ProcessedData::from_sensor_data_with_config(sensor_data, &config, 1);
-
-        // 验证角度报警（如果力矩未报警）
-        if processed.validation_error.is_some() {
-            let error_msg = processed.validation_error.unwrap();
-            // 可能是力矩报警或角度报警
-            assert!(error_msg.contains("报警") || error_msg.contains("预警"));
-        }
     }
 
     #[test]

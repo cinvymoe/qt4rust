@@ -1,4 +1,5 @@
-// settings_viewmodel/calibration/alarm_threshold.rs - 报警阈值设置 ViewModel
+// alarm_threshold_viewmodel.rs - 报警阈值设置 ViewModel
+// 由于 cxx-qt 限制，需要在 src/ 根目录定义
 
 #[cxx_qt::bridge]
 pub mod alarm_threshold_bridge {
@@ -13,7 +14,6 @@ pub mod alarm_threshold_bridge {
         #[qproperty(f64, moment_warning_threshold)]
         #[qproperty(f64, moment_danger_threshold)]
         #[qproperty(f64, max_load)]
-        #[qproperty(f64, max_angle)]
         type AlarmThresholdViewModel = super::AlarmThresholdViewModelRust;
 
         #[qinvokable]
@@ -30,7 +30,6 @@ pub struct AlarmThresholdViewModelRust {
     moment_warning_threshold: f64,
     moment_danger_threshold: f64,
     max_load: f64,
-    max_angle: f64,
     calibration_config_path: String,
     alarm_config_path: String,
 }
@@ -52,7 +51,6 @@ impl Default for AlarmThresholdViewModelRust {
             moment_warning_threshold: alarm_thresholds.moment.warning_percentage,
             moment_danger_threshold: alarm_thresholds.moment.alarm_percentage,
             max_load: calibration.weight.scale_value,
-            max_angle: alarm_thresholds.angle.alarm,
             calibration_config_path,
             alarm_config_path,
         }
@@ -63,7 +61,6 @@ impl alarm_threshold_bridge::AlarmThresholdViewModel {
     pub fn save_thresholds(self: Pin<&mut Self>) -> bool {
         let mwt = *self.as_ref().moment_warning_threshold();
         let mdt = *self.as_ref().moment_danger_threshold();
-        let ma = *self.as_ref().max_angle();
 
         // 保存报警阈值到独立文件
         let alarm_manager = qt_rust_demo::config::alarm_threshold_manager::AlarmThresholdManager::new(&self.alarm_config_path);
@@ -77,8 +74,6 @@ impl alarm_threshold_bridge::AlarmThresholdViewModel {
 
         alarm_thresholds.moment.warning_percentage = mwt;
         alarm_thresholds.moment.alarm_percentage = mdt;
-        alarm_thresholds.angle.warning = ma;
-        alarm_thresholds.angle.alarm = ma;
 
         match alarm_manager.save(&alarm_thresholds) {
             Ok(_) => {
@@ -101,6 +96,5 @@ impl alarm_threshold_bridge::AlarmThresholdViewModel {
         self.as_mut()
             .set_moment_danger_threshold(alarm_thresholds.moment.alarm_percentage);
         self.as_mut().set_max_load(calibration.weight.scale_value);
-        self.as_mut().set_max_angle(alarm_thresholds.angle.alarm);
     }
 }

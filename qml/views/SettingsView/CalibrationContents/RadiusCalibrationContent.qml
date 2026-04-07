@@ -1,12 +1,27 @@
-// RadiusCalibrationContent.qml - 半径传感器校准内容
+// RadiusCalibrationContent.qml - 长度传感器校准内容
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import qt.rust.demo
 import "../../../styles"
 import "../../../components/controls"
 
 Item {
     id: root
+    
+    // 暴露保存和重置函数给外部调用
+    function saveCalibration() {
+        return radiusViewModel.save_calibration()
+    }
+    
+    function resetToDefault() {
+        radiusViewModel.reset_to_default()
+    }
+    
+    // 绑定 RadiusCalibrationViewModel
+    RadiusCalibrationViewModel {
+        id: radiusViewModel
+    }
     
     Flickable {
         id: flickable
@@ -21,112 +36,6 @@ Item {
             anchors.top: parent.top
             anchors.margins: Theme.spacingLarge
             spacing: Theme.spacingLarge
-            
-            // 半径范围设置
-            Rectangle {
-                width: parent.width
-                height: 206
-                color: Theme.darkSurface
-                border.color: Theme.darkBorder
-                border.width: Theme.borderThin
-                radius: Theme.radiusMedium
-                
-                Column {
-                    anchors.fill: parent
-                    anchors.margins: 25
-                    spacing: Theme.spacingMedium
-                    
-                    // 标题
-                    Row {
-                        width: parent.width
-                        height: 28
-                        spacing: Theme.spacingSmall
-                        
-                        Rectangle {
-                            width: 4
-                            height: 24
-                            color: "#00c950"
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                        
-                        Text {
-                            text: "半径测量范围"
-                            font.pixelSize: Theme.fontSizeLarge
-                            color: Theme.textPrimary
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                    }
-                    
-                    Row {
-                        width: parent.width
-                        spacing: Theme.spacingMedium
-                        
-                        Column {
-                            width: (parent.width - Theme.spacingMedium) / 2
-                            spacing: Theme.spacingSmall
-                            
-                            Text {
-                                text: "最小半径（m）"
-                                font.pixelSize: Theme.fontSizeSmall
-                                color: Theme.textSecondary
-                            }
-                            
-                            CustomInput {
-                                id: minRadiusField
-                                width: parent.width
-                                height: 42
-                                text: "3.0"
-                                font.pixelSize: Theme.fontSizeMedium
-                                font.family: Theme.fontFamilyMono
-                                color: Theme.textPrimary
-                                
-                                background: Rectangle {
-                                    color: "#314158"
-                                    border.color: "#45556c"
-                                    border.width: Theme.borderThin
-                                    radius: Theme.radiusSmall
-                                }
-                            }
-                        }
-                        
-                        Column {
-                            width: (parent.width - Theme.spacingMedium) / 2
-                            spacing: Theme.spacingSmall
-                            
-                            Text {
-                                text: "最大半径（m）"
-                                font.pixelSize: Theme.fontSizeSmall
-                                color: Theme.textSecondary
-                            }
-                            
-                            CustomInput {
-                                id: maxRadiusField
-                                width: parent.width
-                                height: 42
-                                text: "30.0"
-                                font.pixelSize: Theme.fontSizeMedium
-                                font.family: Theme.fontFamilyMono
-                                color: Theme.textPrimary
-                                
-                                background: Rectangle {
-                                    color: "#314158"
-                                    border.color: "#45556c"
-                                    border.width: Theme.borderThin
-                                    radius: Theme.radiusSmall
-                                }
-                            }
-                        }
-                    }
-                    
-                    Text {
-                        text: "设置半径传感器的有效测量范围，超出范围将触发报警"
-                        font.pixelSize: Theme.fontSizeTiny
-                        color: "#62748e"
-                        wrapMode: Text.WordWrap
-                        width: parent.width
-                    }
-                }
-            }
             
             // 两点标定设置
             Rectangle {
@@ -173,16 +82,40 @@ Item {
                         RadiusCalibrationPoint {
                             width: parent.width
                             pointNumber: 1
-                            adValue: "5000"
-                            radiusValue: "3.0"
+                            adValue: radiusViewModel.point1_ad.toFixed(2)
+                            lengthValue: radiusViewModel.point1_radius.toFixed(2)
+                            onAdValueEdited: function(newValue) {
+                                var value = parseFloat(newValue)
+                                if (!isNaN(value)) {
+                                    radiusViewModel.point1_ad = value
+                                }
+                            }
+                            onLengthValueEdited: function(newValue) {
+                                var value = parseFloat(newValue)
+                                if (!isNaN(value)) {
+                                    radiusViewModel.point1_radius = value
+                                }
+                            }
                         }
                         
                         // 标定点 2
                         RadiusCalibrationPoint {
                             width: parent.width
                             pointNumber: 2
-                            adValue: "25000"
-                            radiusValue: "30.0"
+                            adValue: radiusViewModel.point2_ad.toFixed(2)
+                            lengthValue: radiusViewModel.point2_radius.toFixed(2)
+                            onAdValueEdited: function(newValue) {
+                                var value = parseFloat(newValue)
+                                if (!isNaN(value)) {
+                                    radiusViewModel.point2_ad = value
+                                }
+                            }
+                            onLengthValueEdited: function(newValue) {
+                                var value = parseFloat(newValue)
+                                if (!isNaN(value)) {
+                                    radiusViewModel.point2_radius = value
+                                }
+                            }
                         }
                     }
                 }
@@ -215,7 +148,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: "半径传感器标定说明"
+                            text: "长度传感器标定说明"
                             font.pixelSize: Theme.fontSizeMedium
                             color: Theme.successColor
                         }
@@ -225,13 +158,13 @@ Item {
                             spacing: 4
                             
                             Text {
-                                text: "• 至少需要2个标定点，建议在最小和最大工作半径处标定"
+                                text: "• 至少需要2个标定点，建议在最小和最大工作长度处标定"
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
                             
                             Text {
-                                text: "• 使用精确测量工具确定实际工作半径"
+                                text: "• 使用精确测量工具确定实际工作长度"
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
@@ -243,13 +176,13 @@ Item {
                             }
                             
                             Text {
-                                text: "• 半径传感器通常为拉绳式或角度换算，需定期检查"
+                                text: "• 长度传感器通常为拉绳式或角度换算，需定期检查"
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
                             
                             Text {
-                                text: "• 系统使用线性插值算法计算两点之间的半径值"
+                                text: "• 系统使用线性插值算法计算两点之间的长度值"
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
@@ -260,13 +193,15 @@ Item {
         }
     }
     
-    // 半径标定点组件
+    // 长度标定点组件
     component RadiusCalibrationPoint: Rectangle {
         property int pointNumber: 1
         property string adValue: "0"
-        property string radiusValue: "0"
+        property string lengthValue: "0"
+        signal adValueEdited(string newValue)
+        signal lengthValueEdited(string newValue)
         
-        height: Math.max(90, 104)
+        height: 104
         color: Theme.darkBackground
         border.color: "#45556c"
         border.width: Theme.borderThin
@@ -325,6 +260,10 @@ Item {
                             border.width: Theme.borderThin
                             radius: Theme.radiusSmall
                         }
+                        
+                        onEditingFinished: {
+                            adValueEdited(text)
+                        }
                     }
                 }
                 
@@ -333,16 +272,16 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: "半径（m）"
+                        text: "长度（m）"
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }
                     
                     CustomInput {
-                        id: radiusValueField
+                        id: lengthValueField
                         width: parent.width
                         height: 42
-                        text: radiusValue
+                        text: lengthValue
                         font.pixelSize: Theme.fontSizeMedium
                         font.family: Theme.fontFamilyMono
                         color: Theme.textPrimary
@@ -352,6 +291,10 @@ Item {
                             border.color: "#45556c"
                             border.width: Theme.borderThin
                             radius: Theme.radiusSmall
+                        }
+                        
+                        onEditingFinished: {
+                            lengthValueEdited(text)
                         }
                     }
                 }

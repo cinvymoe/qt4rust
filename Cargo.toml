@@ -81,7 +81,3 @@ path = "examples/full_pipeline_demo.rs"
 [[example]]
 name = "test_storage_interval"
 path = "examples/test_storage_interval.rs"
-
-[[example]]
-name = "backend_test"
-path = "examples/backend_test.rs"

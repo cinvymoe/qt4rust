@@ -9,7 +9,7 @@ import "CalibrationContents"
 Item {
     id: calibrationView
     
-    property int currentSensorTab: 0  // 0: 载荷, 1: 角度, 2: 半径, 3: 报警阈值
+    property int currentSensorTab: 0  // 0: 载荷, 1: 角度, 2: 长度, 3: 报警阈值
     
     // 绑定 CalibrationViewModel
     CalibrationViewModel {
@@ -115,7 +115,7 @@ Item {
                             model: [
                                 {text: "载荷传感器"},
                                 {text: "角度传感器"},
-                                {text: "半径传感器"},
+                                {text: "长度传感器"},
                                 {text: "报警阈值"}
                             ]
                             
@@ -171,7 +171,7 @@ Item {
                         visible: currentSensorTab === 1
                     }
                     
-                    // 半径传感器校准
+                    // 长度传感器校准
                     RadiusCalibrationContent {
                         id: radiusCalibrationContent
                         anchors.fill: parent
@@ -242,11 +242,11 @@ Item {
                                         }
                                         console.log("角度传感器恢复默认")
                                         break
-                                    case 2: // 半径传感器
+                                    case 2: // 长度传感器
                                         if (radiusCalibrationContent.resetToDefault) {
                                             radiusCalibrationContent.resetToDefault()
                                         }
-                                        console.log("半径传感器恢复默认")
+                                        console.log("长度传感器恢复默认")
                                         break
                                     case 3: // 报警阈值
                                         if (alarmThresholdContent.resetToDefault) {
@@ -307,13 +307,13 @@ Item {
                                             }
                                         }
                                         break
-                                    case 2: // 半径传感器
+                                    case 2: // 长度传感器
                                         if (radiusCalibrationContent.saveCalibration) {
                                             success = radiusCalibrationContent.saveCalibration()
                                             if (success) {
-                                                console.log("半径传感器校准参数保存成功")
+                                                console.log("长度传感器校准参数保存成功")
                                             } else {
-                                                console.error("半径传感器校准参数保存失败")
+                                                console.error("长度传感器校准参数保存失败")
                                             }
                                         }
                                         break
