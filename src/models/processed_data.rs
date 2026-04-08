@@ -22,7 +22,10 @@ pub struct ProcessedData {
     /// 力矩百分比
     pub moment_percentage: f64,
 
-    /// 是否危险
+    /// 是否预警（达到预警阈值，>=90%）
+    pub is_warning: bool,
+
+    /// 是否危险（达到报警阈值，>=100%）
     pub is_danger: bool,
 
     /// 验证错误
@@ -46,7 +49,8 @@ impl ProcessedData {
     /// - `sequence_number`: 序列号
     pub fn from_sensor_data(raw_data: SensorData, sequence_number: u64) -> Self {
         let moment_percentage = Self::calculate_moment_percentage(&raw_data);
-        let is_danger = moment_percentage >= 90.0;
+        let is_warning = moment_percentage >= 90.0;
+        let is_danger = moment_percentage >= 100.0;
         let validation_error = raw_data.validate().err();
 
         Self {
@@ -55,6 +59,7 @@ impl ProcessedData {
             boom_angle: raw_data.ad3_angle,
             boom_length: raw_data.ad2_radius, // 简化模式：臂长等于半径
             moment_percentage,
+            is_warning,
             is_danger,
             validation_error,
             timestamp: SystemTime::now(),
@@ -103,7 +108,8 @@ impl ProcessedData {
         let moment_percentage =
             Self::calculate_moment_percentage_with_load(current_load, working_radius, rated_load);
 
-        // 使用配置的危险阈值判断
+        // 分别判断是否达到预警和报警阈值
+        let is_warning = config.alarm_thresholds.is_moment_warning(moment_percentage);
         let is_danger = config.alarm_thresholds.is_moment_alarm(moment_percentage);
 
         // 检查传感器值是否超过预警/报警阈值
@@ -114,10 +120,7 @@ impl ProcessedData {
                 "力矩报警: {:.1}% >= {:.1}%",
                 moment_percentage, config.alarm_thresholds.moment.alarm_percentage
             ));
-        } else if config
-            .alarm_thresholds
-            .is_moment_warning(moment_percentage)
-        {
+        } else if config.alarm_thresholds.is_moment_warning(moment_percentage) {
             validation_error = Some(format!(
                 "力矩预警: {:.1}% >= {:.1}%",
                 moment_percentage, config.alarm_thresholds.moment.warning_percentage
@@ -130,6 +133,7 @@ impl ProcessedData {
             boom_angle,
             boom_length,
             moment_percentage,
+            is_warning,
             is_danger,
             validation_error,
             timestamp: SystemTime::now(),
@@ -211,12 +215,25 @@ mod tests {
     }
 
     #[test]
-    fn test_danger_detection() {
-        let sensor_data = SensorData::new(23.0, 10.0, 60.0);
+    fn test_warning_detection() {
+        // 90-100% triggers warning but not danger
+        let sensor_data = SensorData::new(23.0, 10.0, 60.0); // 92%
         let processed = ProcessedData::from_sensor_data(sensor_data, 2);
 
-        assert!(processed.is_danger);
+        assert!(processed.is_warning); // 92% >= 90%
+        assert!(!processed.is_danger); // 92% < 100%
         assert!(processed.moment_percentage >= 90.0);
+    }
+
+    #[test]
+    fn test_danger_detection() {
+        // >=100% triggers both warning and danger
+        let sensor_data = SensorData::new(25.0, 10.0, 60.0); // 100%
+        let processed = ProcessedData::from_sensor_data(sensor_data, 2);
+
+        assert!(processed.is_warning); // 100% >= 90%
+        assert!(processed.is_danger); // 100% >= 100%
+        assert!(processed.moment_percentage >= 100.0);
     }
 
     #[test]

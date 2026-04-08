@@ -32,7 +32,7 @@ Item {
         }
     }
     
-    // 绑定 ViewModel
+    // 绑定 MonitoringViewModel
     MonitoringViewModel {
         id: viewModel
 
@@ -57,6 +57,11 @@ Item {
             displayTimer.stop()
             console.log("[QML] Display timer stopped (destruction)")
         }
+    }
+
+    // 绑定 AlarmThresholdViewModel - 用于读取报警阈值配置
+    AlarmThresholdViewModel {
+        id: alarmThresholdViewModel
     }
 
     // 显示更新定时器（管道三：主线程显示管道）
@@ -187,13 +192,13 @@ Item {
             anchors.fill: parent
             spacing: 0
             
-            // 顶部栏 - 绑定危险状态
+            // 顶部栏 - 绑定预警或危险状态
             Header {
                 id: header
                 width: parent.width
                 height: monitoringView.headerVisible ? Theme.headerHeight : 0
                 visible: height > 0
-                alertActive: viewModel.is_danger
+                alertActive: viewModel.is_warning || viewModel.is_danger
                 clip: true
                 
                 Behavior on height {
@@ -221,18 +226,20 @@ Item {
                 height: parent.height
                 spacing: Theme.spacingMedium
                 
-                // 危险状态卡片 - 仅在 danger 时显示
+                // 预警/报警状态卡片 - 预警或报警时显示
                 DangerCard {
                     id: dangerCard
                     width: parent.width
                     height: 96
-                    visible: viewModel.is_danger
-                    // 根据力矩百分比显示不同的消息
-                    title: viewModel.moment_percentage >= 100 ? "严重危险" : "危险状态"
-                    message: viewModel.moment_percentage >= 100 ? 
-                        "力矩严重超限！立即停止作业" : 
-                        "力矩超限！立即减载或降低幅度"
-                    
+                    visible: viewModel.is_warning || viewModel.is_danger
+                    // 预警状态为黄色，报警状态为红色
+                    isWarning: viewModel.is_warning && !viewModel.is_danger
+                    // 根据状态显示不同的消息：预警(90-100%) vs 报警(>=100%)
+                    title: viewModel.is_danger ? "危险报警" : "力矩预警"
+                    message: viewModel.is_danger ?
+                        "力矩严重超限！立即停止作业" :
+                        "力矩接近上限，请注意控制载荷"
+
                     Behavior on visible {
                         NumberAnimation {
                             duration: Theme.animationDuration
@@ -240,13 +247,13 @@ Item {
                         }
                     }
                 }
-                
-                // 时间卡片 - danger 时隐藏
+
+                // 时间卡片 - 预警或报警时隐藏
                 TimeCard {
                     id: timeCard
                     width: parent.width
                     height: 96
-                    visible: !viewModel.is_danger
+                    visible: !viewModel.is_warning && !viewModel.is_danger
                     
                     Behavior on visible {
                         NumberAnimation {
@@ -316,11 +323,13 @@ Item {
                 height: parent.height
                 spacing: Theme.spacingMedium
                 
-                // 力矩百分比卡片 - 绑定 ViewModel
+                // 力矩百分比卡片 - 绑定 ViewModel 和阈值配置
                 MomentCard {
                     width: parent.width
                     height: 216
                     percentage: viewModel.moment_percentage
+                    warningThreshold: alarmThresholdViewModel.moment_warning_threshold
+                    dangerThreshold: alarmThresholdViewModel.moment_danger_threshold
                 }
                 
                 // 数据网格 - 使用 GridView (每行2列，可滑动)

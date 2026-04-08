@@ -243,6 +243,10 @@ impl StorageRepository for SqliteStorageRepository {
             let timestamp_secs: i64 = row.get(1)?;
             let timestamp = std::time::UNIX_EPOCH + std::time::Duration::from_secs(timestamp_secs as u64);
             
+            let moment_percentage: f64 = row.get(6)?;
+            let is_danger: bool = row.get(7)?;
+            let is_warning = !is_danger && moment_percentage >= 90.0;
+
             Ok(ProcessedData {
                 sequence_number: row.get::<_, i64>(0)? as u64,
                 timestamp,
@@ -250,8 +254,9 @@ impl StorageRepository for SqliteStorageRepository {
                 working_radius: row.get(3)?,
                 boom_angle: row.get(4)?,
                 boom_length: row.get(5)?,
-                moment_percentage: row.get(6)?,
-                is_danger: row.get(7)?,
+                moment_percentage,
+                is_warning,
+                is_danger,
                 validation_error: row.get(8)?,
             })
         }).map_err(|e| format!("Failed to query: {}", e))?;
@@ -463,7 +468,10 @@ impl StorageRepository for SqliteStorageRepository {
         let rows = stmt.query_map(params![limit as i64, offset], |row| {
             let timestamp_secs: i64 = row.get(1)?;
             let timestamp = SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(timestamp_secs as u64);
-            
+            let moment_percentage: f64 = row.get(6)?;
+            let is_danger: bool = row.get(7)?;
+            let is_warning = !is_danger && moment_percentage >= 90.0;
+
             Ok(ProcessedData {
                 sequence_number: row.get(0)?,
                 timestamp,
@@ -471,8 +479,9 @@ impl StorageRepository for SqliteStorageRepository {
                 working_radius: row.get(3)?,
                 boom_angle: row.get(4)?,
                 boom_length: row.get(5)?,
-                moment_percentage: row.get(6)?,
-                is_danger: row.get(7)?,
+                moment_percentage,
+                is_warning,
+                is_danger,
                 validation_error: row.get(8)?,
             })
         }).map_err(|e| format!("Failed to query runtime data: {}", e))?;

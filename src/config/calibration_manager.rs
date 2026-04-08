@@ -190,18 +190,21 @@ mod tests {
                 zero_value: 5.0,
                 scale_ad: 4000.0,
                 scale_value: 45.0,
+                multiplier: 1.0,
             },
             angle: crate::models::sensor_calibration::SensorCalibrationParams {
                 zero_ad: 200.0,
                 zero_value: 10.0,
                 scale_ad: 3800.0,
                 scale_value: 80.0,
+                multiplier: 1.0,
             },
             radius: crate::models::sensor_calibration::SensorCalibrationParams {
                 zero_ad: 150.0,
                 zero_value: 2.0,
                 scale_ad: 3900.0,
                 scale_value: 18.0,
+                multiplier: 1.0,
             },
         };
 

@@ -7,8 +7,8 @@ Rectangle {
     id: momentCard
     
     property real percentage: 94.8
-    property real warningThreshold: 75.0
-    property real dangerThreshold: 90.0
+    property real warningThreshold: 90.0
+    property real dangerThreshold: 100.0
     
     color: Theme.darkSurface
     border.color: Theme.darkBorder
@@ -133,7 +133,7 @@ Rectangle {
                     }
                     
                     Text {
-                        text: "预警 75%"
+                        text: "预警 " + momentCard.warningThreshold.toFixed(0) + "%"
                         font.pixelSize: Theme.fontSizeSmall
                         font.family: Theme.fontFamilyDefault
                         color: Theme.warningColor
@@ -145,7 +145,7 @@ Rectangle {
                     }
                     
                     Text {
-                        text: "危险 90%"
+                        text: "危险 " + momentCard.dangerThreshold.toFixed(0) + "%"
                         font.pixelSize: Theme.fontSizeSmall
                         font.family: Theme.fontFamilyDefault
                         color: Theme.dangerLight

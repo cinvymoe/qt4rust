@@ -15,8 +15,13 @@ pub struct MonitoringState {
     pub boom_length: f64,
     /// 力矩百分比
     pub moment_percentage: f64,
-    /// 是否处于危险状态
+
+    /// 是否处于预警状态（>=90%）
+    pub is_warning: bool,
+
+    /// 是否处于危险状态（>=100%）
     pub is_danger: bool,
+
     /// 传感器连接状态
     pub sensor_connected: bool,
     /// 错误信息
@@ -34,6 +39,7 @@ impl Default for MonitoringState {
             boom_angle: 0.0,
             boom_length: 0.0,
             moment_percentage: 0.0,
+            is_warning: false,
             is_danger: false,
             sensor_connected: false,
             error_message: None,
