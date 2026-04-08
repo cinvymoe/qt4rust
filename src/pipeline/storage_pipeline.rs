@@ -223,6 +223,10 @@ impl StoragePipeline {
         let batch_len = pending_batch.lock().await.len();
         tracing::info!("Draining {} pending records before shutdown", batch_len);
         Self::flush_pending_batch(&pending_batch, &last_seq, &config, &repository).await;
+        
+        // 确保在事件循环结束时重置 running 标志
+        self.running.store(false, Ordering::Relaxed);
+        tracing::debug!("Storage pipeline event loop ended, running flag reset");
     }
     
     async fn handle_new_data(

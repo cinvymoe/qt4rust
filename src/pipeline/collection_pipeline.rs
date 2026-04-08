@@ -2,11 +2,14 @@
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::Mutex;
+use std::sync::{Mutex, RwLock};
 use std::time::Duration;
 use tokio::task::JoinHandle;
 use crate::repositories::CraneDataRepository;
 use crate::models::{ProcessedData, SensorData};
+use crate::models::sensor_calibration::SensorCalibration;
+use crate::models::rated_load_table::RatedLoadTable;
+use crate::models::crane_config::CraneConfig;
 use super::shared_buffer::SharedBuffer;
 use super::event_channel::StorageEventSender;
 use super::sensor_data_event_channel::SensorDataEventSender;
@@ -62,6 +65,9 @@ pub struct CollectionPipeline {
     storage_event_sender: Option<StorageEventSender>,
     sensor_storage_sender: Option<SensorDataEventSender>,
     shared_sensor_buffer: Option<SharedSensorBuffer>,
+    // 热重载配置引用
+    sensor_calibration: Option<Arc<RwLock<SensorCalibration>>>,
+    rated_load_table: Option<Arc<RwLock<RatedLoadTable>>>,
 }
 
 impl CollectionPipeline {
@@ -84,6 +90,8 @@ impl CollectionPipeline {
             storage_event_sender: None,
             sensor_storage_sender: None,
             shared_sensor_buffer: None,
+            sensor_calibration: None,
+            rated_load_table: None,
         }
     }
 
@@ -107,6 +115,8 @@ impl CollectionPipeline {
             storage_event_sender: Some(storage_event_sender),
             sensor_storage_sender: None,
             shared_sensor_buffer: None,
+            sensor_calibration: None,
+            rated_load_table: None,
         }
     }
 
@@ -132,6 +142,8 @@ impl CollectionPipeline {
             storage_event_sender: Some(storage_event_sender),
             sensor_storage_sender: Some(sensor_storage_sender),
             shared_sensor_buffer: Some(shared_sensor_buffer),
+            sensor_calibration: None,
+            rated_load_table: None,
         }
     }
 
@@ -156,6 +168,28 @@ impl CollectionPipeline {
             storage_event_sender: None,
             sensor_storage_sender: None,
             shared_sensor_buffer: None,
+            sensor_calibration: None,
+            rated_load_table: None,
+        }
+    }
+    
+    /// 设置热重载配置引用
+    pub fn set_hot_reload_config(
+        &mut self,
+        sensor_calibration: Arc<RwLock<SensorCalibration>>,
+        rated_load_table: Arc<RwLock<RatedLoadTable>>,
+    ) {
+        self.sensor_calibration = Some(sensor_calibration.clone());
+        self.rated_load_table = Some(rated_load_table.clone());
+        
+        if let Ok(cal) = sensor_calibration.read() {
+            tracing::info!("🔧 [CollectionPipeline] 热重载配置已设置");
+            tracing::info!("📋 [初始标定参数] weight: zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}, multiplier={:.2}",
+                cal.weight.zero_ad,
+                cal.weight.zero_value,
+                cal.weight.scale_ad,
+                cal.weight.scale_value,
+                cal.weight.multiplier);
         }
     }
     
@@ -206,6 +240,8 @@ impl CollectionPipeline {
         let storage_event_sender = self.storage_event_sender.clone();
         let sensor_storage_sender = self.sensor_storage_sender.clone();
         let shared_sensor_buffer = self.shared_sensor_buffer.clone();
+        let sensor_calibration = self.sensor_calibration.clone();
+        let rated_load_table = self.rated_load_table.clone();
 
         let handle = qt_threading_utils::runtime::global_runtime().spawn(async move {
             tracing::info!(" Collection pipeline started (mode: {})", 
@@ -246,17 +282,50 @@ impl CollectionPipeline {
                             let seq = sequence_number.fetch_add(1, Ordering::Relaxed);
                             
                             // 获取配置并进行AD转换
-                            let repo_clone = Arc::clone(&repository);
-                            let processed = match repo_clone.get_config() {
-                                Ok(config) => {
-                                    let p = ProcessedData::from_sensor_data_with_config(sensor_data.clone(), &config, seq);
-                                    tracing::debug!("[CollectionPipeline] 遗留模式AD转换: ad1={:.2} -> load={:.2}吨",
-                                        sensor_data.ad1_load, p.current_load);
-                                    p
-                                }
-                                Err(e) => {
-                                    tracing::warn!("[CollectionPipeline] 无法加载配置，使用简单转换: {}", e);
-                                    ProcessedData::from_sensor_data(sensor_data.clone(), seq)
+                            let processed = if let (Some(cal), Some(table)) = (&sensor_calibration, &rated_load_table) {
+                                // 使用热重载配置
+                                let cal_guard = cal.read().unwrap();
+                                let table_guard = table.read().unwrap();
+                                
+                                tracing::info!("🔥 [CollectionPipeline] 使用热重载配置进行AD转换");
+                                tracing::info!("📊 [标定参数] weight: zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}, multiplier={:.2}",
+                                    cal_guard.weight.zero_ad,
+                                    cal_guard.weight.zero_value,
+                                    cal_guard.weight.scale_ad,
+                                    cal_guard.weight.scale_value,
+                                    cal_guard.weight.multiplier);
+                                
+                                // 创建临时CraneConfig
+                                let repo_clone = Arc::clone(&repository);
+                                let alarm_thresholds = repo_clone.get_config()
+                                    .map(|c| c.alarm_thresholds.clone())
+                                    .unwrap_or_default();
+                                
+                                let hot_config = CraneConfig {
+                                    sensor_calibration: cal_guard.clone(),
+                                    rated_load_table: table_guard.clone(),
+                                    alarm_thresholds,
+                                };
+                                
+                                let p = ProcessedData::from_sensor_data_with_config(sensor_data.clone(), &hot_config, seq);
+                                tracing::info!("✅ [CollectionPipeline] AD转换完成: ad1={:.2} -> load={:.2}吨",
+                                    sensor_data.ad1_load, p.current_load);
+                                p
+                            } else {
+                                // 使用静态配置（向后兼容）
+                                tracing::warn!("⚠️  [CollectionPipeline] 热重载配置未设置，使用静态配置");
+                                let repo_clone = Arc::clone(&repository);
+                                match repo_clone.get_config() {
+                                    Ok(config) => {
+                                        let p = ProcessedData::from_sensor_data_with_config(sensor_data.clone(), &config, seq);
+                                        tracing::debug!("[CollectionPipeline] 静态配置AD转换: ad1={:.2} -> load={:.2}吨",
+                                            sensor_data.ad1_load, p.current_load);
+                                        p
+                                    }
+                                    Err(e) => {
+                                        tracing::warn!("[CollectionPipeline] 无法加载配置，使用简单转换: {}", e);
+                                        ProcessedData::from_sensor_data(sensor_data.clone(), seq)
+                                    }
                                 }
                             };
 

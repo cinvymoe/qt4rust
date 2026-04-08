@@ -124,6 +124,10 @@ impl SensorStoragePipeline {
         let batch_len = pending_batch.lock().await.len();
         tracing::info!("Draining {} pending sensor data records before shutdown", batch_len);
         Self::flush_batch(&pending_batch, &last_flush, &config, &repository).await;
+        
+        // 确保在事件循环结束时重置 running 标志
+        self.running.store(false, Ordering::Relaxed);
+        tracing::debug!("Sensor storage pipeline event loop ended, running flag reset");
     }
 
     /// Flush pending batch to repository

@@ -5,6 +5,7 @@ use qt_rust_demo::pipeline::PipelineManager;
 use qt_rust_demo::pipeline::shared_buffer::SharedBuffer;
 use qt_rust_demo::pipeline::shared_sensor_buffer::SharedSensorBuffer;
 use std::sync::{Arc, Mutex};
+use config_hot_reload::{HotReloadConfigManager, SharedConfigRefs, register_all_subscribers};
 
 /// ViewModel 管理器
 pub struct ViewModelManager {
@@ -12,6 +13,10 @@ pub struct ViewModelManager {
     shared_buffer: Option<SharedBuffer>,
     shared_sensor_buffer: Option<SharedSensorBuffer>,
     viewmodel_ready: bool,
+    /// 热加载配置管理器
+    hot_reload_manager: Option<HotReloadConfigManager>,
+    /// 共享配置引用
+    shared_config_refs: Option<SharedConfigRefs>,
 }
 
 impl ViewModelManager {
@@ -22,6 +27,8 @@ impl ViewModelManager {
             shared_buffer: None,
             shared_sensor_buffer: None,
             viewmodel_ready: false,
+            hot_reload_manager: None,
+            shared_config_refs: None,
         }
     }
     
@@ -39,6 +46,41 @@ impl ViewModelManager {
         // 创建数据仓库（使用 Default 实现，自动创建 ConfigManager）
         let repository = Arc::new(CraneDataRepository::default());
         
+        // 初始化热加载配置管理器
+        let config_dir = std::path::PathBuf::from("config");
+        let hot_reload_config = match HotReloadConfigManager::new(config_dir) {
+            Ok(mut hot_reload_manager) => {
+                tracing::info!("热加载配置管理器初始化成功");
+                
+                // 创建共享配置引用（使用默认配置初始化）
+                let shared_refs = SharedConfigRefs::default();
+                
+                // 注册所有订阅者
+                qt_threading_utils::runtime::global_runtime().block_on(async {
+                    register_all_subscribers(&mut hot_reload_manager, &shared_refs).await;
+                });
+                
+                // 启动热加载服务
+                qt_threading_utils::runtime::global_runtime().block_on(async {
+                    if let Err(e) = hot_reload_manager.start().await {
+                        tracing::error!("启动热加载服务失败: {}", e);
+                    } else {
+                        tracing::info!("热加载服务已启动，监控配置文件变化");
+                    }
+                });
+                
+                self.hot_reload_manager = Some(hot_reload_manager);
+                self.shared_config_refs = Some(shared_refs.clone());
+                
+                Some(shared_refs)
+            }
+            Err(e) => {
+                tracing::error!("热加载配置管理器初始化失败: {}", e);
+                tracing::warn!("继续使用静态配置");
+                None
+            }
+        };
+        
         // 创建管道管理器（带存储支持）
         let db_path = "crane_data.db";
         tracing::info!("Initializing storage system with database: {}", db_path);
@@ -46,21 +88,40 @@ impl ViewModelManager {
         let manager = match qt_threading_utils::runtime::global_runtime().block_on(async {
             PipelineManager::new_with_storage(repository, db_path).await
         }) {
-            Ok(mgr) => {
+            Ok(mut mgr) => {
                 tracing::info!("Storage system initialized successfully");
+                
+                // 如果有热重载配置，设置到PipelineManager（在启动管道之前）
+                if let Some(ref shared_refs) = hot_reload_config {
+                    tracing::info!("🚀 [ViewModelManager] 正在设置热重载配置到PipelineManager...");
+                    mgr.set_hot_reload_config(
+                        Arc::clone(&shared_refs.sensor_calibration),
+                        Arc::clone(&shared_refs.rated_load_table),
+                    );
+                    tracing::info!("✅ [ViewModelManager] 热重载配置已成功设置到PipelineManager");
+                } else {
+                    tracing::warn!("⚠️  [ViewModelManager] 没有热重载配置可设置");
+                }
+                
+                // 启动所有管道（在设置热重载配置之后）
+                tracing::info!("🚀 [ViewModelManager] 正在启动所有管道...");
+                mgr.start_all();
+                tracing::info!("✅ [ViewModelManager] 所有管道已启动");
+                
                 mgr
             }
             Err(e) => {
                 tracing::error!("Failed to initialize storage system: {}", e);
                 tracing::warn!("Falling back to collection-only mode");
                 let repository = Arc::new(CraneDataRepository::default());
-                PipelineManager::new(repository)
+                let mut mgr = PipelineManager::new(repository);
+                mgr.start_all();
+                mgr
             }
         };
         
-        // 启动所有管道（管道1 + 管道2）
-        let mut manager = manager;
-        manager.start_all();
+        // 管道已经启动，不需要再次启动
+        let manager = manager;
 
         // 获取共享缓冲区供 ViewModel 使用
         let shared_buffer = manager.get_shared_buffer();
@@ -77,6 +138,11 @@ impl ViewModelManager {
         tracing::info!("Backend Thread 1 (Collection Pipeline) is now running at 10Hz");
         tracing::info!("Backend Thread 2 (Storage Pipeline) is now running at 1Hz");
         tracing::info!("Shared buffer created and ready for display pipeline");
+        
+        // 打印热加载状态
+        if self.hot_reload_manager.is_some() {
+            tracing::info!("配置热加载已启用 - 修改配置文件后立即生效");
+        }
     }
 
     /// 获取共享缓冲区（用于初始化 ViewModel 的显示管道）
@@ -173,6 +239,30 @@ pub fn get_global_shared_sensor_buffer() -> Option<SharedSensorBuffer> {
         None => {
             tracing::warn!("get_global_shared_sensor_buffer: NO BUFFER AVAILABLE");
             None
+        }
+    }
+}
+
+/// 获取全局共享配置引用
+pub fn get_global_shared_config_refs() -> Option<SharedConfigRefs> {
+    let manager = VIEWMODEL_MANAGER.lock().unwrap();
+    manager.as_ref().and_then(|mgr| mgr.shared_config_refs.clone())
+}
+
+/// 手动重载所有配置
+pub fn reload_all_configs() {
+    let manager = VIEWMODEL_MANAGER.lock().unwrap();
+    if let Some(mgr) = manager.as_ref() {
+        if let Some(hot_reload_manager) = &mgr.hot_reload_manager {
+            qt_threading_utils::runtime::global_runtime().block_on(async {
+                if let Err(e) = hot_reload_manager.reload_all().await {
+                    tracing::error!("手动重载配置失败: {}", e);
+                } else {
+                    tracing::info!("手动重载所有配置成功");
+                }
+            });
+        } else {
+            tracing::warn!("热加载服务未启用，无法重载配置");
         }
     }
 }

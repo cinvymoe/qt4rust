@@ -6,6 +6,7 @@ members = [
     "crates/qt-threading-utils",
     "crates/crane-data-layer",
     "crates/qt-app",
+    "crates/config-hot-reload",
 ]
 resolver = "2"
 

@@ -4,8 +4,8 @@
 # 可以为每个模块/文件单独设置日志级别
 
 # 默认日志级别（可选值: trace, debug, info, warn, error, off）
-# 设置为 off 表示默认不显示任何日志
-default_level = "off"
+# 设置为 warn 只显示警告和错误信息
+default_level = "warn"
 
 # 是否输出到控制台
 console_output = true
@@ -15,6 +15,26 @@ file_output = false
 
 # 日志文件路径（当 file_output = true 时生效）
 log_file = "logs/app.log"
+
+# 开启所有管道相关日志
+[[modules]]
+module = "qt_rust_demo::pipeline"
+level = "warn"
+
+# 单独开启ProcessPipeline的日志
+[[modules]]
+module = "qt_rust_demo::pipeline::process_pipeline"
+level = "warn"
+
+# 开启配置热重载日志
+[[modules]]
+module = "config_hot_reload"
+level = "warn"
+
+# 开启ViewModelManager日志
+[[modules]]
+module = "qt_app"
+level = "warn"
 
 # MonitoringViewModel 日志（开启 trace 级别）
 # [[modules]]

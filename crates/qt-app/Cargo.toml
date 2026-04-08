@@ -9,6 +9,7 @@ description = "Qt GUI application for crane monitoring system"
 # 依赖主 lib（不带 qt-ui feature）
 qt-rust-demo = { path = "../.." }
 qt-threading-utils = { path = "../qt-threading-utils" }
+config-hot-reload = { path = "../config-hot-reload" }
 
 # Qt 依赖
 cxx = "1.0"

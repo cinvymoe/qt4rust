@@ -1,13 +1,15 @@
 // 管道管理器 - 统一管理多个管道
 
 use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::{Mutex, RwLock};
 use tracing::{trace, debug, info, warn, error};
 use crate::repositories::CraneDataRepository;
 use crate::repositories::storage_repository::StorageRepository;
 use crate::repositories::sqlite_storage_repository::SqliteStorageRepository;
 use crate::repositories::sensor_data_repository::SensorDataRepository;
 use crate::models::crane_config::CraneConfig;
+use crate::models::sensor_calibration::SensorCalibration;
+use crate::models::rated_load_table::RatedLoadTable;
 use super::shared_buffer::{ProcessedDataBuffer, SharedBuffer};
 use super::collection_pipeline::{CollectionPipeline, CollectionPipelineConfig};
 use super::display_pipeline::{DisplayPipeline, DisplayPipelineConfig};
@@ -34,6 +36,9 @@ pub struct PipelineManager {
     storage_event_sender: Option<StorageEventSender>,
     sensor_storage_pipeline: Option<SensorStoragePipeline>,
     shared_sensor_buffer: Option<SharedSensorBuffer>,
+    // 热重载配置引用
+    sensor_calibration: Option<Arc<RwLock<SensorCalibration>>>,
+    rated_load_table: Option<Arc<RwLock<RatedLoadTable>>>,
 }
 
 impl PipelineManager {
@@ -55,6 +60,8 @@ impl PipelineManager {
             storage_event_sender: None,
             sensor_storage_pipeline: None,
             shared_sensor_buffer: None,
+            sensor_calibration: None,
+            rated_load_table: None,
         }
     }
     
@@ -179,7 +186,35 @@ impl PipelineManager {
             storage_event_sender: Some(storage_sender),
             sensor_storage_pipeline,
             shared_sensor_buffer,
+            sensor_calibration: None,
+            rated_load_table: None,
         })
+    }
+    
+    /// 设置热重载配置引用
+    pub fn set_hot_reload_config(
+        &mut self,
+        sensor_calibration: Arc<RwLock<SensorCalibration>>,
+        rated_load_table: Arc<RwLock<RatedLoadTable>>,
+    ) {
+        self.sensor_calibration = Some(sensor_calibration.clone());
+        self.rated_load_table = Some(rated_load_table.clone());
+        
+        // 将配置传递给ProcessPipeline
+        if let Some(ref mut pp) = self.process_pipeline {
+            pp.set_hot_reload_config(sensor_calibration.clone(), rated_load_table.clone());
+            info!("🔗 [PipelineManager] 热重载配置已设置到ProcessPipeline");
+        } else {
+            warn!("⚠️  [PipelineManager] ProcessPipeline不存在，无法设置热重载配置");
+        }
+        
+        // 将配置传递给CollectionPipeline
+        if let Some(ref mut cp) = self.collection_pipeline {
+            cp.set_hot_reload_config(sensor_calibration, rated_load_table);
+            info!("🔗 [PipelineManager] 热重载配置已设置到CollectionPipeline");
+        } else {
+            warn!("⚠️  [PipelineManager] CollectionPipeline不存在，无法设置热重载配置");
+        }
     }
     
     /// 启动采集管道（后台线程 1）
