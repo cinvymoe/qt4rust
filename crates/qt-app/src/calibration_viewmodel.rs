@@ -13,6 +13,9 @@ pub mod calibration_viewmodel_bridge {
         #[qproperty(f64, ad1_load)]
         #[qproperty(f64, ad2_radius)]
         #[qproperty(f64, ad3_angle)]
+        #[qproperty(f64, calculated_load)]
+        #[qproperty(f64, calculated_radius)]
+        #[qproperty(f64, calculated_angle)]
         #[qproperty(bool, sensor_connected)]
         #[qproperty(QString, error_message)]
         type CalibrationViewModel = super::CalibrationViewModelRust;
@@ -39,6 +42,9 @@ pub struct CalibrationViewModelRust {
     ad1_load: f64,
     ad2_radius: f64,
     ad3_angle: f64,
+    calculated_load: f64,
+    calculated_radius: f64,
+    calculated_angle: f64,
     sensor_connected: bool,
     error_message: QString,
     
@@ -53,6 +59,9 @@ impl Default for CalibrationViewModelRust {
             ad1_load: state.ad1_load,
             ad2_radius: state.ad2_radius,
             ad3_angle: state.ad3_angle,
+            calculated_load: state.calculated_load,
+            calculated_radius: state.calculated_radius,
+            calculated_angle: state.calculated_angle,
             sensor_connected: state.sensor_connected,
             error_message: QString::from(""),
             reducer: CalibrationReducer::new(),
@@ -70,6 +79,9 @@ impl calibration_viewmodel_bridge::CalibrationViewModel {
             ad1_load: *self.as_ref().ad1_load(),
             ad2_radius: *self.as_ref().ad2_radius(),
             ad3_angle: *self.as_ref().ad3_angle(),
+            calculated_load: *self.as_ref().calculated_load(),
+            calculated_radius: *self.as_ref().calculated_radius(),
+            calculated_angle: *self.as_ref().calculated_angle(),
             sensor_connected: *self.as_ref().sensor_connected(),
             error_message: {
                 let msg = self.as_ref().error_message().to_string();
@@ -116,6 +128,30 @@ impl calibration_viewmodel_bridge::CalibrationViewModel {
             );
             self.as_mut().set_ad3_angle(new_state.ad3_angle);
         }
+        if *self.as_ref().calculated_load() != new_state.calculated_load {
+            tracing::trace!(
+                "[CalibrationViewModel] Updating calculated_load: {:.2} -> {:.2}",
+                *self.as_ref().calculated_load(),
+                new_state.calculated_load
+            );
+            self.as_mut().set_calculated_load(new_state.calculated_load);
+        }
+        if *self.as_ref().calculated_radius() != new_state.calculated_radius {
+            tracing::trace!(
+                "[CalibrationViewModel] Updating calculated_radius: {:.2} -> {:.2}",
+                *self.as_ref().calculated_radius(),
+                new_state.calculated_radius
+            );
+            self.as_mut().set_calculated_radius(new_state.calculated_radius);
+        }
+        if *self.as_ref().calculated_angle() != new_state.calculated_angle {
+            tracing::trace!(
+                "[CalibrationViewModel] Updating calculated_angle: {:.2} -> {:.2}",
+                *self.as_ref().calculated_angle(),
+                new_state.calculated_angle
+            );
+            self.as_mut().set_calculated_angle(new_state.calculated_angle);
+        }
         if *self.as_ref().sensor_connected() != new_state.sensor_connected {
             tracing::info!(
                 "[CalibrationViewModel] Sensor connection changed: {} -> {}",
@@ -143,12 +179,22 @@ impl calibration_viewmodel_bridge::CalibrationViewModel {
         self.as_mut().handle_intent(CalibrationIntent::ClearError);
     }
     
-    /// 从全局传感器缓冲区更新传感器数据
+    /// 从全局缓冲区更新传感器数据（包含计算后的物理量）
     pub fn update_sensor_data(mut self: Pin<&mut Self>) {
-        use crate::viewmodel_manager::get_global_shared_sensor_buffer;
+        use crate::viewmodel_manager::{get_global_shared_buffer, get_global_shared_sensor_buffer};
         
-        // 获取全局传感器缓冲区
-        let buffer = match get_global_shared_sensor_buffer() {
+        // 获取处理后数据缓冲区（包含计算后的物理量）
+        let processed_buffer = match get_global_shared_buffer() {
+            Some(b) => b,
+            None => {
+                tracing::warn!("[CalibrationViewModel] Global shared buffer not available");
+                self.as_mut().handle_intent(CalibrationIntent::SensorDisconnected);
+                return;
+            }
+        };
+        
+        // 获取原始传感器数据缓冲区（包含AD值）
+        let sensor_buffer = match get_global_shared_sensor_buffer() {
             Some(b) => b,
             None => {
                 tracing::warn!("[CalibrationViewModel] Global sensor buffer not available");
@@ -157,18 +203,36 @@ impl calibration_viewmodel_bridge::CalibrationViewModel {
             }
         };
         
-        // 读取最新的原始传感器数据
-        let guard = match buffer.read() {
+        // 读取处理后数据
+        let processed_guard = match processed_buffer.read() {
             Ok(g) => g,
             Err(e) => {
-                tracing::error!("[CalibrationViewModel] Failed to read sensor buffer: {}", e);
+                tracing::error!("[CalibrationViewModel] Failed to read processed buffer: {}", e);
                 self.as_mut().handle_intent(CalibrationIntent::SensorDisconnected);
                 return;
             }
         };
         
-        let raw_data = guard.get_latest_raw();
-        let (ad1, ad2, ad3) = match raw_data {
+        let processed_data = match processed_guard.get_latest() {
+            Some(data) => data,
+            None => {
+                tracing::trace!("[CalibrationViewModel] No processed data available yet");
+                return;
+            }
+        };
+        
+        drop(processed_guard);
+        
+        // 读取原始AD值
+        let sensor_guard = match sensor_buffer.read() {
+            Ok(g) => g,
+            Err(e) => {
+                tracing::error!("[CalibrationViewModel] Failed to read sensor buffer: {}", e);
+                return;
+            }
+        };
+        
+        let (ad1, ad2, ad3) = match sensor_guard.get_latest_raw() {
             Some(data) => data,
             None => {
                 tracing::trace!("[CalibrationViewModel] No sensor data available yet");
@@ -176,16 +240,22 @@ impl calibration_viewmodel_bridge::CalibrationViewModel {
             }
         };
         
-        // 创建 SensorData 并触发更新
-        let sensor_data = qt_rust_demo::models::SensorData::new(ad1, ad2, ad3);
-        
         tracing::trace!(
-            "[CalibrationViewModel] Sensor data updated: AD1={:.2}, AD2={:.2}, AD3={:.2}",
+            "[CalibrationViewModel] Data updated: load={:.2}吨, radius={:.2}米, angle={:.2}度 (AD: {:.2}, {:.2}, {:.2})",
+            processed_data.current_load, processed_data.working_radius, processed_data.boom_angle,
             ad1, ad2, ad3
         );
         
-        drop(guard); // 释放锁
+        drop(sensor_guard);
         
-        self.as_mut().handle_intent(CalibrationIntent::SensorDataUpdated(sensor_data));
+        // 创建包含AD值和计算值的Intent
+        self.as_mut().handle_intent(CalibrationIntent::DataUpdated {
+            ad1_load: ad1,
+            ad2_radius: ad2,
+            ad3_angle: ad3,
+            calculated_load: processed_data.current_load,
+            calculated_radius: processed_data.working_radius,
+            calculated_angle: processed_data.boom_angle,
+        });
     }
 }

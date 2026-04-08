@@ -61,7 +61,7 @@ Item {
                         width: parent.width - parent.leftPadding - parent.rightPadding
                         sensorName: "重量传感器"
                         adValue: (viewModel.ad1_load || 0).toFixed(2)
-                        calculatedValue: (viewModel.ad1_load || 0).toFixed(2)
+                        calculatedValue: (viewModel.calculated_load || 0).toFixed(2)
                         unit: "吨"
                         isOnline: viewModel.sensor_connected
                     }
@@ -71,7 +71,7 @@ Item {
                         width: parent.width - parent.leftPadding - parent.rightPadding
                         sensorName: "角度传感器"
                         adValue: (viewModel.ad3_angle || 0).toFixed(2)
-                        calculatedValue: (viewModel.ad3_angle || 0).toFixed(1)
+                        calculatedValue: (viewModel.calculated_angle || 0).toFixed(1)
                         unit: "°"
                         isOnline: viewModel.sensor_connected
                     }
@@ -81,7 +81,7 @@ Item {
                         width: parent.width - parent.leftPadding - parent.rightPadding
                         sensorName: "侧长传感器"
                         adValue: (viewModel.ad2_radius || 0).toFixed(2)
-                        calculatedValue: (viewModel.ad2_radius || 0).toFixed(2)
+                        calculatedValue: (viewModel.calculated_radius || 0).toFixed(2)
                         unit: "m"
                         isOnline: viewModel.sensor_connected
                     }

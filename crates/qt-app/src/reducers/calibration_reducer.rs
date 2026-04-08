@@ -2,7 +2,6 @@
 
 use crate::states::calibration_state::CalibrationState;
 use crate::intents::calibration_intent::CalibrationIntent;
-use qt_rust_demo::models::SensorData;
 
 /// 参数校准状态转换器
 pub struct CalibrationReducer;
@@ -22,8 +21,25 @@ impl CalibrationReducer {
                 }
             }
             
-            CalibrationIntent::SensorDataUpdated(sensor_data) => {
-                self.update_from_sensor_data(state, sensor_data)
+            CalibrationIntent::DataUpdated {
+                ad1_load,
+                ad2_radius,
+                ad3_angle,
+                calculated_load,
+                calculated_radius,
+                calculated_angle,
+            } => {
+                CalibrationState {
+                    ad1_load,
+                    ad2_radius,
+                    ad3_angle,
+                    calculated_load,
+                    calculated_radius,
+                    calculated_angle,
+                    sensor_connected: true,
+                    error_message: None,
+                    last_update_time: std::time::SystemTime::now(),
+                }
             }
             
             CalibrationIntent::SensorDisconnected => {
@@ -41,24 +57,6 @@ impl CalibrationReducer {
                     ..state
                 }
             }
-        }
-    }
-    
-    /// 从传感器数据更新状态
-    fn update_from_sensor_data(&self, _state: CalibrationState, sensor_data: SensorData) -> CalibrationState {
-        // 数据验证
-        let error_message = match sensor_data.validate() {
-            Ok(_) => None,
-            Err(e) => Some(e),
-        };
-        
-        CalibrationState {
-            ad1_load: sensor_data.ad1_load,
-            ad2_radius: sensor_data.ad2_radius,
-            ad3_angle: sensor_data.ad3_angle,
-            sensor_connected: true,
-            error_message,
-            last_update_time: std::time::SystemTime::now(),
         }
     }
 }
@@ -86,19 +84,26 @@ mod tests {
     }
     
     #[test]
-    fn test_sensor_data_updated() {
+    fn test_data_updated() {
         let reducer = CalibrationReducer::new();
         let state = CalibrationState::default();
-        let sensor_data = SensorData::new(17.0, 10.0, 62.7);
         
         let new_state = reducer.reduce(
             state,
-            CalibrationIntent::SensorDataUpdated(sensor_data)
+            CalibrationIntent::DataUpdated {
+                ad1_load: 2047.5,
+                ad2_radius: 2047.5,
+                ad3_angle: 2047.5,
+                calculated_load: 25.0,
+                calculated_radius: 10.0,
+                calculated_angle: 45.0,
+            }
         );
         
-        assert_eq!(new_state.ad1_load, 17.0);
-        assert_eq!(new_state.ad2_radius, 10.0);
-        assert_eq!(new_state.ad3_angle, 62.7);
+        assert_eq!(new_state.ad1_load, 2047.5);
+        assert_eq!(new_state.calculated_load, 25.0);
+        assert_eq!(new_state.calculated_radius, 10.0);
+        assert_eq!(new_state.calculated_angle, 45.0);
         assert!(new_state.sensor_connected);
     }
     
