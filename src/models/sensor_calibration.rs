@@ -17,6 +17,9 @@ pub struct SensorCalibrationParams {
     /// 标定倍率（默认为 1.0）
     #[serde(default = "default_multiplier")]
     pub multiplier: f64,
+    /// 实际倍率（默认为 1.0）
+    #[serde(default = "default_multiplier")]
+    pub actual_multiplier: f64,
 }
 
 fn default_multiplier() -> f64 {
@@ -31,6 +34,7 @@ impl Default for SensorCalibrationParams {
             scale_ad: 4095.0,
             scale_value: 50.0,
             multiplier: 1.0,
+            actual_multiplier: 1.0,
         }
     }
 }
@@ -75,6 +79,7 @@ impl Default for SensorCalibration {
                 scale_ad: 4095.0,
                 scale_value: 50.0,  // 50 tons
                 multiplier: 1.0,
+                actual_multiplier: 1.0,
             },
             angle: SensorCalibrationParams {
                 zero_ad: 0.0,
@@ -82,6 +87,7 @@ impl Default for SensorCalibration {
                 scale_ad: 4095.0,
                 scale_value: 90.0,  // 90 degrees
                 multiplier: 1.0,
+                actual_multiplier: 1.0,
             },
             radius: SensorCalibrationParams {
                 zero_ad: 0.0,
@@ -89,6 +95,7 @@ impl Default for SensorCalibration {
                 scale_ad: 4095.0,
                 scale_value: 20.0,  // 20 meters
                 multiplier: 1.0,
+                actual_multiplier: 1.0,
             },
         }
     }
@@ -282,7 +289,8 @@ mod tests {
             zero_value: 5.0,
             scale_ad: 4000.0,
             scale_value: 45.0,
-            multiplier: 1.0
+            multiplier: 1.0,
+            actual_multiplier: 1.0
         };
         
         let value = params.convert_ad_to_value(100.0);

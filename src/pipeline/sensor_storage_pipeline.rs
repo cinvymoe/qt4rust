@@ -8,7 +8,7 @@ use crate::models::SensorData;
 use crate::repositories::sensor_data_repository::SensorDataRepository;
 use crate::pipeline::sensor_data_event_channel::SensorDataEventReceiver;
 use tokio::sync::Mutex;
-use tracing::{info, warn, error};
+use tracing::{info, warn};
 
 /// SensorData 存储管道
 pub struct SensorStoragePipeline {

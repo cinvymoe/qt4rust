@@ -97,6 +97,7 @@ impl ViewModelManager {
                     mgr.set_hot_reload_config(
                         Arc::clone(&shared_refs.sensor_calibration),
                         Arc::clone(&shared_refs.rated_load_table),
+                        Arc::clone(&shared_refs.alarm_thresholds),
                     );
                     tracing::info!("✅ [ViewModelManager] 热重载配置已成功设置到PipelineManager");
                 } else {

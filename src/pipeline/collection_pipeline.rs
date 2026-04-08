@@ -7,7 +7,7 @@ use std::time::Duration;
 use tokio::task::JoinHandle;
 use crate::repositories::CraneDataRepository;
 use crate::models::{ProcessedData, SensorData};
-use crate::models::sensor_calibration::SensorCalibration;
+use crate::models::sensor_calibration::{SensorCalibration, AlarmThresholds};
 use crate::models::rated_load_table::RatedLoadTable;
 use crate::models::crane_config::CraneConfig;
 use super::shared_buffer::SharedBuffer;
@@ -15,6 +15,52 @@ use super::event_channel::StorageEventSender;
 use super::sensor_data_event_channel::SensorDataEventSender;
 use super::filter_buffer::FilterBuffer;
 use super::shared_sensor_buffer::SharedSensorBuffer;
+
+/// 采集错误类型
+#[derive(Debug)]
+enum CollectionError {
+    /// 采集失败
+    Collection(String),
+    /// 任务 panic
+    Panic(String),
+    /// 任务取消
+    Cancelled(String),
+}
+
+/// 管道上下文（包含所有共享状态）
+struct PipelineContext {
+    config: CollectionPipelineConfig,
+    repository: Arc<CraneDataRepository>,
+    display_buffer: SharedBuffer,
+    filter_buffer: Option<Arc<Mutex<FilterBuffer>>>,
+    running: Arc<AtomicBool>,
+    sequence_number: Arc<AtomicU64>,
+    alarm_callback: Option<Arc<dyn Fn(ProcessedData) + Send + Sync>>,
+    danger_cleared_callback: Option<Arc<dyn Fn() + Send + Sync>>,
+    storage_event_sender: Option<StorageEventSender>,
+    sensor_storage_sender: Option<SensorDataEventSender>,
+    shared_sensor_buffer: Option<SharedSensorBuffer>,
+    sensor_calibration: Option<Arc<RwLock<SensorCalibration>>>,
+    rated_load_table: Option<Arc<RwLock<RatedLoadTable>>>,
+    alarm_thresholds: Option<Arc<RwLock<AlarmThresholds>>>,
+}
+
+/// 采集循环状态
+struct CollectionLoopState {
+    consecutive_failures: u32,
+    interval_timer: tokio::time::Interval,
+    previous_danger: bool,
+}
+
+impl CollectionLoopState {
+    fn new(interval: Duration) -> Self {
+        Self {
+            consecutive_failures: 0,
+            interval_timer: tokio::time::interval(interval),
+            previous_danger: false,
+        }
+    }
+}
 
 /// 采集管道配置
 #[derive(Debug, Clone)]
@@ -68,6 +114,7 @@ pub struct CollectionPipeline {
     // 热重载配置引用
     sensor_calibration: Option<Arc<RwLock<SensorCalibration>>>,
     rated_load_table: Option<Arc<RwLock<RatedLoadTable>>>,
+    alarm_thresholds: Option<Arc<RwLock<AlarmThresholds>>>,
 }
 
 impl CollectionPipeline {
@@ -92,6 +139,7 @@ impl CollectionPipeline {
             shared_sensor_buffer: None,
             sensor_calibration: None,
             rated_load_table: None,
+            alarm_thresholds: None,
         }
     }
 
@@ -117,6 +165,7 @@ impl CollectionPipeline {
             shared_sensor_buffer: None,
             sensor_calibration: None,
             rated_load_table: None,
+            alarm_thresholds: None,
         }
     }
 
@@ -144,6 +193,7 @@ impl CollectionPipeline {
             shared_sensor_buffer: Some(shared_sensor_buffer),
             sensor_calibration: None,
             rated_load_table: None,
+            alarm_thresholds: None,
         }
     }
 
@@ -170,6 +220,7 @@ impl CollectionPipeline {
             shared_sensor_buffer: None,
             sensor_calibration: None,
             rated_load_table: None,
+            alarm_thresholds: None,
         }
     }
     
@@ -178,9 +229,11 @@ impl CollectionPipeline {
         &mut self,
         sensor_calibration: Arc<RwLock<SensorCalibration>>,
         rated_load_table: Arc<RwLock<RatedLoadTable>>,
+        alarm_thresholds: Arc<RwLock<AlarmThresholds>>,
     ) {
         self.sensor_calibration = Some(sensor_calibration.clone());
         self.rated_load_table = Some(rated_load_table.clone());
+        self.alarm_thresholds = Some(alarm_thresholds.clone());
         
         if let Ok(cal) = sensor_calibration.read() {
             tracing::info!("🔧 [CollectionPipeline] 热重载配置已设置");
@@ -190,6 +243,12 @@ impl CollectionPipeline {
                 cal.weight.scale_ad,
                 cal.weight.scale_value,
                 cal.weight.multiplier);
+        }
+        
+        if let Ok(thresholds) = alarm_thresholds.read() {
+            tracing::info!("⚠️  [CollectionPipeline] 预警阈值已设置: warning={}%, alarm={}%",
+                thresholds.moment.warning_percentage,
+                thresholds.moment.alarm_percentage);
         }
     }
     
@@ -229,170 +288,312 @@ impl CollectionPipeline {
         
         self.running.store(true, Ordering::Relaxed);
 
-        let config = self.config.clone();
-        let repository = Arc::clone(&self.repository);
-        let display_buffer = Arc::clone(&self.display_buffer);
-        let filter_buffer = self.filter_buffer.clone();
-        let running = Arc::clone(&self.running);
-        let sequence_number = Arc::clone(&self.sequence_number);
-        let alarm_callback = self.alarm_callback.clone();
-        let danger_cleared_callback = self.danger_cleared_callback.clone();
-        let storage_event_sender = self.storage_event_sender.clone();
-        let sensor_storage_sender = self.sensor_storage_sender.clone();
-        let shared_sensor_buffer = self.shared_sensor_buffer.clone();
-        let sensor_calibration = self.sensor_calibration.clone();
-        let rated_load_table = self.rated_load_table.clone();
-
+        let context = self.create_pipeline_context();
         let handle = qt_threading_utils::runtime::global_runtime().spawn(async move {
-            tracing::info!(" Collection pipeline started (mode: {})", 
-                if filter_buffer.is_some() { "filter" } else { "legacy" });
-            let mut consecutive_failures = 0;
-            let mut interval_timer = tokio::time::interval(config.interval);
-            let mut previous_danger = false;
-
-            while running.load(Ordering::Relaxed) {
-                interval_timer.tick().await;
-
-                let repo = Arc::clone(&repository);
-                let cfg = config.clone();
-                let result = tokio::task::spawn_blocking(move || {
-                    Self::collect_with_retry(&repo, &cfg)
-                }).await;
-
-                match result {
-                    Ok(Ok(sensor_data)) => {
-                        consecutive_failures = 0;
-
-                        // 写入共享传感器缓冲区（供校准界面使用）
-                        if let Some(ref buffer) = shared_sensor_buffer {
-                            if let Ok(mut buf) = buffer.write() {
-                                buf.push(sensor_data.clone());
-                            }
-                        }
-
-                        if let Some(ref fb) = filter_buffer {
-                            // 多速率模式: 只写入滤波缓冲区
-                            if let Ok(mut fb_guard) = fb.lock() {
-                                tracing::debug!("[CollectionPipeline] 写入FilterBuffer: ad1={:.2}, ad2={:.2}, ad3={:.2}",
-                                    sensor_data.ad1_load, sensor_data.ad2_radius, sensor_data.ad3_angle);
-                                fb_guard.push(sensor_data);
-                            }
-                        } else {
-                            // 遗留模式: 处理数据并写入显示缓冲区和存储
-                            let seq = sequence_number.fetch_add(1, Ordering::Relaxed);
-                            
-                            // 获取配置并进行AD转换
-                            let processed = if let (Some(cal), Some(table)) = (&sensor_calibration, &rated_load_table) {
-                                // 使用热重载配置
-                                let cal_guard = cal.read().unwrap();
-                                let table_guard = table.read().unwrap();
-                                
-                                tracing::info!("🔥 [CollectionPipeline] 使用热重载配置进行AD转换");
-                                tracing::info!("📊 [标定参数] weight: zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}, multiplier={:.2}",
-                                    cal_guard.weight.zero_ad,
-                                    cal_guard.weight.zero_value,
-                                    cal_guard.weight.scale_ad,
-                                    cal_guard.weight.scale_value,
-                                    cal_guard.weight.multiplier);
-                                
-                                // 创建临时CraneConfig
-                                let repo_clone = Arc::clone(&repository);
-                                let alarm_thresholds = repo_clone.get_config()
-                                    .map(|c| c.alarm_thresholds.clone())
-                                    .unwrap_or_default();
-                                
-                                let hot_config = CraneConfig {
-                                    sensor_calibration: cal_guard.clone(),
-                                    rated_load_table: table_guard.clone(),
-                                    alarm_thresholds,
-                                };
-                                
-                                let p = ProcessedData::from_sensor_data_with_config(sensor_data.clone(), &hot_config, seq);
-                                tracing::info!("✅ [CollectionPipeline] AD转换完成: ad1={:.2} -> load={:.2}吨",
-                                    sensor_data.ad1_load, p.current_load);
-                                p
-                            } else {
-                                // 使用静态配置（向后兼容）
-                                tracing::warn!("⚠️  [CollectionPipeline] 热重载配置未设置，使用静态配置");
-                                let repo_clone = Arc::clone(&repository);
-                                match repo_clone.get_config() {
-                                    Ok(config) => {
-                                        let p = ProcessedData::from_sensor_data_with_config(sensor_data.clone(), &config, seq);
-                                        tracing::debug!("[CollectionPipeline] 静态配置AD转换: ad1={:.2} -> load={:.2}吨",
-                                            sensor_data.ad1_load, p.current_load);
-                                        p
-                                    }
-                                    Err(e) => {
-                                        tracing::warn!("[CollectionPipeline] 无法加载配置，使用简单转换: {}", e);
-                                        ProcessedData::from_sensor_data(sensor_data.clone(), seq)
-                                    }
-                                }
-                            };
-
-                            // Send raw sensor data to storage pipeline if configured
-                            if let Some(ref sender) = sensor_storage_sender {
-                                if let Err(e) = sender.try_send_data(vec![sensor_data]) {
-                                    tracing::warn!("Failed to send sensor data to storage: {}", e);
-                                }
-                            }
-
-                            if let Some(ref sender) = storage_event_sender {
-                                if let Err(e) = sender.try_send_data(vec![processed.clone()]) {
-                                    tracing::warn!("Failed to send data to storage: {}", e);
-                                }
-                            }
-
-                            let current_danger = processed.is_danger;
-
-                            if current_danger && !previous_danger {
-                                tracing::warn!("[ALARM] Danger detected! Moment: {:.1}%", processed.moment_percentage);
-                                if let Some(ref callback) = alarm_callback {
-                                    callback(processed.clone());
-                                }
-                            } else if !current_danger && previous_danger {
-                                tracing::info!("[ALARM] Danger cleared");
-                                if let Some(ref callback) = danger_cleared_callback {
-                                    callback();
-                                }
-                            }
-
-                            previous_danger = current_danger;
-
-                            match display_buffer.try_write() {
-                                Ok(mut buf) => { buf.push(processed); }
-                                Err(_) => { tracing::warn!(" Failed to acquire buffer lock, skipping write"); }
-                            }
-                        }
-                    }
-                    Ok(Err(e)) => {
-                        consecutive_failures += 1;
-                        tracing::error!(" Collection failed: {} (consecutive: {})", e, consecutive_failures);
-                        
-                        if filter_buffer.is_none() {
-                            match display_buffer.try_write() {
-                                Ok(mut buf) => { buf.record_error(); }
-                                Err(_) => {}
-                            }
-                        }
-                        
-                        if consecutive_failures >= config.disconnect_threshold {
-                            tracing::error!(" Sensor disconnected (threshold reached)");
-                        }
-                    }
-                    Err(e) => {
-                        if e.is_panic() {
-                            tracing::error!("[PANIC] Collection task panicked: {:?}", e);
-                        } else {
-                            tracing::error!(" Collection task cancelled: {}", e);
-                        }
-                    }
-                }
-            }
-            
-            tracing::info!(" Collection pipeline stopped");
+            Self::run_collection_loop(context).await;
         });
         
         self.handle = Some(handle);
+    }
+    
+    /// 创建管道上下文（克隆所有需要的共享状态）
+    fn create_pipeline_context(&self) -> PipelineContext {
+        PipelineContext {
+            config: self.config.clone(),
+            repository: Arc::clone(&self.repository),
+            display_buffer: Arc::clone(&self.display_buffer),
+            filter_buffer: self.filter_buffer.clone(),
+            running: Arc::clone(&self.running),
+            sequence_number: Arc::clone(&self.sequence_number),
+            alarm_callback: self.alarm_callback.clone(),
+            danger_cleared_callback: self.danger_cleared_callback.clone(),
+            storage_event_sender: self.storage_event_sender.clone(),
+            sensor_storage_sender: self.sensor_storage_sender.clone(),
+            shared_sensor_buffer: self.shared_sensor_buffer.clone(),
+            sensor_calibration: self.sensor_calibration.clone(),
+            rated_load_table: self.rated_load_table.clone(),
+            alarm_thresholds: self.alarm_thresholds.clone(),
+        }
+    }
+    
+    /// 运行采集循环
+    async fn run_collection_loop(ctx: PipelineContext) {
+        tracing::info!(" Collection pipeline started (mode: {})", 
+            if ctx.filter_buffer.is_some() { "filter" } else { "legacy" });
+        
+        let mut state = CollectionLoopState::new(ctx.config.interval);
+
+        while ctx.running.load(Ordering::Relaxed) {
+            state.interval_timer.tick().await;
+
+            let result = Self::collect_sensor_data(&ctx.repository, &ctx.config).await;
+            
+            match result {
+                Ok(sensor_data) => {
+                    state.consecutive_failures = 0;
+                    Self::handle_sensor_data_success(sensor_data, &ctx, &mut state).await;
+                }
+                Err(e) => {
+                    Self::handle_sensor_data_error(e, &ctx, &mut state);
+                }
+            }
+        }
+        
+        tracing::info!(" Collection pipeline stopped");
+    }
+    
+    /// 采集传感器数据
+    async fn collect_sensor_data(
+        repository: &Arc<CraneDataRepository>,
+        config: &CollectionPipelineConfig,
+    ) -> Result<SensorData, CollectionError> {
+        let repo = Arc::clone(repository);
+        let cfg = config.clone();
+        
+        tokio::task::spawn_blocking(move || {
+            Self::collect_with_retry(&repo, &cfg)
+        })
+        .await
+        .map_err(|e| {
+            if e.is_panic() {
+                CollectionError::Panic(format!("{:?}", e))
+            } else {
+                CollectionError::Cancelled(e.to_string())
+            }
+        })?
+        .map_err(CollectionError::Collection)
+    }
+    
+    /// 处理传感器数据采集成功
+    async fn handle_sensor_data_success(
+        sensor_data: SensorData,
+        ctx: &PipelineContext,
+        state: &mut CollectionLoopState,
+    ) {
+        // 写入共享传感器缓冲区（供校准界面使用）
+        Self::write_to_shared_sensor_buffer(&sensor_data, &ctx.shared_sensor_buffer);
+
+        if let Some(ref fb) = ctx.filter_buffer {
+            // 多速率模式: 只写入滤波缓冲区
+            Self::handle_filter_mode(sensor_data, fb);
+        } else {
+            // 遗留模式: 处理数据并写入显示缓冲区和存储
+            Self::handle_legacy_mode(sensor_data, ctx, state);
+        }
+    }
+    
+    /// 写入共享传感器缓冲区
+    fn write_to_shared_sensor_buffer(
+        sensor_data: &SensorData,
+        shared_sensor_buffer: &Option<SharedSensorBuffer>,
+    ) {
+        if let Some(ref buffer) = shared_sensor_buffer {
+            if let Ok(mut buf) = buffer.write() {
+                buf.push(sensor_data.clone());
+            }
+        }
+    }
+    
+    /// 处理滤波模式
+    fn handle_filter_mode(sensor_data: SensorData, filter_buffer: &Arc<Mutex<FilterBuffer>>) {
+        if let Ok(mut fb_guard) = filter_buffer.lock() {
+            tracing::debug!("[CollectionPipeline] 写入FilterBuffer: ad1={:.2}, ad2={:.2}, ad3={:.2}",
+                sensor_data.ad1_load, sensor_data.ad2_radius, sensor_data.ad3_angle);
+            fb_guard.push(sensor_data);
+        }
+    }
+    
+    /// 处理遗留模式
+    fn handle_legacy_mode(
+        sensor_data: SensorData,
+        ctx: &PipelineContext,
+        state: &mut CollectionLoopState,
+    ) {
+        let seq = ctx.sequence_number.fetch_add(1, Ordering::Relaxed);
+        
+        // 处理数据（AD转换）
+        let processed = Self::process_sensor_data(
+            &sensor_data,
+            &ctx.repository,
+            &ctx.sensor_calibration,
+            &ctx.rated_load_table,
+            &ctx.alarm_thresholds,
+            seq,
+        );
+
+        // 发送到存储管道
+        Self::send_to_storage(&sensor_data, &processed, ctx);
+
+        // 检测报警状态变化
+        Self::check_alarm_state(&processed, &ctx.alarm_callback, &ctx.danger_cleared_callback, state);
+
+        // 写入显示缓冲区
+        Self::write_to_display_buffer(&processed, &ctx.display_buffer);
+    }
+    
+    /// 处理传感器数据（AD转换）
+    fn process_sensor_data(
+        sensor_data: &SensorData,
+        repository: &Arc<CraneDataRepository>,
+        sensor_calibration: &Option<Arc<RwLock<SensorCalibration>>>,
+        rated_load_table: &Option<Arc<RwLock<RatedLoadTable>>>,
+        alarm_thresholds: &Option<Arc<RwLock<AlarmThresholds>>>,
+        seq: u64,
+    ) -> ProcessedData {
+        if let (Some(cal), Some(table), Some(thresholds)) = (sensor_calibration, rated_load_table, alarm_thresholds) {
+            Self::process_with_hot_reload(sensor_data, repository, cal, table, thresholds, seq)
+        } else {
+            Self::process_with_static_config(sensor_data, repository, seq)
+        }
+    }
+    
+    /// 使用热重载配置处理数据
+    fn process_with_hot_reload(
+        sensor_data: &SensorData,
+        _repository: &Arc<CraneDataRepository>,
+        sensor_calibration: &Arc<RwLock<SensorCalibration>>,
+        rated_load_table: &Arc<RwLock<RatedLoadTable>>,
+        alarm_thresholds: &Arc<RwLock<AlarmThresholds>>,
+        seq: u64,
+    ) -> ProcessedData {
+        let cal_guard = sensor_calibration.read().unwrap();
+        let table_guard = rated_load_table.read().unwrap();
+        let thresholds_guard = alarm_thresholds.read().unwrap();
+        
+        tracing::info!("🔥 [CollectionPipeline] 使用热重载配置进行AD转换");
+        tracing::info!("📊 [标定参数] weight: zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}, multiplier={:.2}",
+            cal_guard.weight.zero_ad,
+            cal_guard.weight.zero_value,
+            cal_guard.weight.scale_ad,
+            cal_guard.weight.scale_value,
+            cal_guard.weight.multiplier);
+        
+        tracing::info!("⚠️  [预警阈值] warning={}%, alarm={}%",
+            thresholds_guard.moment.warning_percentage,
+            thresholds_guard.moment.alarm_percentage);
+        
+        let hot_config = CraneConfig {
+            sensor_calibration: cal_guard.clone(),
+            rated_load_table: table_guard.clone(),
+            alarm_thresholds: thresholds_guard.clone(),
+        };
+        
+        let processed = ProcessedData::from_sensor_data_with_config(
+            sensor_data.clone(), 
+            &hot_config, 
+            seq,
+        );
+        tracing::info!("✅ [CollectionPipeline] AD转换完成: ad1={:.2} -> load={:.2}吨",
+            sensor_data.ad1_load, processed.current_load);
+        
+        processed
+    }
+    
+    /// 使用静态配置处理数据
+    fn process_with_static_config(
+        sensor_data: &SensorData,
+        repository: &Arc<CraneDataRepository>,
+        seq: u64,
+    ) -> ProcessedData {
+        tracing::warn!("⚠️  [CollectionPipeline] 热重载配置未设置，使用静态配置");
+        
+        match repository.get_config() {
+            Ok(config) => {
+                let processed = ProcessedData::from_sensor_data_with_config(
+                    sensor_data.clone(), 
+                    &config, 
+                    seq,
+                );
+                tracing::debug!("[CollectionPipeline] 静态配置AD转换: ad1={:.2} -> load={:.2}吨",
+                    sensor_data.ad1_load, processed.current_load);
+                processed
+            }
+            Err(e) => {
+                tracing::warn!("[CollectionPipeline] 无法加载配置，使用简单转换: {}", e);
+                ProcessedData::from_sensor_data(sensor_data.clone(), seq)
+            }
+        }
+    }
+    
+    /// 发送数据到存储管道
+    fn send_to_storage(
+        sensor_data: &SensorData,
+        processed: &ProcessedData,
+        ctx: &PipelineContext,
+    ) {
+        if let Some(ref sender) = ctx.sensor_storage_sender {
+            if let Err(e) = sender.try_send_data(vec![sensor_data.clone()]) {
+                tracing::warn!("Failed to send sensor data to storage: {}", e);
+            }
+        }
+
+        if let Some(ref sender) = ctx.storage_event_sender {
+            if let Err(e) = sender.try_send_data(vec![processed.clone()]) {
+                tracing::warn!("Failed to send data to storage: {}", e);
+            }
+        }
+    }
+    
+    /// 检测报警状态变化
+    fn check_alarm_state(
+        processed: &ProcessedData,
+        alarm_callback: &Option<Arc<dyn Fn(ProcessedData) + Send + Sync>>,
+        danger_cleared_callback: &Option<Arc<dyn Fn() + Send + Sync>>,
+        state: &mut CollectionLoopState,
+    ) {
+        let current_danger = processed.is_danger;
+
+        if current_danger && !state.previous_danger {
+            tracing::warn!("[ALARM] Danger detected! Moment: {:.1}%", processed.moment_percentage);
+            if let Some(ref callback) = alarm_callback {
+                callback(processed.clone());
+            }
+        } else if !current_danger && state.previous_danger {
+            tracing::info!("[ALARM] Danger cleared");
+            if let Some(ref callback) = danger_cleared_callback {
+                callback();
+            }
+        }
+
+        state.previous_danger = current_danger;
+    }
+    
+    /// 写入显示缓冲区
+    fn write_to_display_buffer(processed: &ProcessedData, display_buffer: &SharedBuffer) {
+        match display_buffer.try_write() {
+            Ok(mut buf) => { buf.push(processed.clone()); }
+            Err(_) => { tracing::warn!(" Failed to acquire buffer lock, skipping write"); }
+        }
+    }
+    
+    /// 处理传感器数据采集错误
+    fn handle_sensor_data_error(
+        error: CollectionError,
+        ctx: &PipelineContext,
+        state: &mut CollectionLoopState,
+    ) {
+        match error {
+            CollectionError::Collection(e) => {
+                state.consecutive_failures += 1;
+                tracing::error!(" Collection failed: {} (consecutive: {})", e, state.consecutive_failures);
+                
+                if ctx.filter_buffer.is_none() {
+                    if let Ok(mut buf) = ctx.display_buffer.try_write() {
+                        buf.record_error();
+                    }
+                }
+                
+                if state.consecutive_failures >= ctx.config.disconnect_threshold {
+                    tracing::error!(" Sensor disconnected (threshold reached)");
+                }
+            }
+            CollectionError::Panic(e) => {
+                tracing::error!("[PANIC] Collection task panicked: {}", e);
+            }
+            CollectionError::Cancelled(e) => {
+                tracing::error!(" Collection task cancelled: {}", e);
+            }
+        }
     }
     
     /// 停止管道

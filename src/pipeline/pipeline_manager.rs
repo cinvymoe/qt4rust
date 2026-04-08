@@ -8,7 +8,7 @@ use crate::repositories::storage_repository::StorageRepository;
 use crate::repositories::sqlite_storage_repository::SqliteStorageRepository;
 use crate::repositories::sensor_data_repository::SensorDataRepository;
 use crate::models::crane_config::CraneConfig;
-use crate::models::sensor_calibration::SensorCalibration;
+use crate::models::sensor_calibration::{SensorCalibration, AlarmThresholds};
 use crate::models::rated_load_table::RatedLoadTable;
 use super::shared_buffer::{ProcessedDataBuffer, SharedBuffer};
 use super::collection_pipeline::{CollectionPipeline, CollectionPipelineConfig};
@@ -196,13 +196,14 @@ impl PipelineManager {
         &mut self,
         sensor_calibration: Arc<RwLock<SensorCalibration>>,
         rated_load_table: Arc<RwLock<RatedLoadTable>>,
+        alarm_thresholds: Arc<RwLock<AlarmThresholds>>,
     ) {
         self.sensor_calibration = Some(sensor_calibration.clone());
         self.rated_load_table = Some(rated_load_table.clone());
         
         // 将配置传递给ProcessPipeline
         if let Some(ref mut pp) = self.process_pipeline {
-            pp.set_hot_reload_config(sensor_calibration.clone(), rated_load_table.clone());
+            pp.set_hot_reload_config(sensor_calibration.clone(), rated_load_table.clone(), alarm_thresholds.clone());
             info!("🔗 [PipelineManager] 热重载配置已设置到ProcessPipeline");
         } else {
             warn!("⚠️  [PipelineManager] ProcessPipeline不存在，无法设置热重载配置");
@@ -210,7 +211,7 @@ impl PipelineManager {
         
         // 将配置传递给CollectionPipeline
         if let Some(ref mut cp) = self.collection_pipeline {
-            cp.set_hot_reload_config(sensor_calibration, rated_load_table);
+            cp.set_hot_reload_config(sensor_calibration, rated_load_table, alarm_thresholds);
             info!("🔗 [PipelineManager] 热重载配置已设置到CollectionPipeline");
         } else {
             warn!("⚠️  [PipelineManager] CollectionPipeline不存在，无法设置热重载配置");
