@@ -276,11 +276,21 @@ impl HotReloadConfigManager {
                         &config_cache,
                         &subscribers,
                         &config_dir,
-                        event,
+                        event.clone(),
                     )
                     .await
                     {
-                        error!("处理文件事件失败: {}", e);
+                        // 检查是否是空文件错误（编辑器保存过程中的临时状态）
+                        let error_msg = e.to_string();
+                        if error_msg.contains("文件为空") || error_msg.contains("只包含空白字符") {
+                            warn!(
+                                file_type = ?event.file_type,
+                                path = %event.path.display(),
+                                "忽略空文件事件（可能是编辑器保存过程中的临时状态）"
+                            );
+                        } else {
+                            error!("处理文件事件失败: {}", e);
+                        }
                     }
                 }
 

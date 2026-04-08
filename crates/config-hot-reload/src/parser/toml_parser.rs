@@ -44,7 +44,16 @@ pub fn parse_toml<T: DeserializeOwned>(path: &Path) -> Result<T, HotReloadError>
         source,
     })?;
     
-    // 3. 解析 TOML
+    // 3. 检查文件是否为空或只包含空白字符
+    let trimmed = content.trim();
+    if trimmed.is_empty() {
+        return Err(HotReloadError::ParseError {
+            path: path.to_path_buf(),
+            reason: "文件为空或只包含空白字符（可能是编辑器保存过程中的临时状态）".to_string(),
+        });
+    }
+    
+    // 4. 解析 TOML
     toml::from_str(&content).map_err(|e| {
         // 提取详细的错误信息，包含行号
         let reason = format!("TOML 解析失败: {}", e);

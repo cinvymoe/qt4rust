@@ -8,6 +8,7 @@ use crate::models::SensorData;
 use crate::repositories::sensor_data_repository::SensorDataRepository;
 use crate::pipeline::sensor_data_event_channel::SensorDataEventReceiver;
 use tokio::sync::Mutex;
+use tracing::{info, warn, error};
 
 /// SensorData 存储管道
 pub struct SensorStoragePipeline {
@@ -41,29 +42,33 @@ impl SensorStoragePipeline {
 
     /// Start the sensor storage pipeline
     pub fn start(&mut self) -> Result<(), String> {
+        // 如果已经在运行，先停止旧的任务
+        // abort() 会立即终止任务，无需等待
         if self.running.load(Ordering::Relaxed) {
-            return Err("Sensor storage pipeline already running".to_string());
+            warn!("传感器存储管道已在运行，先停止旧任务");
+            self.stop();
         }
 
         self.running.store(true, Ordering::Relaxed);
 
         let pipeline = self.clone_for_callback();
 
-        // Use global runtime to spawn the async task
+        // 使用全局 tokio runtime 启动异步任务
         self.handle = Some(qt_threading_utils::runtime::global_runtime().spawn(async move {
             pipeline.run_event_loop().await;
         }));
 
+        info!("传感器存储管道已启动");
         Ok(())
     }
 
-    /// Stop the sensor storage pipeline
+    /// 停止传感器存储管道
     pub fn stop(&mut self) {
         self.running.store(false, Ordering::Relaxed);
-        // Send shutdown signal through event receiver
+        // 发送关闭信号
         self.event_receiver.shutdown();
 
-        // Abort the handle but don't block
+        // abort() 会立即终止 tokio 任务，无需阻塞等待
         if let Some(handle) = self.handle.take() {
             handle.abort();
         }

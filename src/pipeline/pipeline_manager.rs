@@ -135,12 +135,12 @@ impl PipelineManager {
             let sensor_repo = Arc::new(SqliteStorageRepository::new(db_path).await?) as Arc<dyn SensorDataRepository>;
             let (sensor_tx, sensor_rx) = create_sensor_data_channels(1000);
             
-            let mut sensor_pipeline = SensorStoragePipeline::with_event_channel(
+            let sensor_pipeline = SensorStoragePipeline::with_event_channel(
                 pipeline_config.sensor_storage.clone(),
                 sensor_repo,
                 sensor_rx,
             );
-            sensor_pipeline.start().map_err(|e| format!("Sensor storage pipeline start failed: {}", e))?;
+            // 不在这里启动，让 start_all() 统一启动所有管道
             
             let sensor_buffer = Arc::new(std::sync::RwLock::new(
                 super::shared_sensor_buffer::SensorDataBuffer::new(100)
