@@ -58,7 +58,6 @@ pub mod monitoring_viewmodel_bridge {
 use core::pin::Pin;
 use cxx_qt_lib::QString;
 use qt_rust_demo::intents::monitoring_intent::MonitoringIntent;
-use qt_rust_demo::models::SensorData;
 use qt_rust_demo::pipeline::shared_buffer::SharedBuffer;
 use qt_rust_demo::pipeline::DisplayPipeline;
 use qt_rust_demo::reducers::monitoring_reducer::MonitoringReducer;
@@ -242,10 +241,13 @@ impl monitoring_viewmodel_bridge::MonitoringViewModel {
     pub fn update_test_data(mut self: Pin<&mut Self>, load: f64, radius: f64, angle: f64) {
         // 创建模拟的传感器数据
         let sensor_data = qt_rust_demo::models::SensorData::new(load, radius, angle);
-
+        
+        // 使用简单转换（不依赖配置）
+        let processed_data = qt_rust_demo::models::ProcessedData::from_sensor_data(sensor_data, 0);
+        
         // 通过 Intent 更新状态
         self.as_mut()
-            .handle_intent(MonitoringIntent::SensorDataUpdated(sensor_data));
+            .handle_intent(MonitoringIntent::ProcessedDataUpdated(processed_data));
     }
 
     /// 初始化显示管道（通过 Pin 访问内部字段）
@@ -272,16 +274,12 @@ impl monitoring_viewmodel_bridge::MonitoringViewModel {
         match pipeline_ref.as_mut() {
             Some(pipeline) => {
                 if pipeline.tick() {
-                    if let Some(data) = pipeline.get_latest() {
-                        let sensor_data = SensorData::new(
-                            data.current_load,
-                            data.working_radius,
-                            data.boom_angle,
-                        );
-                        tracing::debug!("[MonitoringViewModel] tick_display: data retrieved - load={:.2}, radius={:.2}, angle={:.2}", 
-                            data.current_load, data.working_radius, data.boom_angle);
+                    if let Some(processed_data) = pipeline.get_latest() {
+                        tracing::info!("[MonitoringViewModel] 从DisplayPipeline获取数据: load={:.2}吨, radius={:.2}米, angle={:.2}度", 
+                            processed_data.current_load, processed_data.working_radius, processed_data.boom_angle);
                         drop(pipeline_ref);
-                        self.handle_intent(MonitoringIntent::SensorDataUpdated(sensor_data));
+                        // 直接使用 ProcessedData，不再转换为 SensorData
+                        self.handle_intent(MonitoringIntent::ProcessedDataUpdated(processed_data));
                         return true;
                     } else {
                         tracing::trace!(

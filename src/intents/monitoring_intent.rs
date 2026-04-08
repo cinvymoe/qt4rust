@@ -1,6 +1,6 @@
 // 监控视图意图
 
-use crate::models::SensorData;
+use crate::models::ProcessedData;
 
 /// 监控视图意图
 #[derive(Debug, Clone)]
@@ -12,8 +12,8 @@ pub enum MonitoringIntent {
     /// 重置报警状态
     ResetAlarm,
     
-    /// 传感器数据更新（后台线程触发）
-    SensorDataUpdated(SensorData),
+    /// 已处理数据更新（从共享管道获取）
+    ProcessedDataUpdated(ProcessedData),
     
     /// 传感器断连
     SensorDisconnected,

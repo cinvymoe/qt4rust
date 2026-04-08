@@ -148,18 +148,6 @@ Item {
         anchors.fill: parent
         color: "transparent"
         
-        // 错误提示对话框
-        InfoDialog {
-            id: errorDialog
-            visible: viewModel.error_message !== ""
-            title: "数据异常"
-            message: viewModel.error_message
-            
-            onAccepted: {
-                viewModel.clear_error()
-            }
-        }
-        
         // 传感器断连提示
         Rectangle {
             id: sensorDisconnectedBanner

@@ -282,6 +282,7 @@ mod tests {
             zero_value: 5.0,
             scale_ad: 4000.0,
             scale_value: 45.0,
+            multiplier: 1.0
         };
         
         let value = params.convert_ad_to_value(100.0);

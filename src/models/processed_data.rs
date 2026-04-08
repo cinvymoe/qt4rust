@@ -16,6 +16,9 @@ pub struct ProcessedData {
     /// 吊臂角度（度）
     pub boom_angle: f64,
 
+    /// 臂长（米）
+    pub boom_length: f64,
+
     /// 力矩百分比
     pub moment_percentage: f64,
 
@@ -50,6 +53,7 @@ impl ProcessedData {
             current_load: raw_data.ad1_load,
             working_radius: raw_data.ad2_radius,
             boom_angle: raw_data.ad3_angle,
+            boom_length: raw_data.ad2_radius, // 简化模式：臂长等于半径
             moment_percentage,
             is_danger,
             validation_error,
@@ -124,6 +128,7 @@ impl ProcessedData {
             current_load,
             working_radius,
             boom_angle,
+            boom_length,
             moment_percentage,
             is_danger,
             validation_error,
@@ -200,6 +205,7 @@ mod tests {
         assert_eq!(processed.current_load, 20.0);
         assert_eq!(processed.working_radius, 10.0);
         assert_eq!(processed.boom_angle, 60.0);
+        assert_eq!(processed.boom_length, 10.0); // 简化模式：臂长等于半径
         assert_eq!(processed.moment_percentage, 80.0);
         assert!(!processed.is_danger);
     }

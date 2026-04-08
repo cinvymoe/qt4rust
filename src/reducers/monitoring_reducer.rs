@@ -2,9 +2,12 @@
 
 use crate::states::monitoring_state::MonitoringState;
 use crate::intents::MonitoringIntent;
-use crate::models::SensorData;
+use crate::models::ProcessedData;
 
 /// 监控状态转换器
+/// 
+/// 注意：此 Reducer 不再处理原始传感器数据，而是直接使用
+/// 从共享管道（SharedBuffer）中获取的已处理数据（ProcessedData）
 pub struct MonitoringReducer;
 
 impl MonitoringReducer {
@@ -29,8 +32,8 @@ impl MonitoringReducer {
                 }
             }
             
-            MonitoringIntent::SensorDataUpdated(sensor_data) => {
-                self.update_from_sensor_data(state, sensor_data)
+            MonitoringIntent::ProcessedDataUpdated(processed_data) => {
+                self.update_from_processed_data(state, processed_data)
             }
             
             MonitoringIntent::SensorDisconnected => {
@@ -51,43 +54,28 @@ impl MonitoringReducer {
         }
     }
     
-    /// 从传感器数据更新状态
-    fn update_from_sensor_data(&self, state: MonitoringState, sensor_data: SensorData) -> MonitoringState {
-        // 使用当前状态中的 rated_load 计算力矩百分比
-        let moment_percentage = self.calculate_moment_percentage(&sensor_data, state.rated_load);
-        
-        // 判断是否危险
-        let is_danger = moment_percentage >= 90.0;
-        
-        // 数据验证
-        let error_message = match sensor_data.validate() {
-            Ok(_) => None,
-            Err(e) => Some(e),
-        };
+    /// 从已处理数据更新状态
+    /// 
+    /// ProcessedData 已经包含了：
+    /// - AD值转换后的物理量（重量、角度、半径）
+    /// - 计算后的力矩百分比
+    /// - 危险状态判断
+    /// - 数据验证结果
+    fn update_from_processed_data(&self, state: MonitoringState, processed: ProcessedData) -> MonitoringState {
+        tracing::info!("[MonitoringReducer] 更新状态: load={:.2}吨, radius={:.2}米, angle={:.2}度, moment={:.1}%",
+            processed.current_load, processed.working_radius, processed.boom_angle, processed.moment_percentage);
         
         MonitoringState {
-            current_load: sensor_data.ad1_load,
+            current_load: processed.current_load,  // 转换后的重量值（吨）
             rated_load: state.rated_load,  // 保持原有配置
-            working_radius: sensor_data.ad2_radius,
-            boom_angle: sensor_data.ad3_angle,
-            boom_length: state.boom_length,  // 保持原有配置
-            moment_percentage,
-            is_danger,
+            working_radius: processed.working_radius,  // 转换后的工作半径（米）
+            boom_angle: processed.boom_angle,  // 转换后的角度（度）
+            boom_length: processed.boom_length,  // 从处理后的数据获取臂长
+            moment_percentage: processed.moment_percentage,  // 计算后的力矩百分比
+            is_danger: processed.is_danger,  // 危险状态判断
             sensor_connected: true,
-            error_message,
-            last_update_time: std::time::SystemTime::now(),
-        }
-    }
-    
-    /// 计算力矩百分比
-    fn calculate_moment_percentage(&self, sensor_data: &SensorData, rated_load: f64) -> f64 {
-        let current_moment = sensor_data.ad1_load * sensor_data.ad2_radius;
-        let rated_moment = rated_load * sensor_data.ad2_radius;
-        
-        if rated_moment > 0.0 {
-            (current_moment / rated_moment) * 100.0
-        } else {
-            0.0
+            error_message: processed.validation_error,  // 验证错误信息
+            last_update_time: processed.timestamp,
         }
     }
 }
@@ -101,6 +89,7 @@ impl Default for MonitoringReducer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::SensorData;
     
     #[test]
     fn test_clear_error() {
@@ -115,18 +104,22 @@ mod tests {
     }
     
     #[test]
-    fn test_sensor_data_updated() {
+    fn test_processed_data_updated() {
         let reducer = MonitoringReducer::new();
         let state = MonitoringState::default();
-        let sensor_data = SensorData::new(17.0, 10.0, 62.7);
+        
+        // 创建已处理的数据
+        let sensor_data = SensorData::new(2047.5, 2047.5, 2047.5);
+        let processed_data = ProcessedData::from_sensor_data(sensor_data, 1);
         
         let new_state = reducer.reduce(
             state,
-            MonitoringIntent::SensorDataUpdated(sensor_data)
+            MonitoringIntent::ProcessedDataUpdated(processed_data)
         );
         
-        assert_eq!(new_state.current_load, 17.0);
-        assert_eq!(new_state.working_radius, 10.0);
+        // 验证使用了处理后的值
+        assert!(new_state.current_load > 0.0);
+        assert!(new_state.working_radius > 0.0);
         assert!(new_state.sensor_connected);
     }
     

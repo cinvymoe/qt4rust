@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Controls
 import "../../styles"
 import "../../components/controls"
+import qt.rust.demo
 
 Flickable {
     id: momentCurveView
@@ -10,6 +11,22 @@ Flickable {
     height: parent.height
     contentHeight: contentColumn.height
     clip: true
+    
+    // ViewModel 实例
+    MomentCurveViewModel {
+        id: viewModel
+        Component.onCompleted: {
+            console.log("MomentCurveViewModel initialized")
+            console.log("Available properties:")
+            for (var prop in viewModel) {
+                console.log("  -", prop, ":", typeof viewModel[prop])
+            }
+            loadData()
+            console.log("After loadData()")
+            console.log("boom_length_list:", boom_length_list)
+            console.log("data_loaded:", data_loaded)
+        }
+    }
     
     Column {
         id: contentColumn
@@ -21,7 +38,7 @@ Flickable {
             
             Column {
                 anchors.horizontalCenter: parent.horizontalCenter
-                width: parent.width - 200  // 左右各留 100px 边距
+                width: parent.width - 200
                 spacing: Theme.spacingMedium
                 topPadding: Theme.spacingMedium
                 bottomPadding: Theme.spacingMedium
@@ -91,354 +108,237 @@ Flickable {
                 // 2. 额定载荷曲线
                 Rectangle {
                     width: parent.width
-                    height: childrenRect.height + Theme.borderThin
+                    height: childrenRect.height + 20
                     color: Theme.darkSurface
                     border.color: Theme.darkBorder
                     border.width: Theme.borderThin
-                    radius: Theme.radiusMedium
+                    radius: 12
                     
                     Column {
                         width: parent.width
-                        spacing: Theme.spacingMedium
-                        topPadding: 16.667
-                        bottomPadding: Theme.borderThin
-                        leftPadding: 16.667
-                        rightPadding: 16.667
+                        spacing: 20
+                        topPadding: 20
+                        bottomPadding: 20
+                        leftPadding: 20
+                        rightPadding: 20
                         
-                        // 标题和按钮
-                        Item {
-                            width: parent.width - 2 * 16.667
-                            height: 40
+                        // 标题
+                        Row {
+                            width: parent.width - 40
+                            spacing: 12
                             
-                            Row {
-                                spacing: 12
-                                anchors.left: parent.left
+                            Rectangle {
+                                width: 4
+                                height: 28
+                                color: Theme.successColor
+                                radius: 2
                                 anchors.verticalCenter: parent.verticalCenter
-                                
-                                Rectangle {
-                                    width: 4
-                                    height: 24
-                                    color: Theme.successColor
-                                    anchors.verticalCenter: parent.verticalCenter
-                                }
-                                
-                                Text {
-                                    text: "额定载荷曲线"
-                                    font.pixelSize: Theme.fontSizeLarge
-                                    font.family: Theme.fontFamilyDefault
-                                    color: Theme.textPrimary
-                                    anchors.verticalCenter: parent.verticalCenter
-                                }
                             }
                             
-                            Button {
-                                width: 120
-                                height: 40
-                                anchors.right: parent.right
+                            Text {
+                                text: "额定载荷曲线"
+                                font.pixelSize: 20
+                                font.family: Theme.fontFamilyDefault
+                                font.weight: Font.Bold
+                                color: Theme.textPrimary
                                 anchors.verticalCenter: parent.verticalCenter
-                                
-                                background: Rectangle {
-                                    color: parent.pressed ? "#0d4ab8" : "#155dfc"
-                                    radius: Theme.radiusMedium
-                                    
-                                    Behavior on color {
-                                        ColorAnimation {
-                                            duration: 100
-                                        }
-                                    }
-                                }
-                                
-                                contentItem: Text {
-                                    text: "力矩曲线导入"
-                                    font.pixelSize: Theme.fontSizeMedium
-                                    font.weight: Font.Medium
-                                    color: Theme.textPrimary
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                    opacity: parent.pressed ? 0.7 : 1.0
-                                    
-                                    Behavior on opacity {
-                                        NumberAnimation {
-                                            duration: 100
-                                        }
-                                    }
-                                }
-                                
-                                onClicked: console.log("力矩曲线导入")
                             }
                         }
                         
                         // 图表
                         LoadCurveChart {
-                            width: parent.width - 2 * 16.667
-                            height: 384
+                            id: loadCurveChart
+                            width: parent.width - 40
+                            height: 400
+                            viewModel: viewModel
                         }
                         
-                        // 图例
-                        Row {
-                            width: parent.width - 2 * 16.667
-                            spacing: Theme.spacingLarge
+                        // 臂长选择
+                        Column {
+                            width: parent.width - 40
+                            spacing: 16
                             
-                            Repeater {
-                                model: [
-                                    {label: "主臂配置", color: "#22c55e"},
-                                    {label: "主臂+副臂", color: "#3b82f6"},
-                                    {label: "最大臂长", color: "#f59e0b"}
-                                ]
+                            Flow {
+                                width: parent.width
+                                spacing: 12
                                 
-                                Rectangle {
-                                    width: (parent.width - 2 * Theme.spacingLarge) / 3
-                                    height: 64
-                                    color: Theme.darkBackground
-                                    radius: Theme.radiusSmall
+                                Repeater {
+                                    model: viewModel.boom_length_list
                                     
-                                    Column {
-                                        anchors.fill: parent
-                                        anchors.margins: 12
-                                        spacing: 4
+                                    Button {
+                                        width: 110
+                                        height: 56
                                         
-                                        Row {
-                                            spacing: Theme.spacingSmall
+                                        property bool isSelected: viewModel.selected_boom_index === index
+                                        
+                                        background: Rectangle {
+                                            color: isSelected ? "#155dfc" : Theme.darkBackground
+                                            border.color: isSelected ? "#1447e6" : "#2d3748"
+                                            border.width: 2
+                                            radius: 8
                                             
                                             Rectangle {
-                                                width: 16
-                                                height: 4
-                                                color: modelData.color
-                                                radius: Theme.radiusSmall
+                                                anchors.fill: parent
+                                                anchors.margins: -2
+                                                color: "transparent"
+                                                border.color: isSelected ? "#60a5fa" : "transparent"
+                                                border.width: 2
+                                                radius: 10
+                                                opacity: 0.3
+                                                visible: isSelected
+                                            }
+                                            
+                                            Behavior on color { ColorAnimation { duration: 200 } }
+                                            Behavior on border.color { ColorAnimation { duration: 200 } }
+                                        }
+                                        
+                                        contentItem: Column {
+                                            anchors.centerIn: parent
+                                            spacing: 4
+                                            
+                                            Text {
+                                                text: modelData + "m"
+                                                font.pixelSize: 18
+                                                font.family: Theme.fontFamilyDefault
+                                                font.weight: isSelected ? Font.Bold : Font.Medium
+                                                color: isSelected ? "#ffffff" : Theme.textSecondary
+                                                horizontalAlignment: Text.AlignHCenter
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                Behavior on color { ColorAnimation { duration: 200 } }
+                                            }
+                                            
+                                            Text {
+                                                text: "臂长"
+                                                font.pixelSize: 12
+                                                font.family: Theme.fontFamilyDefault
+                                                color: isSelected ? "#93c5fd" : Theme.textTertiary
+                                                horizontalAlignment: Text.AlignHCenter
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                Behavior on color { ColorAnimation { duration: 200 } }
+                                            }
+                                        }
+                                        
+                                        onClicked: {
+                                            viewModel.selectBoomByIndex(index)
+                                            loadCurveChart.updateChart()
+                                        }
+                                        
+                                        scale: hovered ? 1.05 : 1.0
+                                        Behavior on scale { NumberAnimation { duration: 150 } }
+                                    }
+                                }
+                            }
+                            
+                            // 统计信息卡片
+                            Rectangle {
+                                width: parent.width
+                                height: 100
+                                color: "#1a202c"
+                                border.color: "#2d3748"
+                                border.width: 1
+                                radius: 12
+                                visible: viewModel.data_loaded
+                                
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: parent.radius
+                                    gradient: Gradient {
+                                        GradientStop { position: 0.0; color: "#1e293b" }
+                                        GradientStop { position: 1.0; color: "#0f172a" }
+                                    }
+                                    opacity: 0.5
+                                }
+                                
+                                Row {
+                                    anchors.fill: parent
+                                    anchors.margins: 20
+                                    spacing: 20
+                                    
+                                    Column {
+                                        width: (parent.width - 3 * 20) / 4
+                                        spacing: 6
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        
+                                        Row {
+                                            spacing: 6
+                                            Rectangle {
+                                                width: 6
+                                                height: 6
+                                                radius: 3
+                                                color: "#3b82f6"
                                                 anchors.verticalCenter: parent.verticalCenter
                                             }
-                                            
                                             Text {
-                                                text: modelData.label
-                                                font.pixelSize: Theme.fontSizeSmall
-                                                font.family: Theme.fontFamilyDefault
-                                                color: Theme.textSecondary
+                                                text: "当前臂长"
+                                                font.pixelSize: 12
+                                                color: "#94a3b8"
                                             }
                                         }
-                                        
                                         Text {
-                                            text: index === 0 ? "臂长约30m，最大载荷25吨" : 
-                                                  index === 1 ? "臂长约40m，最大载荷20吨" : 
-                                                  "臂长约50m，最大载荷15吨"
-                                            font.pixelSize: Theme.fontSizeTiny
-                                            font.family: Theme.fontFamilyDefault
-                                            color: Theme.textTertiary
-                                            wrapMode: Text.WordWrap
-                                            width: parent.width
+                                            text: (viewModel.current_boom_length || 0).toFixed(1) + " m"
+                                            font.pixelSize: 22
+                                            font.weight: Font.Bold
+                                            color: "#3b82f6"
                                         }
                                     }
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                // 3. 使用示例
-                Rectangle {
-                    width: parent.width
-                    height: childrenRect.height + Theme.borderThin
-                    color: Theme.darkSurface
-                    border.color: Theme.darkBorder
-                    border.width: Theme.borderThin
-                    radius: Theme.radiusMedium
-                    
-                    Column {
-                        width: parent.width
-                        spacing: Theme.spacingMedium
-                        topPadding: 16.667
-                        bottomPadding: Theme.borderThin
-                        leftPadding: 16.667
-                        rightPadding: 16.667
-                        
-                        // 标题
-                        Item {
-                            width: parent.width - 2 * 16.667
-                            height: 28
-                            
-                            Rectangle {
-                                width: 4
-                                height: 24
-                                color: "#ff6900"
-                                anchors.left: parent.left
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                            
-                            Text {
-                                text: "使用示例"
-                                font.pixelSize: Theme.fontSizeLarge
-                                font.family: Theme.fontFamilyDefault
-                                color: Theme.textPrimary
-                                anchors.left: parent.left
-                                anchors.leftMargin: 12
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                        }
-                        
-                        // 示例卡片容器
-                        Column {
-                            width: parent.width - 2 * 16.667
-                            spacing: 12
-                            
-                            // 安全作业示例
-                            Rectangle {
-                                width: parent.width
-                                height: 148
-                                color: Theme.darkBackground
-                                border.color: Theme.successColor
-                                border.width: 4
-                                radius: Theme.radiusMedium
-                                
-                                Column {
-                                    anchors.fill: parent
-                                    anchors.topMargin: Theme.spacingMedium
-                                    anchors.leftMargin: 20
-                                    anchors.rightMargin: Theme.spacingMedium
-                                    spacing: Theme.spacingSmall
                                     
-                                    Text {
-                                        text: "✓ 安全作业示例"
-                                        font.pixelSize: Theme.fontSizeMedium
-                                        font.family: Theme.fontFamilyDefault
-                                        color: "#05df72"
-                                        width: parent.width
-                                    }
-                                    
-                                    Text {
-                                        text: "主臂配置，工作半径10m，吊运载荷12吨"
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        font.family: Theme.fontFamilyDefault
-                                        color: Theme.textSecondary
-                                        width: parent.width
-                                    }
+                                    Rectangle { width: 1; height: parent.height - 20; color: "#2d3748"; anchors.verticalCenter: parent.verticalCenter }
                                     
                                     Column {
-                                        width: parent.width
-                                        spacing: 4
+                                        width: (parent.width - 3 * 20) / 4
+                                        spacing: 6
+                                        anchors.verticalCenter: parent.verticalCenter
                                         
-                                        Repeater {
-                                            model: [
-                                                "• 根据曲线，10m半径时额定载荷约17吨",
-                                                "• 实际载荷12吨，低于额定载荷17吨",
-                                                "• 载荷率为70.6%，处于安全范围"
-                                            ]
-                                            
-                                            Text {
-                                                text: modelData
-                                                font.pixelSize: Theme.fontSizeTiny
-                                                font.family: Theme.fontFamilyDefault
-                                                color: Theme.textTertiary
-                                                width: parent.width
-                                            }
+                                        Row {
+                                            spacing: 6
+                                            Rectangle { width: 6; height: 6; radius: 3; color: "#22c55e"; anchors.verticalCenter: parent.verticalCenter }
+                                            Text { text: "最大载荷"; font.pixelSize: 12; color: "#94a3b8" }
+                                        }
+                                        Text {
+                                            text: viewModel.getMaxLoadForBoom(viewModel.current_boom_length || 0).toFixed(1) + " t"
+                                            font.pixelSize: 22
+                                            font.weight: Font.Bold
+                                            color: "#22c55e"
                                         }
                                     }
-                                }
-                            }
-                            
-                            // 预警作业示例
-                            Rectangle {
-                                width: parent.width
-                                height: 148
-                                color: Theme.darkBackground
-                                border.color: Theme.warningColor
-                                border.width: 4
-                                radius: Theme.radiusMedium
-                                
-                                Column {
-                                    anchors.fill: parent
-                                    anchors.topMargin: Theme.spacingMedium
-                                    anchors.leftMargin: 20
-                                    anchors.rightMargin: Theme.spacingMedium
-                                    spacing: Theme.spacingSmall
                                     
-                                    Text {
-                                        text: "⚠ 预警作业示例"
-                                        font.pixelSize: Theme.fontSizeMedium
-                                        font.family: Theme.fontFamilyDefault
-                                        color: "#fdc700"
-                                        width: parent.width
-                                    }
-                                    
-                                    Text {
-                                        text: "主臂配置，工作半径15m，吊运载荷10吨"
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        font.family: Theme.fontFamilyDefault
-                                        color: Theme.textSecondary
-                                        width: parent.width
-                                    }
+                                    Rectangle { width: 1; height: parent.height - 20; color: "#2d3748"; anchors.verticalCenter: parent.verticalCenter }
                                     
                                     Column {
-                                        width: parent.width
-                                        spacing: 4
+                                        width: (parent.width - 3 * 20) / 4
+                                        spacing: 6
+                                        anchors.verticalCenter: parent.verticalCenter
                                         
-                                        Repeater {
-                                            model: [
-                                                "• 根据曲线，15m半径时额定载荷约12吨",
-                                                "• 实际载荷10吨，载荷率为83.3%",
-                                                "• 超过75%预警线，建议减载或减小半径"
-                                            ]
-                                            
-                                            Text {
-                                                text: modelData
-                                                font.pixelSize: Theme.fontSizeTiny
-                                                font.family: Theme.fontFamilyDefault
-                                                color: Theme.textTertiary
-                                                width: parent.width
-                                            }
+                                        Row {
+                                            spacing: 6
+                                            Rectangle { width: 6; height: 6; radius: 3; color: "#f59e0b"; anchors.verticalCenter: parent.verticalCenter }
+                                            Text { text: "最大幅度"; font.pixelSize: 12; color: "#94a3b8" }
+                                        }
+                                        Text {
+                                            text: viewModel.getMaxRadiusForBoom(viewModel.current_boom_length || 0).toFixed(1) + " m"
+                                            font.pixelSize: 22
+                                            font.weight: Font.Bold
+                                            color: "#f59e0b"
                                         }
                                     }
-                                }
-                            }
-                            
-                            // 危险作业示例
-                            Rectangle {
-                                width: parent.width
-                                height: 148
-                                color: Theme.darkBackground
-                                border.color: Theme.dangerLight
-                                border.width: 4
-                                radius: Theme.radiusMedium
-                                
-                                Column {
-                                    anchors.fill: parent
-                                    anchors.topMargin: Theme.spacingMedium
-                                    anchors.leftMargin: 20
-                                    anchors.rightMargin: Theme.spacingMedium
-                                    spacing: Theme.spacingSmall
                                     
-                                    Text {
-                                        text: "✗ 危险作业示例"
-                                        font.pixelSize: Theme.fontSizeMedium
-                                        font.family: Theme.fontFamilyDefault
-                                        color: "#ff6467"
-                                        width: parent.width
-                                    }
-                                    
-                                    Text {
-                                        text: "最大臂长配置，工作半径20m，吊运载荷3吨"
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        font.family: Theme.fontFamilyDefault
-                                        color: Theme.textSecondary
-                                        width: parent.width
-                                    }
+                                    Rectangle { width: 1; height: parent.height - 20; color: "#2d3748"; anchors.verticalCenter: parent.verticalCenter }
                                     
                                     Column {
-                                        width: parent.width
-                                        spacing: 4
+                                        width: (parent.width - 3 * 20) / 4
+                                        spacing: 6
+                                        anchors.verticalCenter: parent.verticalCenter
                                         
-                                        Repeater {
-                                            model: [
-                                                "• 根据曲线，20m半径时额定载荷约3.2吨",
-                                                "• 实际载荷3吨，载荷率为93.8%",
-                                                "• 超过90%危险线！必须立即减载"
-                                            ]
-                                            
-                                            Text {
-                                                text: modelData
-                                                font.pixelSize: Theme.fontSizeTiny
-                                                font.family: Theme.fontFamilyDefault
-                                                color: Theme.textTertiary
-                                                width: parent.width
-                                            }
+                                        Row {
+                                            spacing: 6
+                                            Rectangle { width: 6; height: 6; radius: 3; color: "#8b5cf6"; anchors.verticalCenter: parent.verticalCenter }
+                                            Text { text: "数据点数"; font.pixelSize: 12; color: "#94a3b8" }
+                                        }
+                                        Text {
+                                            text: viewModel.getDataPointCount(viewModel.current_boom_length || 0).toString()
+                                            font.pixelSize: 22
+                                            font.weight: Font.Bold
+                                            color: "#8b5cf6"
                                         }
                                     }
                                 }

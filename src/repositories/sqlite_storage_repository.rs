@@ -50,6 +50,7 @@ impl SqliteStorageRepository {
                 current_load REAL NOT NULL,
                 working_radius REAL NOT NULL,
                 boom_angle REAL NOT NULL,
+                boom_length REAL NOT NULL,
                 moment_percentage REAL NOT NULL,
                 is_danger BOOLEAN NOT NULL,
                 validation_error TEXT,
@@ -142,14 +143,15 @@ impl StorageRepository for SqliteStorageRepository {
             let result = conn.execute(
                 "INSERT OR IGNORE INTO runtime_data 
                  (sequence_number, timestamp, current_load, working_radius, 
-                  boom_angle, moment_percentage, is_danger, validation_error)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                  boom_angle, boom_length, moment_percentage, is_danger, validation_error)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
                 params![
                     item.sequence_number as i64,
                     timestamp,
                     item.current_load,
                     item.working_radius,
                     item.boom_angle,
+                    item.boom_length,
                     item.moment_percentage,
                     item.is_danger,
                     item.validation_error.as_ref().map(|s| s.as_str()),
@@ -247,9 +249,10 @@ impl StorageRepository for SqliteStorageRepository {
                 current_load: row.get(2)?,
                 working_radius: row.get(3)?,
                 boom_angle: row.get(4)?,
-                moment_percentage: row.get(5)?,
-                is_danger: row.get(6)?,
-                validation_error: row.get(7)?,
+                boom_length: row.get(5)?,
+                moment_percentage: row.get(6)?,
+                is_danger: row.get(7)?,
+                validation_error: row.get(8)?,
             })
         }).map_err(|e| format!("Failed to query: {}", e))?;
         
@@ -467,9 +470,10 @@ impl StorageRepository for SqliteStorageRepository {
                 current_load: row.get(2)?,
                 working_radius: row.get(3)?,
                 boom_angle: row.get(4)?,
-                moment_percentage: row.get(5)?,
-                is_danger: row.get(6)?,
-                validation_error: row.get(7)?,
+                boom_length: row.get(5)?,
+                moment_percentage: row.get(6)?,
+                is_danger: row.get(7)?,
+                validation_error: row.get(8)?,
             })
         }).map_err(|e| format!("Failed to query runtime data: {}", e))?;
         

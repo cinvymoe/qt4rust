@@ -103,16 +103,26 @@ impl ProcessPipeline {
 
                 let sensor_data = {
                     let fb = filter_buffer.lock().unwrap();
-                    fb.get_filtered().clone()
+                    let filtered = fb.get_filtered().clone();
+                    if let Some(ref data) = filtered {
+                        tracing::debug!("[ProcessPipeline] 从FilterBuffer读取: ad1={:.2}, ad2={:.2}, ad3={:.2}",
+                            data.ad1_load, data.ad2_radius, data.ad3_angle);
+                    }
+                    filtered
                 };
 
                 if let Some(raw_data) = sensor_data {
                     let seq = sequence_number.fetch_add(1, Ordering::Relaxed);
                     let processed = ProcessedData::from_sensor_data_with_config(
-                        raw_data,
+                        raw_data.clone(),
                         &crane_config,
                         seq,
                     );
+                    
+                    tracing::debug!("[ProcessPipeline] AD转换: ad1={:.2} -> load={:.2}吨, ad2={:.2} -> radius={:.2}米, ad3={:.2} -> angle={:.2}度",
+                        raw_data.ad1_load, processed.current_load,
+                        raw_data.ad2_radius, processed.working_radius,
+                        raw_data.ad3_angle, processed.boom_angle);
 
                     if let Some(ref sender) = storage_event_sender {
                         let _ = sender.try_send_data(vec![processed.clone()]);

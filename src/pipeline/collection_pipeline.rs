@@ -237,12 +237,28 @@ impl CollectionPipeline {
                         if let Some(ref fb) = filter_buffer {
                             // 多速率模式: 只写入滤波缓冲区
                             if let Ok(mut fb_guard) = fb.lock() {
+                                tracing::debug!("[CollectionPipeline] 写入FilterBuffer: ad1={:.2}, ad2={:.2}, ad3={:.2}",
+                                    sensor_data.ad1_load, sensor_data.ad2_radius, sensor_data.ad3_angle);
                                 fb_guard.push(sensor_data);
                             }
                         } else {
                             // 遗留模式: 处理数据并写入显示缓冲区和存储
                             let seq = sequence_number.fetch_add(1, Ordering::Relaxed);
-                            let processed = ProcessedData::from_sensor_data(sensor_data.clone(), seq);
+                            
+                            // 获取配置并进行AD转换
+                            let repo_clone = Arc::clone(&repository);
+                            let processed = match repo_clone.get_config() {
+                                Ok(config) => {
+                                    let p = ProcessedData::from_sensor_data_with_config(sensor_data.clone(), &config, seq);
+                                    tracing::debug!("[CollectionPipeline] 遗留模式AD转换: ad1={:.2} -> load={:.2}吨",
+                                        sensor_data.ad1_load, p.current_load);
+                                    p
+                                }
+                                Err(e) => {
+                                    tracing::warn!("[CollectionPipeline] 无法加载配置，使用简单转换: {}", e);
+                                    ProcessedData::from_sensor_data(sensor_data.clone(), seq)
+                                }
+                            };
 
                             // Send raw sensor data to storage pipeline if configured
                             if let Some(ref sender) = sensor_storage_sender {
