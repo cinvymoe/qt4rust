@@ -6,15 +6,24 @@ import "../../styles"
 Rectangle {
     id: header
     height: Theme.headerHeight
-    color: Theme.dangerBackground
-    border.color: Theme.dangerColor
-    border.width: Theme.borderThin
     
     // 状态属性
     property string title: "汽车吊力矩监测系统"
     property string subtitle: "Crane Moment Monitoring System"
     property bool alertActive: false
-    property string alertText: "危险报警"
+    property bool isWarning: false  // 预警状态
+    property bool isDanger: false   // 报警状态
+    
+    // 根据状态动态计算颜色
+    // 正常状态：使用表面色背景
+    // 预警状态：使用黄色背景和边框
+    // 报警状态：使用红色背景和边框
+    color: isDanger ? Theme.dangerBackground : (isWarning ? "#2a1f00" : Theme.darkSurface)
+    border.color: isDanger ? Theme.dangerColor : (isWarning ? Theme.warningColor : Theme.darkBorder)
+    border.width: isDanger || isWarning ? Theme.borderNormal : Theme.borderThin
+    
+    // 报警文本根据状态动态变化
+    readonly property string alertText: isDanger ? "危险报警" : (isWarning ? "力矩预警" : "")
     
     Row {
         anchors.fill: parent
@@ -57,13 +66,14 @@ Rectangle {
             height: 1
         }
         
-        // 报警按钮
+        // 报警按钮 - 根据预警/报警状态显示不同颜色
         Rectangle {
             id: alertButton
             width: 108
             height: Theme.buttonHeightSmall
             radius: Theme.radiusMedium
-            color: Theme.dangerColor
+            // 预警状态使用黄色，报警状态使用红色
+            color: header.isDanger ? Theme.dangerColor : Theme.warningColor
             opacity: header.alertActive ? Theme.opacityMedium : 0
             visible: header.alertActive
             anchors.verticalCenter: parent.verticalCenter

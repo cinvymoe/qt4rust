@@ -251,6 +251,7 @@ impl StorageRepository for SqliteStorageRepository {
                 sequence_number: row.get::<_, i64>(0)? as u64,
                 timestamp,
                 current_load: row.get(2)?,
+                rated_load: 25.0, // 从数据库读取时使用默认值
                 working_radius: row.get(3)?,
                 boom_angle: row.get(4)?,
                 boom_length: row.get(5)?,
@@ -476,6 +477,7 @@ impl StorageRepository for SqliteStorageRepository {
                 sequence_number: row.get(0)?,
                 timestamp,
                 current_load: row.get(2)?,
+                rated_load: 25.0, // 从数据库读取时使用默认值
                 working_radius: row.get(3)?,
                 boom_angle: row.get(4)?,
                 boom_length: row.get(5)?,

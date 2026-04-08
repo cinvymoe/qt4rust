@@ -199,6 +199,8 @@ Item {
                 height: monitoringView.headerVisible ? Theme.headerHeight : 0
                 visible: height > 0
                 alertActive: viewModel.is_warning || viewModel.is_danger
+                isWarning: viewModel.is_warning && !viewModel.is_danger
+                isDanger: viewModel.is_danger
                 clip: true
                 
                 Behavior on height {

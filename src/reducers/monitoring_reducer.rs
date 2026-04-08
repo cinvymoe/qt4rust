@@ -58,12 +58,12 @@ impl MonitoringReducer {
         state: MonitoringState,
         processed: ProcessedData,
     ) -> MonitoringState {
-        tracing::info!("[MonitoringReducer] 更新状态: load={:.2}吨, radius={:.2}米, angle={:.2}度, moment={:.1}%",
-            processed.current_load, processed.working_radius, processed.boom_angle, processed.moment_percentage);
+        tracing::info!("[MonitoringReducer] 更新状态: load={:.2}吨, rated={:.2}吨, radius={:.2}米, angle={:.2}度, moment={:.1}%",
+            processed.current_load, processed.rated_load, processed.working_radius, processed.boom_angle, processed.moment_percentage);
 
         MonitoringState {
             current_load: processed.current_load,     // 转换后的重量值（吨）
-            rated_load: state.rated_load,             // 保持原有配置
+            rated_load: processed.rated_load,         // 从载荷表查询得到的额定载荷
             working_radius: processed.working_radius, // 转换后的工作半径（米）
             boom_angle: processed.boom_angle,         // 转换后的角度（度）
             boom_length: processed.boom_length,       // 从处理后的数据获取臂长

@@ -65,6 +65,7 @@ mod tests {
     fn create_test_processed_data() -> ProcessedData {
         ProcessedData {
             current_load: 10.0,
+            rated_load: 25.0,
             working_radius: 5.0,
             boom_angle: 45.0,
             boom_length: 10.0,

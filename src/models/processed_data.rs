@@ -10,6 +10,9 @@ pub struct ProcessedData {
     /// 当前载荷（吨）
     pub current_load: f64,
 
+    /// 额定载荷（吨，从载荷表查询得到）
+    pub rated_load: f64,
+
     /// 工作半径（米）
     pub working_radius: f64,
 
@@ -55,6 +58,7 @@ impl ProcessedData {
 
         Self {
             current_load: raw_data.ad1_load,
+            rated_load: Self::DEFAULT_RATED_LOAD,
             working_radius: raw_data.ad2_radius,
             boom_angle: raw_data.ad3_angle,
             boom_length: raw_data.ad2_radius, // 简化模式：臂长等于半径
@@ -129,6 +133,7 @@ impl ProcessedData {
 
         Self {
             current_load,
+            rated_load,
             working_radius,
             boom_angle,
             boom_length,
