@@ -170,7 +170,7 @@ impl ProcessedData {
         let rated_moment = Self::DEFAULT_RATED_LOAD * data.ad2_radius;
 
         if rated_moment > 0.0 {
-            (current_moment / rated_moment) * 100.0
+            ((current_moment / rated_moment) * 100.0).min(100.0)
         } else {
             0.0
         }
@@ -194,7 +194,7 @@ impl ProcessedData {
         let rated_moment = rated_load * working_radius;
 
         if rated_moment > 0.0 {
-            (current_moment / rated_moment) * 100.0
+            ((current_moment / rated_moment) * 100.0).min(100.0)
         } else {
             0.0
         }
@@ -337,8 +337,9 @@ mod tests {
         let percentage = ProcessedData::calculate_moment_percentage_with_load(25.0, 10.0, 25.0);
         assert_eq!(percentage, 100.0);
 
+        // 超过100%时应该被限制为100%
         let percentage = ProcessedData::calculate_moment_percentage_with_load(30.0, 10.0, 25.0);
-        assert_eq!(percentage, 120.0);
+        assert_eq!(percentage, 100.0);
     }
 
     #[test]
