@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Controls
 import "../../styles"
 import "../../components/controls"
+import "../../components/dialogs"
 import qt.rust.demo
 
 Flickable {
@@ -25,6 +26,49 @@ Flickable {
             console.log("After loadData()")
             console.log("boom_length_list:", boom_length_list)
             console.log("data_loaded:", data_loaded)
+        }
+    }
+    
+    // 文件选择对话框
+    FileSelectDialog {
+        id: fileDialog
+        
+        onFileSelected: function(filePath) {
+            console.log("Selected file:", filePath)
+            
+            var success = viewModel.importCurveFromFile(filePath)
+            var message = viewModel.getImportStatusMessage()
+            
+            if (success) {
+                importSuccessDialog.message = message
+                importSuccessDialog.open()
+                loadCurveChart.updateChart()
+            } else {
+                importErrorDialog.message = message
+                importErrorDialog.open()
+            }
+        }
+    }
+    
+    // 导入成功对话框
+    InfoDialog {
+        id: importSuccessDialog
+        title: "导入成功"
+        message: ""
+        
+        onAccepted: {
+            close()
+        }
+    }
+    
+    // 导入失败对话框
+    InfoDialog {
+        id: importErrorDialog
+        title: "导入失败"
+        message: ""
+        
+        onAccepted: {
+            close()
         }
     }
     
@@ -123,25 +167,61 @@ Flickable {
                         rightPadding: 20
                         
                         // 标题
-                        Row {
+                        Item {
                             width: parent.width - 40
-                            spacing: 12
+                            height: 36
                             
-                            Rectangle {
-                                width: 4
-                                height: 28
-                                color: Theme.successColor
-                                radius: 2
+                            Row {
+                                anchors.left: parent.left
                                 anchors.verticalCenter: parent.verticalCenter
+                                spacing: 12
+                                
+                                Rectangle {
+                                    width: 4
+                                    height: 28
+                                    color: Theme.successColor
+                                    radius: 2
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                                
+                                Text {
+                                    text: "额定载荷曲线"
+                                    font.pixelSize: 20
+                                    font.family: Theme.fontFamilyDefault
+                                    font.weight: Font.Bold
+                                    color: Theme.textPrimary
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
                             }
                             
-                            Text {
-                                text: "额定载荷曲线"
-                                font.pixelSize: 20
-                                font.family: Theme.fontFamilyDefault
-                                font.weight: Font.Bold
-                                color: Theme.textPrimary
+                            // 导入按钮
+                            Button {
+                                anchors.right: parent.right
                                 anchors.verticalCenter: parent.verticalCenter
+                                width: 100
+                                height: 36
+                                
+                                background: Rectangle {
+                                    color: parent.hovered ? "#1e5dff" : "#155dfc"
+                                    border.color: "#1447e6"
+                                    border.width: 1
+                                    radius: 8
+                                    
+                                    Behavior on color { ColorAnimation { duration: 150 } }
+                                }
+                                
+                                contentItem: Text {
+                                    text: "导入曲线"
+                                    font.pixelSize: 14
+                                    font.family: Theme.fontFamilyDefault
+                                    color: "#ffffff"
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                
+                                onClicked: {
+                                    fileDialog.open()
+                                }
                             }
                         }
                         

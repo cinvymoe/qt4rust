@@ -49,6 +49,7 @@ fn main() {
             .qml_file("qml/components/dialogs/InfoDialog.qml")
             .qml_file("qml/components/dialogs/CustomTimeRangeDialog.qml")
             .qml_file("qml/components/dialogs/CustomMultiplierDialog.qml")
+            .qml_file("qml/components/dialogs/FileSelectDialog.qml")
             // 样式系统
             .qml_file("qml/styles/Theme.qml"),
     )

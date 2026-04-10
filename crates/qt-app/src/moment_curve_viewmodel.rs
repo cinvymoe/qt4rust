@@ -52,6 +52,14 @@ pub mod moment_curve_bridge {
 
         #[qinvokable]
         unsafe fn getGlobalMaxLoad(self: Pin<&mut MomentCurveViewModel>) -> f64;
+
+        /// 从文件导入曲线数据
+        #[qinvokable]
+        unsafe fn importCurveFromFile(self: Pin<&mut MomentCurveViewModel>, file_path: QString) -> bool;
+
+        /// 获取导入状态消息
+        #[qinvokable]
+        unsafe fn getImportStatusMessage(self: Pin<&mut MomentCurveViewModel>) -> QString;
     }
 }
 
@@ -61,6 +69,7 @@ use qt_rust_demo::config::load_table_manager::LoadTableManager;
 use qt_rust_demo::models::rated_load_table::RatedLoadTable;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::fs;
 
 struct CurveDataPoint {
     radius: f64,
@@ -78,6 +87,7 @@ pub struct MomentCurveViewModelRust {
     boom_lengths: RefCell<Vec<f64>>,
     global_max_radius: RefCell<f64>,
     global_max_load: RefCell<f64>,
+    import_status_message: RefCell<String>,
 }
 
 impl Default for MomentCurveViewModelRust {
@@ -93,6 +103,7 @@ impl Default for MomentCurveViewModelRust {
             boom_lengths: RefCell::new(Vec::new()),
             global_max_radius: RefCell::new(25.0),
             global_max_load: RefCell::new(60.0),
+            import_status_message: RefCell::new(String::new()),
         }
     }
 }
@@ -295,5 +306,92 @@ impl moment_curve_bridge::MomentCurveViewModel {
 
     pub fn getGlobalMaxLoad(self: Pin<&mut Self>) -> f64 {
         *self.global_max_load.borrow()
+    }
+
+    /// 从文件导入曲线数据
+    pub fn importCurveFromFile(mut self: Pin<&mut Self>, file_path: QString) -> bool {
+        let file_path_str = file_path.to_string();
+        tracing::info!("Importing curve from file: {}", file_path_str);
+
+        // 清除之前的状态消息
+        *self.import_status_message.borrow_mut() = String::new();
+
+        // 1. 验证文件路径
+        if file_path_str.is_empty() {
+            let msg = "文件路径为空".to_string();
+            tracing::error!("{}", msg);
+            *self.import_status_message.borrow_mut() = msg;
+            return false;
+        }
+
+        // 2. 检查文件是否存在
+        if !std::path::Path::new(&file_path_str).exists() {
+            let msg = format!("文件不存在: {}", file_path_str);
+            tracing::error!("{}", msg);
+            *self.import_status_message.borrow_mut() = msg;
+            return false;
+        }
+
+        // 3. 备份当前配置文件
+        let backup_path = format!("{}.bak", self.config_path);
+        if let Err(e) = fs::copy(&self.config_path, &backup_path) {
+            let msg = format!("备份当前配置失败: {}", e);
+            tracing::error!("{}", msg);
+            *self.import_status_message.borrow_mut() = msg;
+            return false;
+        }
+        tracing::info!("Current config backed up to: {}", backup_path);
+
+        // 4. 验证导入文件格式（先加载测试）
+        let temp_manager = LoadTableManager::new(&file_path_str);
+        match temp_manager.load() {
+            Ok(table) => {
+                // 验证数据有效性
+                if let Err(e) = table.validate() {
+                    let msg = format!("导入文件数据验证失败: {}", e);
+                    tracing::error!("{}", msg);
+                    *self.import_status_message.borrow_mut() = msg;
+                    // 验证失败，不需要恢复备份（原文件未改动）
+                    return false;
+                }
+
+                // 5. 复制导入文件到配置目录
+                if let Err(e) = fs::copy(&file_path_str, &self.config_path) {
+                    let msg = format!("复制文件失败: {}", e);
+                    tracing::error!("{}", msg);
+                    *self.import_status_message.borrow_mut() = msg;
+                    // 恢复备份
+                    if let Err(restore_err) = fs::copy(&backup_path, &self.config_path) {
+                        tracing::error!("恢复备份失败: {}", restore_err);
+                    }
+                    return false;
+                }
+
+                tracing::info!("File copied to config directory: {}", self.config_path);
+
+                // 6. 重新加载数据
+                self.as_mut().process_loaded_data(table);
+
+                let msg = format!(
+                    "导入成功：{} 个臂长配置",
+                    self.boom_lengths.borrow().len()
+                );
+                tracing::info!("{}", msg);
+                *self.import_status_message.borrow_mut() = msg;
+                true
+            }
+            Err(e) => {
+                let msg = format!("导入文件格式错误: {}", e);
+                tracing::error!("{}", msg);
+                *self.import_status_message.borrow_mut() = msg;
+                // 加载失败，不需要恢复备份（原文件未改动）
+                false
+            }
+        }
+    }
+
+    /// 获取导入状态消息
+    pub fn getImportStatusMessage(self: Pin<&mut Self>) -> QString {
+        QString::from(&*self.import_status_message.borrow())
     }
 }
