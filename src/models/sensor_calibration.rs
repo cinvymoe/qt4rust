@@ -134,12 +134,24 @@ impl SensorCalibration {
 pub struct AlarmThresholds {
     /// 力矩报警阈值
     pub moment: MomentThresholds,
+    /// 角度报警阈值
+    #[serde(default)]
+    pub angle: AngleThresholds,
+    /// 主钩勾头开关报警
+    #[serde(default)]
+    pub main_hook_switch: HookSwitchThresholds,
+    /// 副钩勾头开关报警
+    #[serde(default)]
+    pub aux_hook_switch: HookSwitchThresholds,
 }
 
 impl Default for AlarmThresholds {
     fn default() -> Self {
         Self {
             moment: MomentThresholds::default(),
+            angle: AngleThresholds::default(),
+            main_hook_switch: HookSwitchThresholds::default(),
+            aux_hook_switch: HookSwitchThresholds::default(),
         }
     }
 }
@@ -162,6 +174,42 @@ impl Default for MomentThresholds {
     }
 }
 
+/// 角度报警阈值
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct AngleThresholds {
+    /// 最小角度报警（度）
+    pub min_angle: f64,
+    /// 最大角度报警（度）
+    pub max_angle: f64,
+}
+
+impl Default for AngleThresholds {
+    fn default() -> Self {
+        Self {
+            min_angle: 0.0,   // 最小角度 0 度
+            max_angle: 85.0,  // 最大角度 85 度
+        }
+    }
+}
+
+/// 勾头开关报警阈值
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct HookSwitchThresholds {
+    /// 常开报警（true = 启用报警）
+    pub normally_open_alarm: bool,
+    /// 常闭报警（true = 启用报警）
+    pub normally_closed_alarm: bool,
+}
+
+impl Default for HookSwitchThresholds {
+    fn default() -> Self {
+        Self {
+            normally_open_alarm: false,  // 默认不启用
+            normally_closed_alarm: false, // 默认不启用
+        }
+    }
+}
+
 impl AlarmThresholds {
     /// 检查力矩百分比是否超过预警值
     pub fn is_moment_warning(&self, moment_percentage: f64) -> bool {
@@ -171,6 +219,11 @@ impl AlarmThresholds {
     /// 检查力矩百分比是否超过报警值
     pub fn is_moment_alarm(&self, moment_percentage: f64) -> bool {
         moment_percentage >= self.moment.alarm_percentage
+    }
+    
+    /// 检查角度是否超出范围
+    pub fn is_angle_alarm(&self, angle: f64) -> bool {
+        angle < self.angle.min_angle || angle > self.angle.max_angle
     }
     
     /// 验证报警阈值的有效性
@@ -196,6 +249,29 @@ impl AlarmThresholds {
             return Err(format!(
                 "moment.alarm_percentage ({}) 必须大于等于 moment.warning_percentage ({})",
                 self.moment.alarm_percentage, self.moment.warning_percentage
+            ));
+        }
+        
+        // 验证角度范围
+        if self.angle.min_angle < 0.0 || self.angle.min_angle > 90.0 {
+            return Err(format!(
+                "angle.min_angle 必须在 0-90 范围内，当前值: {}",
+                self.angle.min_angle
+            ));
+        }
+        
+        if self.angle.max_angle < 0.0 || self.angle.max_angle > 90.0 {
+            return Err(format!(
+                "angle.max_angle 必须在 0-90 范围内，当前值: {}",
+                self.angle.max_angle
+            ));
+        }
+        
+        // 验证最大角度必须大于最小角度
+        if self.angle.max_angle <= self.angle.min_angle {
+            return Err(format!(
+                "angle.max_angle ({}) 必须大于 angle.min_angle ({})",
+                self.angle.max_angle, self.angle.min_angle
             ));
         }
         

@@ -32,7 +32,7 @@ impl CraneDataRepository {
     /// ```
     pub fn new(config_manager: Arc<ConfigManager>) -> Self {
         // 根据配置文件创建传感器数据源
-        let sensor_source = match SensorDataSource::from_config() {
+        let mut sensor_source = match SensorDataSource::from_config() {
             Ok(source) => {
                 tracing::info!("传感器数据源初始化成功");
                 source
@@ -43,6 +43,15 @@ impl CraneDataRepository {
                 SensorDataSource::new()
             }
         };
+        
+        // 连接传感器（对于 Modbus 传感器必须先连接）
+        if let Err(e) = sensor_source.connect() {
+            tracing::error!("传感器连接失败: {}", e);
+            tracing::warn!("将使用模拟传感器");
+            sensor_source = SensorDataSource::new();
+        } else {
+            tracing::info!("传感器连接成功");
+        }
         
         Self {
             sensor_source: Arc::new(Mutex::new(sensor_source)),
