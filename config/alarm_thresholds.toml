@@ -13,3 +13,34 @@ warning_percentage = 90.0
 # 报警百分比（%）
 # 当实际力矩达到额定力矩的此百分比时，系统将发出报警
 alarm_percentage = 100.0
+
+# ========== 角度报警阈值 ==========
+[angle]
+# 最小角度报警（度）
+# 当吊臂角度小于此值时，系统将发出报警
+min_angle = 0.0
+# 最大角度报警（度）
+# 当吊臂角度大于此值时，系统将发出报警
+max_angle = 85.0
+
+# ========== 主钩勾头开关报警 ==========
+[main_hook_switch]
+# 常开报警
+# true = 启用常开状态报警，false = 不启用
+# 说明：当主钩勾头开关处于常开状态时是否报警
+normally_open_alarm = false
+# 常闭报警
+# true = 启用常闭状态报警，false = 不启用
+# 说明：当主钩勾头开关处于常闭状态时是否报警
+normally_closed_alarm = false
+
+# ========== 副钩勾头开关报警 ==========
+[aux_hook_switch]
+# 常开报警
+# true = 启用常开状态报警，false = 不启用
+# 说明：当副钩勾头开关处于常开状态时是否报警
+normally_open_alarm = false
+# 常闭报警
+# true = 启用常闭状态报警，false = 不启用
+# 说明：当副钩勾头开关处于常闭状态时是否报警
+normally_closed_alarm = false

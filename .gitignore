@@ -65,3 +65,4 @@ crane_data_device.db
 *.db-shm
 *.db-wal
 .opencode
+.sisyphus/*

@@ -14,6 +14,12 @@ pub mod alarm_threshold_bridge {
         #[qproperty(f64, moment_warning_threshold)]
         #[qproperty(f64, moment_danger_threshold)]
         #[qproperty(f64, max_load)]
+        #[qproperty(f64, min_angle)]
+        #[qproperty(f64, max_angle)]
+        #[qproperty(bool, main_hook_normally_open_alarm)]
+        #[qproperty(bool, main_hook_normally_closed_alarm)]
+        #[qproperty(bool, aux_hook_normally_open_alarm)]
+        #[qproperty(bool, aux_hook_normally_closed_alarm)]
         type AlarmThresholdViewModel = super::AlarmThresholdViewModelRust;
 
         #[qinvokable]
@@ -30,6 +36,12 @@ pub struct AlarmThresholdViewModelRust {
     moment_warning_threshold: f64,
     moment_danger_threshold: f64,
     max_load: f64,
+    min_angle: f64,
+    max_angle: f64,
+    main_hook_normally_open_alarm: bool,
+    main_hook_normally_closed_alarm: bool,
+    aux_hook_normally_open_alarm: bool,
+    aux_hook_normally_closed_alarm: bool,
     calibration_config_path: String,
     alarm_config_path: String,
 }
@@ -51,6 +63,12 @@ impl Default for AlarmThresholdViewModelRust {
             moment_warning_threshold: alarm_thresholds.moment.warning_percentage,
             moment_danger_threshold: alarm_thresholds.moment.alarm_percentage,
             max_load: calibration.weight.scale_value,
+            min_angle: alarm_thresholds.angle.min_angle,
+            max_angle: alarm_thresholds.angle.max_angle,
+            main_hook_normally_open_alarm: alarm_thresholds.main_hook_switch.normally_open_alarm,
+            main_hook_normally_closed_alarm: alarm_thresholds.main_hook_switch.normally_closed_alarm,
+            aux_hook_normally_open_alarm: alarm_thresholds.aux_hook_switch.normally_open_alarm,
+            aux_hook_normally_closed_alarm: alarm_thresholds.aux_hook_switch.normally_closed_alarm,
             calibration_config_path,
             alarm_config_path,
         }
@@ -61,6 +79,12 @@ impl alarm_threshold_bridge::AlarmThresholdViewModel {
     pub fn save_thresholds(self: Pin<&mut Self>) -> bool {
         let mwt = *self.as_ref().moment_warning_threshold();
         let mdt = *self.as_ref().moment_danger_threshold();
+        let min_angle = *self.as_ref().min_angle();
+        let max_angle = *self.as_ref().max_angle();
+        let main_hook_no = *self.as_ref().main_hook_normally_open_alarm();
+        let main_hook_nc = *self.as_ref().main_hook_normally_closed_alarm();
+        let aux_hook_no = *self.as_ref().aux_hook_normally_open_alarm();
+        let aux_hook_nc = *self.as_ref().aux_hook_normally_closed_alarm();
 
         // 保存报警阈值到独立文件
         let alarm_manager = qt_rust_demo::config::alarm_threshold_manager::AlarmThresholdManager::new(&self.alarm_config_path);
@@ -74,6 +98,12 @@ impl alarm_threshold_bridge::AlarmThresholdViewModel {
 
         alarm_thresholds.moment.warning_percentage = mwt;
         alarm_thresholds.moment.alarm_percentage = mdt;
+        alarm_thresholds.angle.min_angle = min_angle;
+        alarm_thresholds.angle.max_angle = max_angle;
+        alarm_thresholds.main_hook_switch.normally_open_alarm = main_hook_no;
+        alarm_thresholds.main_hook_switch.normally_closed_alarm = main_hook_nc;
+        alarm_thresholds.aux_hook_switch.normally_open_alarm = aux_hook_no;
+        alarm_thresholds.aux_hook_switch.normally_closed_alarm = aux_hook_nc;
 
         match alarm_manager.save(&alarm_thresholds) {
             Ok(_) => {
@@ -96,5 +126,11 @@ impl alarm_threshold_bridge::AlarmThresholdViewModel {
         self.as_mut()
             .set_moment_danger_threshold(alarm_thresholds.moment.alarm_percentage);
         self.as_mut().set_max_load(calibration.weight.scale_value);
+        self.as_mut().set_min_angle(alarm_thresholds.angle.min_angle);
+        self.as_mut().set_max_angle(alarm_thresholds.angle.max_angle);
+        self.as_mut().set_main_hook_normally_open_alarm(alarm_thresholds.main_hook_switch.normally_open_alarm);
+        self.as_mut().set_main_hook_normally_closed_alarm(alarm_thresholds.main_hook_switch.normally_closed_alarm);
+        self.as_mut().set_aux_hook_normally_open_alarm(alarm_thresholds.aux_hook_switch.normally_open_alarm);
+        self.as_mut().set_aux_hook_normally_closed_alarm(alarm_thresholds.aux_hook_switch.normally_closed_alarm);
     }
 }
