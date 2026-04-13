@@ -10,6 +10,7 @@ use crate::models::{ProcessedData, SensorData};
 use crate::models::sensor_calibration::{SensorCalibration, AlarmThresholds};
 use crate::models::rated_load_table::RatedLoadTable;
 use crate::models::crane_config::CraneConfig;
+use crate::alarm::{AlarmChecker, AngleAlarmChecker};
 use super::shared_buffer::SharedBuffer;
 use super::event_channel::StorageEventSender;
 use super::sensor_data_event_channel::SensorDataEventSender;
@@ -412,7 +413,7 @@ impl CollectionPipeline {
         let seq = ctx.sequence_number.fetch_add(1, Ordering::Relaxed);
         
         // 处理数据（AD转换）
-        let processed = Self::process_sensor_data(
+        let mut processed = Self::process_sensor_data(
             &sensor_data,
             &ctx.repository,
             &ctx.sensor_calibration,
@@ -420,6 +421,9 @@ impl CollectionPipeline {
             &ctx.alarm_thresholds,
             seq,
         );
+
+        // 检查角度报警
+        Self::check_angle_alarm(&mut processed, &ctx.alarm_thresholds);
 
         // 发送到存储管道
         Self::send_to_storage(&sensor_data, &processed, ctx);
@@ -530,6 +534,29 @@ impl CollectionPipeline {
         if let Some(ref sender) = ctx.storage_event_sender {
             if let Err(e) = sender.try_send_data(vec![processed.clone()]) {
                 tracing::warn!("Failed to send data to storage: {}", e);
+            }
+        }
+    }
+    
+    /// 检查角度报警（使用 AngleAlarmChecker）
+    fn check_angle_alarm(
+        processed: &mut ProcessedData,
+        alarm_thresholds: &Option<Arc<RwLock<AlarmThresholds>>>,
+    ) {
+        if let Some(ref thresholds) = alarm_thresholds {
+            if let Ok(thresholds_guard) = thresholds.read() {
+                let min_angle = thresholds_guard.angle.min_angle;
+                let max_angle = thresholds_guard.angle.max_angle;
+                
+                // 使用 AngleAlarmChecker
+                let checker = AngleAlarmChecker::new(min_angle, max_angle);
+                let result = checker.check(processed);
+                
+                if result.triggered {
+                    processed.is_danger = true;
+                    processed.alarm_messages.push(result.message.clone());
+                    tracing::info!("🚨 [CollectionPipeline] 角度报警触发: {}", result.message);
+                }
             }
         }
     }
