@@ -5,6 +5,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Mutex, RwLock};
 use std::time::Duration;
+use std::collections::HashMap;
 use tokio::task::JoinHandle;
 use crate::models::ProcessedData;
 use crate::models::crane_config::CraneConfig;
@@ -13,6 +14,8 @@ use crate::models::rated_load_table::RatedLoadTable;
 use crate::pipeline::filter_buffer::FilterBuffer;
 use crate::pipeline::shared_buffer::SharedBuffer;
 use crate::pipeline::event_channel::StorageEventSender;
+use crate::alarm::{AlarmManager, AlarmConfig};
+use crate::alarm::alarm_type::AlarmSource;
 
 #[derive(Debug, Clone)]
 pub struct ProcessPipelineConfig {
@@ -40,6 +43,7 @@ pub struct ProcessPipeline {
     running: Arc<AtomicBool>,
     sequence_number: Arc<AtomicU64>,
     handle: Option<JoinHandle<()>>,
+    alarm_manager: Option<Arc<RwLock<AlarmManager>>>,
 }
 
 impl ProcessPipeline {
@@ -61,6 +65,7 @@ impl ProcessPipeline {
             running: Arc::new(AtomicBool::new(false)),
             sequence_number: Arc::new(AtomicU64::new(0)),
             handle: None,
+            alarm_manager: None,
         }
     }
 
@@ -83,6 +88,7 @@ impl ProcessPipeline {
             running: Arc::new(AtomicBool::new(false)),
             sequence_number: Arc::new(AtomicU64::new(0)),
             handle: None,
+            alarm_manager: None,
         }
     }
     
@@ -112,6 +118,30 @@ impl ProcessPipeline {
             tracing::info!("⚠️  [ProcessPipeline] 预警阈值已设置: warning={}%, alarm={}%",
                 thresholds.moment.warning_percentage,
                 thresholds.moment.alarm_percentage);
+            
+            // 从 AlarmThresholds 创建 AlarmConfig
+            let alarm_config = AlarmConfig {
+                moment: crate::alarm::alarm_config::MomentAlarmConfig {
+                    warning_threshold: thresholds.moment.warning_percentage,
+                    danger_threshold: thresholds.moment.alarm_percentage,
+                },
+                angle: crate::alarm::alarm_config::AngleAlarmConfig {
+                    min_angle: thresholds.angle.min_angle,
+                    max_angle: thresholds.angle.max_angle,
+                },
+                load_overload: Default::default(),
+                debounce: Default::default(),
+                enabled_alarms: {
+                    let mut map = HashMap::new();
+                    map.insert("moment".to_string(), true);
+                    map.insert("angle".to_string(), true);
+                    map
+                },
+            };
+            
+            let alarm_manager = AlarmManager::new(alarm_config);
+            self.alarm_manager = Some(Arc::new(RwLock::new(alarm_manager)));
+            tracing::info!("🔔 [ProcessPipeline] AlarmManager 已初始化，角度报警已启用");
         }
     }
 
@@ -131,6 +161,7 @@ impl ProcessPipeline {
         let sensor_calibration = self.sensor_calibration.clone();
         let rated_load_table = self.rated_load_table.clone();
         let alarm_thresholds = self.alarm_thresholds.clone();
+        let alarm_manager = self.alarm_manager.clone();
         let storage_event_sender = self.storage_event_sender.clone();
         let sequence_number = Arc::clone(&self.sequence_number);
         let running = Arc::clone(&self.running);
@@ -215,6 +246,29 @@ impl ProcessPipeline {
                         raw_data.ad1_load, processed.current_load,
                         raw_data.ad2_radius, processed.working_radius,
                         raw_data.ad3_angle, processed.boom_angle);
+
+                    // 检查报警
+                    let mut processed = processed;
+                    if let Some(ref am) = alarm_manager {
+                        if let Ok(manager) = am.read() {
+                            let alarm_results: Vec<_> = manager.check_alarms(&processed);
+                            
+                            for result in alarm_results {
+                                if result.triggered {
+                                    if let Some(ref alarm_type) = result.alarm_type {
+                                        processed.alarm_sources.push(alarm_type.source.clone());
+                                        processed.alarm_messages.push(result.message.clone());
+                                        
+                                        // 如果是角度报警，设置危险状态
+                                        if alarm_type.source == AlarmSource::Angle {
+                                            processed.is_danger = true;
+                                            tracing::warn!("🚨 [ProcessPipeline] 角度报警触发: {}", result.message);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                     if let Some(ref sender) = storage_event_sender {
                         let _ = sender.try_send_data(vec![processed.clone()]);

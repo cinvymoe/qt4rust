@@ -1,27 +1,27 @@
 // 报警配置
 
+use super::alarm_type::AlarmSource;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use super::alarm_type::AlarmSource;
 
 /// 报警配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AlarmConfig {
     /// 力矩报警配置
     pub moment: MomentAlarmConfig,
-    
+
     /// 角度报警配置
     #[serde(default)]
     pub angle: AngleAlarmConfig,
-    
+
     /// 载荷超限报警配置
     #[serde(default)]
     pub load_overload: LoadOverloadConfig,
-    
+
     /// 防抖配置
     #[serde(default)]
     pub debounce: DebounceConfig,
-    
+
     /// 报警启用状态
     #[serde(default)]
     pub enabled_alarms: HashMap<String, bool>,
@@ -31,9 +31,9 @@ impl Default for AlarmConfig {
     fn default() -> Self {
         let mut enabled_alarms = HashMap::new();
         enabled_alarms.insert(AlarmSource::Moment.as_str().to_string(), true);
-        enabled_alarms.insert(AlarmSource::Angle.as_str().to_string(), false);
+        enabled_alarms.insert(AlarmSource::Angle.as_str().to_string(), true);
         enabled_alarms.insert(AlarmSource::LoadOverload.as_str().to_string(), false);
-        
+
         Self {
             moment: MomentAlarmConfig::default(),
             angle: AngleAlarmConfig::default(),
@@ -52,10 +52,11 @@ impl AlarmConfig {
             .copied()
             .unwrap_or(false)
     }
-    
+
     /// 设置报警启用状态
     pub fn set_alarm_enabled(&mut self, source: AlarmSource, enabled: bool) {
-        self.enabled_alarms.insert(source.as_str().to_string(), enabled);
+        self.enabled_alarms
+            .insert(source.as_str().to_string(), enabled);
     }
 }
 
@@ -104,9 +105,7 @@ pub struct LoadOverloadConfig {
 
 impl Default for LoadOverloadConfig {
     fn default() -> Self {
-        Self {
-            max_load: 50.0,
-        }
+        Self { max_load: 50.0 }
     }
 }
 
@@ -124,8 +123,8 @@ pub struct DebounceConfig {
 impl Default for DebounceConfig {
     fn default() -> Self {
         Self {
-            trigger_count: 5,   // 连续 5 次（500ms）
-            clear_count: 10,    // 连续 10 次（1s）
+            trigger_count: 5, // 连续 5 次（500ms）
+            clear_count: 10,  // 连续 10 次（1s）
             enabled: true,
         }
     }
@@ -134,14 +133,14 @@ impl Default for DebounceConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_alarm_config_default() {
         let config = AlarmConfig::default();
         assert!(config.is_alarm_enabled(AlarmSource::Moment));
-        assert!(!config.is_alarm_enabled(AlarmSource::Angle));
+        assert!(config.is_alarm_enabled(AlarmSource::Angle));
     }
-    
+
     #[test]
     fn test_set_alarm_enabled() {
         let mut config = AlarmConfig::default();

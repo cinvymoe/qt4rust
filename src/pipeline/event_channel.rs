@@ -75,6 +75,8 @@ mod tests {
             validation_error: None,
             timestamp: SystemTime::now(),
             sequence_number: 1,
+            alarm_sources: Vec::new(),
+            alarm_messages: Vec::new(),
         }
     }
 

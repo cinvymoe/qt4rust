@@ -259,6 +259,8 @@ impl StorageRepository for SqliteStorageRepository {
                 is_warning,
                 is_danger,
                 validation_error: row.get(8)?,
+                alarm_sources: Vec::new(),
+                alarm_messages: Vec::new(),
             })
         }).map_err(|e| format!("Failed to query: {}", e))?;
         
@@ -485,6 +487,8 @@ impl StorageRepository for SqliteStorageRepository {
                 is_warning,
                 is_danger,
                 validation_error: row.get(8)?,
+                alarm_sources: Vec::new(),
+                alarm_messages: Vec::new(),
             })
         }).map_err(|e| format!("Failed to query runtime data: {}", e))?;
         

@@ -244,8 +244,11 @@ impl StoragePipeline {
         for data in data_list {
             // Filter already stored
             if data.sequence_number > last_seq_val {
+                // 检查是否有任何报警（力矩报警或角度报警等）
+                let has_any_alarm = data.is_danger || !data.alarm_sources.is_empty();
+                
                 // Handle alarm state transitions with debounce
-                if data.is_danger {
+                if has_any_alarm {
                     // 危险状态：增加危险计数，重置安全计数
                     let current_danger_count = danger_count.fetch_add(1, Ordering::Relaxed) + 1;
                     safe_count.store(0, Ordering::Relaxed);
@@ -259,12 +262,18 @@ impl StoragePipeline {
                             Ordering::Relaxed, 
                             Ordering::Relaxed
                         ).is_ok() {
+                            // 记录是哪个类型的报警
+                            for source in &data.alarm_sources {
+                                tracing::warn!("Alarm triggered: {:?}", source);
+                            }
                             // Transition: safe → danger, this is a NEW alarm
                             tracing::warn!(
-                                "⚠️  NEW ALARM triggered at sequence {} (danger_count: {}, threshold: {})",
+                                "⚠️  NEW ALARM triggered at sequence {} (danger_count: {}, threshold: {}, is_danger: {}, alarm_sources: {:?})",
                                 data.sequence_number,
                                 current_danger_count,
-                                config.alarm_debounce_count
+                                config.alarm_debounce_count,
+                                data.is_danger,
+                                data.alarm_sources
                             );
                             Self::save_alarm_inner(data.clone(), config, repository).await;
                         }

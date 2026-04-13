@@ -2,6 +2,7 @@
 
 use super::crane_config::CraneConfig;
 use super::sensor_data::SensorData;
+use crate::alarm::alarm_type::AlarmSource;
 use std::time::SystemTime;
 
 /// 处理后的数据（计算后的结果）
@@ -39,6 +40,12 @@ pub struct ProcessedData {
 
     /// 序列号
     pub sequence_number: u64,
+
+    /// 当前活动的报警来源列表
+    pub alarm_sources: Vec<AlarmSource>,
+
+    /// 报警消息列表
+    pub alarm_messages: Vec<String>,
 }
 
 impl ProcessedData {
@@ -68,6 +75,8 @@ impl ProcessedData {
             validation_error,
             timestamp: SystemTime::now(),
             sequence_number,
+            alarm_sources: Vec::new(),
+            alarm_messages: Vec::new(),
         }
     }
 
@@ -143,6 +152,8 @@ impl ProcessedData {
             validation_error,
             timestamp: SystemTime::now(),
             sequence_number,
+            alarm_sources: Vec::new(),
+            alarm_messages: Vec::new(),
         }
     }
 
