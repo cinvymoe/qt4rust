@@ -44,8 +44,8 @@ enabled = true
 [enabled_alarms]
 # 力矩报警（默认启用）
 moment = true
-# 角度报警（默认禁用）
-angle = false
+# 角度报警（默认启用）
+angle = true
 # 载荷超限报警（默认禁用）
 load_overload = false
 # 主钩勾头开关报警（默认禁用）

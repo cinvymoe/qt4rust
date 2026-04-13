@@ -190,18 +190,33 @@ impl StorageRepository for SqliteStorageRepository {
             .map(|d| d.as_secs() as i64)
             .unwrap_or(0);
         
+        // 根据报警来源和消息生成描述
+        let description = if !data.alarm_messages.is_empty() {
+            // 使用报警消息（包含角度、力矩等所有报警类型）
+            data.alarm_messages.join("; ")
+        } else if data.moment_percentage >= 90.0 {
+            // 向后兼容：如果没有报警消息，使用力矩百分比
+            format!(
+                "力矩百分比 {:.1}% 超过阈值，当前载荷 {:.1}t，工作半径 {:.1}m",
+                data.moment_percentage,
+                data.current_load,
+                data.working_radius
+            )
+        } else {
+            // 默认描述
+            format!(
+                "报警触发，当前载荷 {:.1}t，工作半径 {:.1}m，吊臂角度 {:.1}°",
+                data.current_load,
+                data.working_radius,
+                data.boom_angle
+            )
+        };
+        
         let alarm_type = if data.moment_percentage >= 100.0 {
             "danger"
         } else {
             "warning"
         };
-        
-        let description = format!(
-            "力矩百分比 {:.1}% 超过阈值，当前载荷 {:.1}t，工作半径 {:.1}m",
-            data.moment_percentage,
-            data.current_load,
-            data.working_radius
-        );
         
         conn.execute(
             "INSERT INTO alarm_records 
@@ -224,7 +239,7 @@ impl StorageRepository for SqliteStorageRepository {
         
         let alarm_id = conn.last_insert_rowid();
         
-        tracing::info!("Saved alarm record: {} (id: {})", alarm_type, alarm_id);
+        tracing::info!("💾 报警记录已保存: {} (id: {}, 描述: {})", alarm_type, alarm_id, description);
         Ok(alarm_id)
     }
     
@@ -706,6 +721,35 @@ mod tests {
         let alarms = repo.query_unacknowledged_alarms().await.unwrap();
         assert_eq!(alarms.len(), 1);
         assert_eq!(alarms[0].sequence_number, 1);
+    }
+    
+    #[tokio::test]
+    async fn test_save_angle_alarm_record() {
+        use crate::alarm::alarm_type::AlarmSource;
+        
+        let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
+        
+        // 创建角度报警数据
+        let sensor_data = SensorData::new(15.0, 10.0, 95.0); // 角度超限
+        let mut processed = ProcessedData::from_sensor_data(sensor_data, 1);
+        
+        // 模拟角度报警
+        processed.is_danger = true;
+        processed.alarm_sources.push(AlarmSource::Angle);
+        processed.alarm_messages.push("吊臂角度 95.0° 超过最大角度 85.0°".to_string());
+        
+        // 保存报警
+        let result = repo.save_alarm_record(&processed).await;
+        assert!(result.is_ok());
+        
+        // 查询未确认报警
+        let alarms = repo.query_unacknowledged_alarms().await.unwrap();
+        assert_eq!(alarms.len(), 1);
+        assert_eq!(alarms[0].sequence_number, 1);
+        
+        // 验证描述包含角度信息
+        assert!(alarms[0].description.contains("角度"));
+        assert!(alarms[0].description.contains("95.0"));
     }
     
     #[tokio::test]
