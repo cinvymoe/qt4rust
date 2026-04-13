@@ -169,6 +169,7 @@ impl ProcessPipeline {
 
         self.handle = Some(qt_threading_utils::runtime::global_runtime().spawn(async move {
             let mut tick_interval = tokio::time::interval(interval);
+            tracing::info!("🚀 [ProcessPipeline] 管道循环已启动，间隔: {:?}", interval);
 
             loop {
                 tick_interval.tick().await;
