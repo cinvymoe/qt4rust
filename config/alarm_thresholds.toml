@@ -25,22 +25,16 @@ max_angle = 85.0
 
 # ========== 主钩勾头开关报警 ==========
 [main_hook_switch]
-# 常开报警
-# true = 启用常开状态报警，false = 不启用
-# 说明：当主钩勾头开关处于常开状态时是否报警
-normally_open_alarm = false
-# 常闭报警
-# true = 启用常闭状态报警，false = 不启用
-# 说明：当主钩勾头开关处于常闭状态时是否报警
-normally_closed_alarm = false
+# 报警模式：none | normally_open | normally_closed
+# none         = 不启用报警
+# normally_open   = 当开关处于常开状态时报警
+# normally_closed = 当开关处于常闭状态时报警
+mode = "normally_closed"
 
 # ========== 副钩勾头开关报警 ==========
 [aux_hook_switch]
-# 常开报警
-# true = 启用常开状态报警，false = 不启用
-# 说明：当副钩勾头开关处于常开状态时是否报警
-normally_open_alarm = false
-# 常闭报警
-# true = 启用常闭状态报警，false = 不启用
-# 说明：当副钩勾头开关处于常闭状态时是否报警
-normally_closed_alarm = false
+# 报警模式：none | normally_open | normally_closed
+# none         = 不启用报警
+# normally_open   = 当开关处于常开状态时报警
+# normally_closed = 当开关处于常闭状态时报警
+mode = "normally_closed"

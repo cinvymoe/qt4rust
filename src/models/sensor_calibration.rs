@@ -44,7 +44,7 @@ impl SensorCalibrationParams {
     pub fn validate(&self) -> Result<(), String> {
         AdConverter::validate_calibration(self.zero_ad, self.scale_ad)
     }
-    
+
     /// 将 AD 值转换为物理值
     pub fn convert_ad_to_value(&self, ad: f64) -> f64 {
         AdConverter::convert(
@@ -58,7 +58,7 @@ impl SensorCalibrationParams {
 }
 
 /// 传感器标定配置（结构化）
-/// 
+///
 /// 存储所有传感器的标定参数，用于将 AD 采集值转换为物理值
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SensorCalibration {
@@ -77,7 +77,7 @@ impl Default for SensorCalibration {
                 zero_ad: 0.0,
                 zero_value: 0.0,
                 scale_ad: 4095.0,
-                scale_value: 50.0,  // 50 tons
+                scale_value: 50.0, // 50 tons
                 multiplier: 1.0,
                 actual_multiplier: 1.0,
             },
@@ -85,7 +85,7 @@ impl Default for SensorCalibration {
                 zero_ad: 0.0,
                 zero_value: 0.0,
                 scale_ad: 4095.0,
-                scale_value: 90.0,  // 90 degrees
+                scale_value: 90.0, // 90 degrees
                 multiplier: 1.0,
                 actual_multiplier: 1.0,
             },
@@ -93,7 +93,7 @@ impl Default for SensorCalibration {
                 zero_ad: 0.0,
                 zero_value: 0.0,
                 scale_ad: 4095.0,
-                scale_value: 20.0,  // 20 meters
+                scale_value: 20.0, // 20 meters
                 multiplier: 1.0,
                 actual_multiplier: 1.0,
             },
@@ -106,24 +106,27 @@ impl SensorCalibration {
     pub fn convert_weight_ad_to_value(&self, ad: f64) -> f64 {
         self.weight.convert_ad_to_value(ad)
     }
-    
+
     /// 转换角度 AD 值为物理值（度）
     pub fn convert_angle_ad_to_value(&self, ad: f64) -> f64 {
         self.angle.convert_ad_to_value(ad)
     }
-    
+
     /// 转换半径 AD 值为物理值（米）
     pub fn convert_radius_ad_to_value(&self, ad: f64) -> f64 {
         self.radius.convert_ad_to_value(ad)
     }
-    
+
     /// 验证标定参数的有效性
     pub fn validate(&self) -> Result<(), String> {
-        self.weight.validate()
+        self.weight
+            .validate()
             .map_err(|e| format!("重量传感器标定参数错误: {}", e))?;
-        self.angle.validate()
+        self.angle
+            .validate()
             .map_err(|e| format!("角度传感器标定参数错误: {}", e))?;
-        self.radius.validate()
+        self.radius
+            .validate()
             .map_err(|e| format!("半径传感器标定参数错误: {}", e))?;
         Ok(())
     }
@@ -186,26 +189,46 @@ pub struct AngleThresholds {
 impl Default for AngleThresholds {
     fn default() -> Self {
         Self {
-            min_angle: 0.0,   // 最小角度 0 度
-            max_angle: 85.0,  // 最大角度 85 度
+            min_angle: 0.0,  // 最小角度 0 度
+            max_angle: 85.0, // 最大角度 85 度
         }
     }
 }
 
-/// 勾头开关报警阈值
+/// 勾头开关报警模式（单参数替代原有的双 bool）
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct HookSwitchThresholds {
-    /// 常开报警（true = 启用报警）
-    pub normally_open_alarm: bool,
-    /// 常闭报警（true = 启用报警）
-    pub normally_closed_alarm: bool,
+#[serde(rename_all = "snake_case")]
+pub enum HookSwitchMode {
+    /// 不启用报警
+    None,
+    /// 常开状态报警
+    NormallyOpen,
+    /// 常闭状态报警
+    NormallyClosed,
 }
 
-impl Default for HookSwitchThresholds {
+impl Default for HookSwitchMode {
     fn default() -> Self {
-        Self {
-            normally_open_alarm: false,  // 默认不启用
-            normally_closed_alarm: false, // 默认不启用
+        Self::None
+    }
+}
+
+/// 勾头开关报警阈值
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+pub struct HookSwitchThresholds {
+    /// 报警模式（单参数，替代原有的 normally_open_alarm + normally_closed_alarm）
+    #[serde(default)]
+    pub mode: HookSwitchMode,
+}
+
+impl HookSwitchThresholds {
+    /// 根据开关当前状态判断是否应触发报警
+    /// `state`: true = 常开状态, false = 常闭状态
+    pub fn is_alarm_triggered(&self, state: bool) -> bool {
+        match self.mode {
+            HookSwitchMode::None => false,
+            HookSwitchMode::NormallyOpen => state,
+            HookSwitchMode::NormallyClosed => !state,
         }
     }
 }
@@ -215,17 +238,17 @@ impl AlarmThresholds {
     pub fn is_moment_warning(&self, moment_percentage: f64) -> bool {
         moment_percentage >= self.moment.warning_percentage
     }
-    
+
     /// 检查力矩百分比是否超过报警值
     pub fn is_moment_alarm(&self, moment_percentage: f64) -> bool {
         moment_percentage >= self.moment.alarm_percentage
     }
-    
+
     /// 检查角度是否超出范围
     pub fn is_angle_alarm(&self, angle: f64) -> bool {
         angle < self.angle.min_angle || angle > self.angle.max_angle
     }
-    
+
     /// 验证报警阈值的有效性
     pub fn validate(&self) -> Result<(), String> {
         // 验证力矩预警百分比范围
@@ -235,7 +258,7 @@ impl AlarmThresholds {
                 self.moment.warning_percentage
             ));
         }
-        
+
         // 验证力矩报警百分比范围
         if self.moment.alarm_percentage < 0.0 || self.moment.alarm_percentage > 100.0 {
             return Err(format!(
@@ -243,7 +266,7 @@ impl AlarmThresholds {
                 self.moment.alarm_percentage
             ));
         }
-        
+
         // 验证力矩报警百分比必须大于等于预警百分比
         if self.moment.alarm_percentage < self.moment.warning_percentage {
             return Err(format!(
@@ -251,7 +274,7 @@ impl AlarmThresholds {
                 self.moment.alarm_percentage, self.moment.warning_percentage
             ));
         }
-        
+
         // 验证角度范围
         if self.angle.min_angle < 0.0 || self.angle.min_angle > 90.0 {
             return Err(format!(
@@ -259,14 +282,14 @@ impl AlarmThresholds {
                 self.angle.min_angle
             ));
         }
-        
+
         if self.angle.max_angle < 0.0 || self.angle.max_angle > 90.0 {
             return Err(format!(
                 "angle.max_angle 必须在 0-90 范围内，当前值: {}",
                 self.angle.max_angle
             ));
         }
-        
+
         // 验证最大角度必须大于最小角度
         if self.angle.max_angle <= self.angle.min_angle {
             return Err(format!(
@@ -274,7 +297,7 @@ impl AlarmThresholds {
                 self.angle.max_angle, self.angle.min_angle
             ));
         }
-        
+
         Ok(())
     }
 }
@@ -282,82 +305,82 @@ impl AlarmThresholds {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_convert_weight_ad_to_value() {
         let calibration = SensorCalibration::default();
-        
+
         // 测试零点
         let weight = calibration.convert_weight_ad_to_value(0.0);
         assert!((weight - 0.0).abs() < 0.01);
-        
+
         // 测试中点
         let weight = calibration.convert_weight_ad_to_value(2047.5);
         assert!((weight - 25.0).abs() < 0.1);
-        
+
         // 测试满量程
         let weight = calibration.convert_weight_ad_to_value(4095.0);
         assert!((weight - 50.0).abs() < 0.01);
     }
-    
+
     #[test]
     fn test_convert_angle_ad_to_value() {
         let calibration = SensorCalibration::default();
-        
+
         let angle = calibration.convert_angle_ad_to_value(0.0);
         assert!((angle - 0.0).abs() < 0.01);
-        
+
         let angle = calibration.convert_angle_ad_to_value(4095.0);
         assert!((angle - 90.0).abs() < 0.01);
     }
-    
+
     #[test]
     fn test_convert_radius_ad_to_value() {
         let calibration = SensorCalibration::default();
-        
+
         let radius = calibration.convert_radius_ad_to_value(0.0);
         assert!((radius - 0.0).abs() < 0.01);
-        
+
         let radius = calibration.convert_radius_ad_to_value(4095.0);
         assert!((radius - 20.0).abs() < 0.01);
     }
-    
+
     #[test]
     fn test_alarm_thresholds_moment_warning() {
         let thresholds = AlarmThresholds::default();
-        
+
         assert!(!thresholds.is_moment_warning(80.0));
         assert!(!thresholds.is_moment_warning(89.9));
         assert!(thresholds.is_moment_warning(90.0));
         assert!(thresholds.is_moment_warning(95.0));
     }
-    
+
     #[test]
     fn test_alarm_thresholds_moment_alarm() {
         let thresholds = AlarmThresholds::default();
-        
+
         assert!(!thresholds.is_moment_alarm(80.0));
         assert!(!thresholds.is_moment_alarm(99.9));
         assert!(thresholds.is_moment_alarm(100.0));
         assert!(thresholds.is_moment_alarm(105.0));
     }
-    
+
     #[test]
     fn test_alarm_thresholds_validate_success() {
         let thresholds = AlarmThresholds::default();
         assert!(thresholds.validate().is_ok());
     }
-    
+
     #[test]
     fn test_alarm_thresholds_validate_moment_range() {
         let mut thresholds = AlarmThresholds::default();
         thresholds.moment.warning_percentage = -10.0;
         assert!(thresholds.validate().is_err());
-        
+
         thresholds.moment.warning_percentage = 110.0;
         assert!(thresholds.validate().is_err());
     }
-    
+
     #[test]
     fn test_sensor_calibration_params_convert() {
         let params = SensorCalibrationParams {
@@ -366,12 +389,12 @@ mod tests {
             scale_ad: 4000.0,
             scale_value: 45.0,
             multiplier: 1.0,
-            actual_multiplier: 1.0
+            actual_multiplier: 1.0,
         };
-        
+
         let value = params.convert_ad_to_value(100.0);
         assert!((value - 5.0).abs() < 0.01);
-        
+
         let value = params.convert_ad_to_value(4000.0);
         assert!((value - 45.0).abs() < 0.01);
     }
