@@ -299,6 +299,292 @@ Item {
                 }
             }
             
+            // 主钩勾头开关报警
+            Rectangle {
+                width: parent.width
+                height: 246
+                color: Theme.darkSurface
+                border.color: Theme.darkBorder
+                border.width: Theme.borderThin
+                radius: Theme.radiusMedium
+                
+                Column {
+                    anchors.fill: parent
+                    anchors.margins: 25
+                    spacing: Theme.spacingMedium
+                    
+                    // 标题
+                    Row {
+                        width: parent.width
+                        height: 28
+                        spacing: Theme.spacingSmall
+                        
+                        Rectangle {
+                            width: 4
+                            height: 24
+                            color: Theme.dangerColor
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        
+                        Text {
+                            text: "主钩勾头开关报警"
+                            font.pixelSize: Theme.fontSizeLarge
+                            color: Theme.textPrimary
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                    
+                    Column {
+                        width: parent.width
+                        spacing: Theme.spacingSmall
+                        
+                        Text {
+                            text: "设置主钩勾头开关状态报警触发条件"
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.textSecondary
+                        }
+                        
+                        Row {
+                            width: parent.width
+                            spacing: Theme.spacingMedium
+                            
+                            // 常开/常闭 二选一
+                            Column {
+                                width: parent.width
+                                spacing: Theme.spacingSmall
+                                
+                                Text {
+                                    text: "报警模式"
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    color: Theme.textSecondary
+                                }
+                                
+                                Row {
+                                    spacing: Theme.spacingMedium
+                                    
+                                    // 常开
+                                    RadioButton {
+                                        id: mainHookNormallyOpenRadio
+                                        text: "常开"
+                                        checked: alarmViewModel.main_hook_mode === 1
+                                        font.pixelSize: Theme.fontSizeMedium
+                                        indicator: Rectangle {
+                                            width: 18
+                                            height: 18
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            radius: 9
+                                            border.color: mainHookNormallyOpenRadio.checked ? Theme.dangerColor : "#45556c"
+                                            border.width: 2
+                                            Rectangle {
+                                                anchors.centerIn: parent
+                                                width: 10
+                                                height: 10
+                                                radius: 5
+                                                color: mainHookNormallyOpenRadio.checked ? Theme.dangerColor : "transparent"
+                                            }
+                                        }
+                                        contentItem: Text {
+                                            leftPadding: 26
+                                            text: mainHookNormallyOpenRadio.text
+                                            font.pixelSize: Theme.fontSizeMedium
+                                            color: mainHookNormallyOpenRadio.checked ? Theme.dangerColor : Theme.textSecondary
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                        onClicked: {
+                                            alarmViewModel.main_hook_mode = 1
+                                        }
+                                    }
+                                    
+                                    // 常闭
+                                    RadioButton {
+                                        id: mainHookNormallyClosedRadio
+                                        text: "常闭"
+                                        checked: alarmViewModel.main_hook_mode === 2
+                                        font.pixelSize: Theme.fontSizeMedium
+                                        indicator: Rectangle {
+                                            width: 18
+                                            height: 18
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            radius: 9
+                                            border.color: mainHookNormallyClosedRadio.checked ? Theme.dangerColor : "#45556c"
+                                            border.width: 2
+                                            Rectangle {
+                                                anchors.centerIn: parent
+                                                width: 10
+                                                height: 10
+                                                radius: 5
+                                                color: mainHookNormallyClosedRadio.checked ? Theme.dangerColor : "transparent"
+                                            }
+                                        }
+                                        contentItem: Text {
+                                            leftPadding: 26
+                                            text: mainHookNormallyClosedRadio.text
+                                            font.pixelSize: Theme.fontSizeMedium
+                                            color: mainHookNormallyClosedRadio.checked ? Theme.dangerColor : Theme.textSecondary
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                        onClicked: {
+                                            alarmViewModel.main_hook_mode = 2
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        Text {
+                            text: "选择主钩勾头开关报警触发条件：常开或常闭（二者只能选其一）"
+                            font.pixelSize: Theme.fontSizeTiny
+                            color: "#62748e"
+                            wrapMode: Text.WordWrap
+                            width: parent.width
+                        }
+                    }
+                }
+            }
+            
+            // 副钩勾头开关报警
+            Rectangle {
+                width: parent.width
+                height: 246
+                color: Theme.darkSurface
+                border.color: Theme.darkBorder
+                border.width: Theme.borderThin
+                radius: Theme.radiusMedium
+                
+                Column {
+                    anchors.fill: parent
+                    anchors.margins: 25
+                    spacing: Theme.spacingMedium
+                    
+                    // 标题
+                    Row {
+                        width: parent.width
+                        height: 28
+                        spacing: Theme.spacingSmall
+                        
+                        Rectangle {
+                            width: 4
+                            height: 24
+                            color: Theme.warningColor
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        
+                        Text {
+                            text: "副钩勾头开关报警"
+                            font.pixelSize: Theme.fontSizeLarge
+                            color: Theme.textPrimary
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                    
+                    Column {
+                        width: parent.width
+                        spacing: Theme.spacingSmall
+                        
+                        Text {
+                            text: "设置副钩勾头开关状态报警触发条件"
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.textSecondary
+                        }
+                        
+                        Row {
+                            width: parent.width
+                            spacing: Theme.spacingMedium
+                            
+                            // 常开/常闭 二选一
+                            Column {
+                                width: parent.width
+                                spacing: Theme.spacingSmall
+                                
+                                Text {
+                                    text: "报警模式"
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    color: Theme.textSecondary
+                                }
+                                
+                                Row {
+                                    spacing: Theme.spacingMedium
+                                    
+                                    // 常开
+                                    RadioButton {
+                                        id: auxHookNormallyOpenRadio
+                                        text: "常开"
+                                        checked: alarmViewModel.aux_hook_mode === 1
+                                        font.pixelSize: Theme.fontSizeMedium
+                                        indicator: Rectangle {
+                                            width: 18
+                                            height: 18
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            radius: 9
+                                            border.color: auxHookNormallyOpenRadio.checked ? Theme.dangerColor : "#45556c"
+                                            border.width: 2
+                                            Rectangle {
+                                                anchors.centerIn: parent
+                                                width: 10
+                                                height: 10
+                                                radius: 5
+                                                color: auxHookNormallyOpenRadio.checked ? Theme.dangerColor : "transparent"
+                                            }
+                                        }
+                                        contentItem: Text {
+                                            leftPadding: 26
+                                            text: auxHookNormallyOpenRadio.text
+                                            font.pixelSize: Theme.fontSizeMedium
+                                            color: auxHookNormallyOpenRadio.checked ? Theme.dangerColor : Theme.textSecondary
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                        onClicked: {
+                                            alarmViewModel.aux_hook_mode = 1
+                                        }
+                                    }
+                                    
+                                    // 常闭
+                                    RadioButton {
+                                        id: auxHookNormallyClosedRadio
+                                        text: "常闭"
+                                        checked: alarmViewModel.aux_hook_mode === 2
+                                        font.pixelSize: Theme.fontSizeMedium
+                                        indicator: Rectangle {
+                                            width: 18
+                                            height: 18
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            radius: 9
+                                            border.color: auxHookNormallyClosedRadio.checked ? Theme.dangerColor : "#45556c"
+                                            border.width: 2
+                                            Rectangle {
+                                                anchors.centerIn: parent
+                                                width: 10
+                                                height: 10
+                                                radius: 5
+                                                color: auxHookNormallyClosedRadio.checked ? Theme.dangerColor : "transparent"
+                                            }
+                                        }
+                                        contentItem: Text {
+                                            leftPadding: 26
+                                            text: auxHookNormallyClosedRadio.text
+                                            font.pixelSize: Theme.fontSizeMedium
+                                            color: auxHookNormallyClosedRadio.checked ? Theme.dangerColor : Theme.textSecondary
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                        onClicked: {
+                                            alarmViewModel.aux_hook_mode = 2
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        Text {
+                            text: "选择副钩勾头开关报警触发条件：常开或常闭（二者只能选其一）"
+                            font.pixelSize: Theme.fontSizeTiny
+                            color: "#62748e"
+                            wrapMode: Text.WordWrap
+                            width: parent.width
+                        }
+                    }
+                }
+            }
+            
             // 报警说明
             Rectangle {
                 width: parent.width
