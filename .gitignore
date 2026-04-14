@@ -66,3 +66,6 @@ crane_data_device.db
 *.db-wal
 .opencode
 .sisyphus/*
+
+# Development
+/dev/
