@@ -1102,9 +1102,11 @@ name = "modbus-tcp"
 version = "0.1.0"
 dependencies = [
  "byteorder",
+ "crane-data-layer",
  "thiserror 1.0.69",
  "tokio",
  "tokio-modbus",
+ "toml",
 ]
 
 [[package]]

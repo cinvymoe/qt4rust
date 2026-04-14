@@ -1,13 +1,16 @@
 pub mod config;
+pub mod data_source;
 pub mod simulated;
 
 pub mod prelude {
     pub use crate::config::*;
+    pub use crate::data_source::*;
     pub use crate::simulated::*;
     pub use crane_data_layer::prelude::*;
 }
 
 pub use crate::config::SimulatorConfig;
+pub use crate::data_source::SimulatedDataSource;
 pub use crate::simulated::{SimulatedSensor, SimulatorType};
 
 #[deprecated(

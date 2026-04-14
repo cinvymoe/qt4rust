@@ -1,58 +1,37 @@
 // 起重机数据仓库
 
 use crate::config::config_manager::ConfigManager;
-use crate::data_sources::SensorDataSource;
 use crate::models::crane_config::CraneConfig;
 use crate::models::SensorData;
 use crane_data_layer::error::DataResult;
+use sensor_simulator::prelude::SimulatedDataSource;
 use std::sync::{Arc, Mutex};
 
-/// 起重机数据仓库
+pub enum SensorSourceEnum {
+    Simulated(SimulatedDataSource),
+    #[allow(dead_code)]
+    Modbus(Box<modbus_tcp::ModbusDataSource>),
+}
+
+impl SensorSourceEnum {
+    fn read_all(&self) -> Result<(f64, f64, f64), String> {
+        match self {
+            SensorSourceEnum::Simulated(ds) => ds.read_all().map_err(|e| e.to_string()),
+            SensorSourceEnum::Modbus(ds) => ds.read_all().map_err(|e| e.to_string()),
+        }
+    }
+}
+
 pub struct CraneDataRepository {
-    /// 传感器数据源
-    sensor_source: Arc<Mutex<SensorDataSource>>,
-
-    /// 数据缓存
+    sensor_source: Arc<Mutex<SensorSourceEnum>>,
     cache: Arc<Mutex<Option<SensorData>>>,
-
-    /// 配置管理器
     config_manager: Arc<ConfigManager>,
 }
 
 impl CraneDataRepository {
-    /// 创建新的数据仓库
-    ///
-    /// # 参数
-    /// - `config_manager`: 配置管理器的 Arc 引用
-    ///
-    /// # 示例
-    /// ```
-    /// let config_manager = Arc::new(ConfigManager::new()?);
-    /// let repo = CraneDataRepository::new(config_manager);
-    /// ```
     pub fn new(config_manager: Arc<ConfigManager>) -> Self {
-        // 根据配置文件创建传感器数据源
-        let mut sensor_source = match SensorDataSource::from_config() {
-            Ok(source) => {
-                tracing::info!("传感器数据源初始化成功");
-                source
-            }
-            Err(e) => {
-                tracing::error!("传感器数据源初始化失败: {}", e);
-                tracing::warn!("使用默认模拟传感器");
-                SensorDataSource::new()
-            }
-        };
-        
-        // 连接传感器（对于 Modbus 传感器必须先连接）
-        if let Err(e) = sensor_source.connect() {
-            tracing::error!("传感器连接失败: {}", e);
-            tracing::warn!("将使用模拟传感器");
-            sensor_source = SensorDataSource::new();
-        } else {
-            tracing::info!("传感器连接成功");
-        }
-        
+        let sensor_source = Self::create_sensor_source();
+
         Self {
             sensor_source: Arc::new(Mutex::new(sensor_source)),
             cache: Arc::new(Mutex::new(None)),
@@ -60,16 +39,51 @@ impl CraneDataRepository {
         }
     }
 
-    /// 获取最新传感器数据
+    fn create_sensor_source() -> SensorSourceEnum {
+        if !std::path::Path::new("config/modbus_sensors.toml").exists() {
+            tracing::info!("使用模拟传感器（未检测到 Modbus 配置文件）");
+            return SensorSourceEnum::Simulated(SimulatedDataSource::new());
+        }
+
+        tracing::info!("检测到 Modbus 配置文件，尝试加载...");
+        let config_content = match std::fs::read_to_string("config/modbus_sensors.toml") {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::warn!("读取 Modbus 配置失败: {}，使用模拟传感器", e);
+                return SensorSourceEnum::Simulated(SimulatedDataSource::new());
+            }
+        };
+
+        let mut ds = match modbus_tcp::ModbusDataSource::from_config(&config_content) {
+            Ok(ds) => ds,
+            Err(e) => {
+                tracing::warn!("Modbus 配置解析失败: {}，使用模拟传感器", e);
+                return SensorSourceEnum::Simulated(SimulatedDataSource::new());
+            }
+        };
+
+        match ds.connect() {
+            Ok(_) => {
+                tracing::info!("Modbus 传感器连接成功");
+                SensorSourceEnum::Modbus(Box::new(ds))
+            }
+            Err(e) => {
+                tracing::warn!("Modbus 连接失败: {}，使用模拟传感器", e);
+                SensorSourceEnum::Simulated(SimulatedDataSource::new())
+            }
+        }
+    }
+
     pub fn get_latest_sensor_data(&self) -> Result<SensorData, String> {
         let sensor_source = self
             .sensor_source
             .lock()
             .map_err(|e| format!("Failed to lock sensor source: {}", e))?;
 
-        let data = sensor_source.read_data()?;
+        let (ad1, ad2, ad3) = sensor_source.read_all()?;
 
-        // 更新缓存
+        let data = SensorData::new(ad1, ad2, ad3);
+
         if let Ok(mut cache) = self.cache.lock() {
             *cache = Some(data.clone());
         }
@@ -77,51 +91,19 @@ impl CraneDataRepository {
         Ok(data)
     }
 
-    /// 获取缓存的数据
     #[allow(dead_code)]
     pub fn get_cached_data(&self) -> Option<SensorData> {
         self.cache.lock().ok()?.clone()
     }
 
-    /// 获取当前配置
-    ///
-    /// 委托给 ConfigManager 获取当前配置。
-    ///
-    /// # 返回
-    /// - `Ok(CraneConfig)`: 返回当前配置
-    /// - `Err(DataError)`: 配置未加载或获取失败
-    ///
-    /// # 示例
-    /// ```
-    /// let config = repo.get_config()?;
-    /// let weight = config.sensor_calibration.convert_weight_ad_to_value(2048.0);
-    /// ```
     pub fn get_config(&self) -> DataResult<CraneConfig> {
         self.config_manager.get_config()
     }
 
-    /// 重新加载配置
-    ///
-    /// 委托给 ConfigManager 重新加载配置。
-    /// 从文件重新读取配置，验证后更新缓存，并通知所有观察者。
-    /// 如果加载失败，会自动回滚到旧配置。
-    ///
-    /// # 返回
-    /// - `Ok(CraneConfig)`: 重新加载成功，返回新配置
-    /// - `Err(DataError)`: 重新加载失败，已回滚到旧配置
-    ///
-    /// # 示例
-    /// ```
-    /// match repo.reload_config() {
-    ///     Ok(config) => println!("配置重载成功"),
-    ///     Err(e) => eprintln!("配置重载失败: {:?}", e),
-    /// }
-    /// ```
     pub fn reload_config(&self) -> DataResult<CraneConfig> {
         self.config_manager.reload_config()
     }
 
-    /// 克隆 Repository（用于跨线程共享）
     #[allow(dead_code)]
     pub fn clone_arc(&self) -> Arc<Mutex<Self>> {
         Arc::new(Mutex::new(Self {
@@ -155,10 +137,8 @@ mod tests {
     fn test_cache() {
         let repo = CraneDataRepository::default();
 
-        // 初始缓存为空
         assert!(repo.get_cached_data().is_none());
 
-        // 读取数据后缓存应该有值
         let _ = repo.get_latest_sensor_data();
         assert!(repo.get_cached_data().is_some());
     }

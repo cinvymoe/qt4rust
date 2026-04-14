@@ -1,11 +1,13 @@
-// Modbus TCP Client Library
-
-pub mod config;
-pub mod error;
 pub mod client;
+pub mod config;
+pub mod data_source;
+pub mod error;
+
+pub use data_source::ModbusDataSource;
 
 pub mod prelude {
-    pub use crate::config::*;
-    pub use crate::error::*;
     pub use crate::client::*;
+    pub use crate::config::*;
+    pub use crate::data_source::*;
+    pub use crate::error::*;
 }

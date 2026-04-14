@@ -11,3 +11,8 @@ pub trait SensorProvider {
         "Unknown Sensor"
     }
 }
+
+pub trait SensorSource {
+    fn read_all(&self) -> SensorResult<(f64, f64, f64)>;
+    fn is_connected(&self) -> bool;
+}
