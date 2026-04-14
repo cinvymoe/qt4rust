@@ -1,4 +1,4 @@
-.PHONY: help build push push-qml push-config push-fonts push-no-plugins run stop clean deploy install-autostart push-no-plugins-with-build pull-db push-db
+.PHONY: help build push push-qml push-config push-fonts push-no-plugins run stop clean deploy install-autostart push-no-plugins-with-build pull-db push-db pull-config
 
 # 脚本目录
 SCRIPTS_DIR := scripts
@@ -19,6 +19,7 @@ help:
 	@echo "  make deploy            - 编译并推送到设备"
 	@echo "  make install-autostart - 安装自动启动脚本"
 	@echo "  make pull-db           - 从设备拉取数据库文件到 db/ 文件夹"
+	@echo "  make pull-config       - 从设备拉取配置文件到 dev/config/ 文件夹"
 	@echo "  make push-db           - 推送本地 db/ 文件夹的数据库到设备"
 	@echo "  make clean             - 清理编译产物"
 	@echo ""
@@ -92,7 +93,6 @@ pull-db:
 
 # 推送本地数据库到设备
 push-db:
-	@echo "=== 推送本地数据库到设备 ==="
 	@if [ ! -f db/crane_data.db ]; then \
 		echo "错误: db/crane_data.db 不存在"; \
 		echo "请先使用 'make pull-db' 拉取数据库，或手动创建数据库文件"; \
@@ -100,6 +100,13 @@ push-db:
 	fi
 	@adb push db/crane_data.db /data/local/tmp/qt-rust-demo/crane_data.db
 	@echo "数据库已推送到设备"
+
+# 从设备拉取配置文件到 dev/config/ 文件夹
+pull-config:
+	@echo "=== 从设备拉取配置文件到 dev/config/ 文件夹 ==="
+	@mkdir -p dev/config
+	@adb pull /data/local/tmp/qt-rust-demo/config/ ./dev/config/
+	@echo "配置文件已保存到: dev/config/"
 
 # 清理
 clean:
