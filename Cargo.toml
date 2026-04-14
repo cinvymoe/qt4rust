@@ -5,6 +5,7 @@ members = [
     "crates/sensor-simulator",
     "crates/qt-threading-utils",
     "crates/crane-data-layer",
+    "crates/modbus-tcp",
     "crates/qt-app",
     "crates/config-hot-reload",
 ]
@@ -16,6 +17,8 @@ cxx-qt = "0.8"
 cxx-qt-lib = "0.8"
 tokio = { version = "1.42", features = ["full"] }
 sensor-simulator = { path = "crates/sensor-simulator" }
+crane-data-layer = { path = "crates/crane-data-layer" }
+modbus-tcp = { path = "crates/modbus-tcp" }
 tracing = "0.1"
 
 [package]
@@ -28,9 +31,10 @@ description = "A demonstration application integrating Rust with Qt 6.x using cx
 
 
 [dependencies]
-sensor-simulator = { path = "crates/sensor-simulator" }
+sensor-simulator = { workspace = true }
 qt-threading-utils = { path = "crates/qt-threading-utils" }
-crane-data-layer = { path = "crates/crane-data-layer" }
+crane-data-layer = { workspace = true }
+modbus-tcp = { workspace = true }
 
 tokio = { workspace = true }
 

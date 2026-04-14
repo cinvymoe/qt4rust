@@ -1,0 +1,13 @@
+[package]
+name = "modbus-tcp"
+version = "0.1.0"
+edition = "2021"
+authors = ["Qt Rust Demo Team"]
+description = "Modbus TCP client library for sensor communication"
+license = "MIT"
+
+[dependencies]
+thiserror = "1.0"
+tokio-modbus = { version = "0.17", features = ["tcp"] }
+tokio = { version = "1.42", features = ["rt", "net"] }
+byteorder = "1.5"

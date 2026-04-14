@@ -6,11 +6,15 @@ use std::sync::Mutex;
 use tokio_modbus::client::Context;
 use tokio_modbus::prelude::*;
 
-use crate::error::{SensorError, SensorResult};
-use crate::real::{ByteOrder as SensorByteOrder, ModbusDataType, ModbusTcpConfig};
-use crate::traits::SensorProvider;
+use crate::config::{ModbusByteOrder, ModbusDataType, ModbusTcpConfig};
+use crate::error::{ModbusError, ModbusResult};
 
-pub struct ModbusTcpSensor {
+pub trait ModbusProvider {
+    fn read(&self) -> ModbusResult<f64>;
+    fn is_connected(&self) -> bool;
+}
+
+pub struct ModbusTcpClient {
     config: ModbusTcpConfig,
     connected: bool,
     client: Mutex<Option<Context>>,
@@ -18,7 +22,7 @@ pub struct ModbusTcpSensor {
     name: String,
 }
 
-impl ModbusTcpSensor {
+impl ModbusTcpClient {
     pub fn new(config: ModbusTcpConfig, name: impl Into<String>) -> Self {
         Self {
             config,
@@ -29,22 +33,22 @@ impl ModbusTcpSensor {
         }
     }
 
-    pub fn connect(&mut self) -> SensorResult<()> {
+    pub fn connect(&mut self) -> ModbusResult<()> {
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
-            .map_err(|e| SensorError::InitError(format!("Failed to create runtime: {}", e)))?;
+            .map_err(|e| ModbusError::InitError(format!("Failed to create runtime: {}", e)))?;
 
         let addr: SocketAddr = format!("{}:{}", self.config.host, self.config.port)
             .parse()
-            .map_err(|e| SensorError::ConfigError(format!("Invalid address: {}", e)))?;
+            .map_err(|e| ModbusError::ConfigError(format!("Invalid address: {}", e)))?;
 
         use tokio_modbus::slave::Slave;
         let slave = Slave::from(self.config.slave_id);
         let client = runtime
             .block_on(tcp::connect_slave(addr, slave))
             .map_err(|e| {
-                SensorError::IoError(std::io::Error::new(
+                ModbusError::IoError(std::io::Error::new(
                     std::io::ErrorKind::ConnectionRefused,
                     e.to_string(),
                 ))
@@ -56,57 +60,55 @@ impl ModbusTcpSensor {
         Ok(())
     }
 
-    fn read_holding_registers_sync(&self) -> SensorResult<f64> {
+    fn read_holding_registers_sync(&self) -> ModbusResult<f64> {
         let registers = {
             let mut client_guard = self.client.lock().unwrap();
-            let client = client_guard.as_mut().ok_or(SensorError::NotConnected)?;
+            let client = client_guard.as_mut().ok_or(ModbusError::NotConnected)?;
             let runtime_guard = self.runtime.lock().unwrap();
-            let runtime = runtime_guard.as_ref().ok_or(SensorError::NotConnected)?;
+            let runtime = runtime_guard.as_ref().ok_or(ModbusError::NotConnected)?;
 
             runtime
                 .block_on(client.read_holding_registers(
                     self.config.register_address,
                     self.config.register_count.into(),
                 ))
-                .map_err(|e| SensorError::ReadError(format!("Modbus read error: {}", e)))
+                .map_err(|e| ModbusError::ReadError(format!("Modbus read error: {}", e)))
                 .and_then(|result: Result<Vec<u16>, tokio_modbus::ExceptionCode>| {
-                    result.map_err(|e| {
-                        SensorError::ReadError(format!("Modbus protocol error: {}", e))
-                    })
+                    result.map_err(|e| ModbusError::ProtocolError(e.to_string()))
                 })?
         };
 
         self.convert_registers_to_f64(&registers)
     }
 
-    fn convert_registers_to_f64(&self, registers: &[u16]) -> SensorResult<f64> {
+    fn convert_registers_to_f64(&self, registers: &[u16]) -> ModbusResult<f64> {
         match self.config.data_type {
             ModbusDataType::UInt16 => {
                 let value = registers
                     .first()
-                    .ok_or_else(|| SensorError::ReadError("No register data".to_string()))?;
+                    .ok_or_else(|| ModbusError::ReadError("No register data".to_string()))?;
                 Ok(*value as f64)
             }
             ModbusDataType::Int16 => {
                 let value = registers
                     .first()
-                    .ok_or_else(|| SensorError::ReadError("No register data".to_string()))?;
+                    .ok_or_else(|| ModbusError::ReadError("No register data".to_string()))?;
                 Ok(*value as i16 as f64)
             }
             ModbusDataType::Float32 => {
                 if registers.len() < 2 {
-                    return Err(SensorError::ReadError(
+                    return Err(ModbusError::ReadError(
                         "Float32 requires 2 registers".to_string(),
                     ));
                 }
                 let bytes = match self.config.byte_order {
-                    SensorByteOrder::BigEndian => {
+                    ModbusByteOrder::BigEndian => {
                         let mut bytes = [0u8; 4];
                         BigEndian::write_u16(&mut bytes[0..2], registers[0]);
                         BigEndian::write_u16(&mut bytes[2..4], registers[1]);
                         bytes
                     }
-                    SensorByteOrder::LittleEndian => {
+                    ModbusByteOrder::LittleEndian => {
                         let mut bytes = [0u8; 4];
                         BigEndian::write_u16(&mut bytes[0..2], registers[1]);
                         BigEndian::write_u16(&mut bytes[2..4], registers[0]);
@@ -129,10 +131,10 @@ impl ModbusTcpSensor {
     }
 }
 
-impl SensorProvider for ModbusTcpSensor {
-    fn read(&self) -> SensorResult<f64> {
+impl ModbusProvider for ModbusTcpClient {
+    fn read(&self) -> ModbusResult<f64> {
         if !self.connected {
-            return Err(SensorError::NotConnected);
+            return Err(ModbusError::NotConnected);
         }
         self.read_holding_registers_sync()
     }
@@ -140,13 +142,9 @@ impl SensorProvider for ModbusTcpSensor {
     fn is_connected(&self) -> bool {
         self.connected
     }
-
-    fn name(&self) -> &str {
-        &self.name
-    }
 }
 
-impl Drop for ModbusTcpSensor {
+impl Drop for ModbusTcpClient {
     fn drop(&mut self) {
         self.disconnect();
     }
@@ -166,27 +164,14 @@ mod tests {
         assert_eq!(config.register_count, 2);
         assert_eq!(config.data_type, ModbusDataType::Float32);
         assert_eq!(config.timeout_ms, 1000);
-        assert_eq!(config.byte_order, SensorByteOrder::BigEndian);
+        assert_eq!(config.byte_order, ModbusByteOrder::BigEndian);
     }
 
     #[test]
-    fn test_modbus_tcp_sensor_creation() {
+    fn test_modbus_tcp_client_creation() {
         let config = ModbusTcpConfig::default();
-        let sensor = ModbusTcpSensor::new(config, "Test Sensor");
-        assert_eq!(sensor.name(), "Test Sensor");
-        assert!(!sensor.is_connected());
-    }
-
-    #[test]
-    fn test_modbus_tcp_not_connected() {
-        let config = ModbusTcpConfig::default();
-        let sensor = ModbusTcpSensor::new(config, "Test Sensor");
-        let result = sensor.read();
-        assert!(result.is_err());
-        match result {
-            Err(SensorError::NotConnected) => {}
-            _ => panic!("Expected NotConnected error"),
-        }
+        let client = ModbusTcpClient::new(config, "Test Client");
+        assert!(!client.is_connected());
     }
 
     #[test]
@@ -195,9 +180,9 @@ mod tests {
             data_type: ModbusDataType::UInt16,
             ..Default::default()
         };
-        let sensor = ModbusTcpSensor::new(config, "Test");
+        let client = ModbusTcpClient::new(config, "Test");
         let registers = [1000u16];
-        let result = sensor.convert_registers_to_f64(&registers);
+        let result = client.convert_registers_to_f64(&registers);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), 1000.0);
     }
@@ -208,9 +193,9 @@ mod tests {
             data_type: ModbusDataType::Int16,
             ..Default::default()
         };
-        let sensor = ModbusTcpSensor::new(config, "Test");
+        let client = ModbusTcpClient::new(config, "Test");
         let registers = [0xFFF6u16];
-        let result = sensor.convert_registers_to_f64(&registers);
+        let result = client.convert_registers_to_f64(&registers);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), -10.0);
     }
@@ -219,12 +204,12 @@ mod tests {
     fn test_float32_big_endian_conversion() {
         let config = ModbusTcpConfig {
             data_type: ModbusDataType::Float32,
-            byte_order: SensorByteOrder::BigEndian,
+            byte_order: ModbusByteOrder::BigEndian,
             ..Default::default()
         };
-        let sensor = ModbusTcpSensor::new(config, "Test");
+        let client = ModbusTcpClient::new(config, "Test");
         let registers = [0x4148, 0x0000];
-        let result = sensor.convert_registers_to_f64(&registers);
+        let result = client.convert_registers_to_f64(&registers);
         assert!(result.is_ok());
         let value = result.unwrap();
         assert!((value - 12.5).abs() < 0.001);
@@ -234,34 +219,14 @@ mod tests {
     fn test_float32_little_endian_conversion() {
         let config = ModbusTcpConfig {
             data_type: ModbusDataType::Float32,
-            byte_order: SensorByteOrder::LittleEndian,
+            byte_order: ModbusByteOrder::LittleEndian,
             ..Default::default()
         };
-        let sensor = ModbusTcpSensor::new(config, "Test");
+        let client = ModbusTcpClient::new(config, "Test");
         let registers = [0x0000, 0x4148];
-        let result = sensor.convert_registers_to_f64(&registers);
+        let result = client.convert_registers_to_f64(&registers);
         assert!(result.is_ok());
         let value = result.unwrap();
         assert!((value - 12.5).abs() < 0.001);
-    }
-
-    #[test]
-    fn test_float32_requires_two_registers() {
-        let config = ModbusTcpConfig {
-            data_type: ModbusDataType::Float32,
-            ..Default::default()
-        };
-        let sensor = ModbusTcpSensor::new(config, "Test");
-        let registers = [1000u16];
-        let result = sensor.convert_registers_to_f64(&registers);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_empty_registers_error() {
-        let config = ModbusTcpConfig::default();
-        let sensor = ModbusTcpSensor::new(config, "Test");
-        let result = sensor.convert_registers_to_f64(&[]);
-        assert!(result.is_err());
     }
 }

@@ -1,11 +1,7 @@
-// Simulated Sensor Implementation
-
 use crate::config::SimulatorConfig;
-use crate::error::SensorResult;
-use crate::traits::SensorProvider;
+use crane_data_layer::prelude::*;
 use std::time::SystemTime;
 
-/// 模拟器类型
 #[derive(Debug, Clone)]
 pub enum SimulatorType {
     Sine(SimulatorConfig),
@@ -13,7 +9,6 @@ pub enum SimulatorType {
     Constant(f64),
 }
 
-/// 模拟传感器
 pub struct SimulatedSensor {
     simulator_type: SimulatorType,
     start_time: SystemTime,
@@ -28,17 +23,12 @@ impl SimulatedSensor {
     }
 
     fn generate_sine(&self, config: &SimulatorConfig) -> f64 {
-        let elapsed = self
-            .start_time
-            .elapsed()
-            .unwrap_or_default()
-            .as_secs_f64();
-        
+        let elapsed = self.start_time.elapsed().unwrap_or_default().as_secs_f64();
+
         let base_value = config.amplitude
             * (2.0 * std::f64::consts::PI * config.frequency * elapsed).sin()
             + config.offset;
 
-        // 添加噪声
         if config.noise_level > 0.0 {
             let noise = (rand::random::<f64>() - 0.5) * 2.0 * config.noise_level;
             base_value + noise
@@ -77,7 +67,6 @@ impl SensorProvider for SimulatedSensor {
     }
 }
 
-// 简化的随机数生成（避免依赖 rand crate）
 mod rand {
     use std::cell::Cell;
     use std::time::SystemTime;

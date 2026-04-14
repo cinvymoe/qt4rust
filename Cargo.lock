@@ -1098,6 +1098,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "modbus-tcp"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-modbus",
+]
+
+[[package]]
 name = "moxcms"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1306,6 +1316,7 @@ dependencies = [
  "chrono",
  "crane-data-layer",
  "csv",
+ "modbus-tcp",
  "proptest",
  "qt-threading-utils",
  "rand 0.8.5",
@@ -1553,10 +1564,7 @@ checksum = "d767eb0aabc880b29956c35734170f26ed551a859dbd361d140cdbeca61ab1e2"
 name = "sensor-simulator"
 version = "0.2.0"
 dependencies = [
- "byteorder",
- "thiserror 1.0.69",
- "tokio",
- "tokio-modbus",
+ "crane-data-layer",
 ]
 
 [[package]]

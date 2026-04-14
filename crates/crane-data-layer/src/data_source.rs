@@ -23,9 +23,9 @@ impl<T> MemoryDataSource<T> {
 
 impl<T: Clone> DataSource<T> for MemoryDataSource<T> {
     fn read(&self) -> DataResult<T> {
-        self.data.clone().ok_or_else(|| 
-            crate::error::DataError::NotFound("No data available".to_string())
-        )
+        self.data
+            .clone()
+            .ok_or_else(|| crate::error::DataError::NotFound("No data available".to_string()))
     }
 
     fn write(&mut self, data: &T) -> DataResult<()> {

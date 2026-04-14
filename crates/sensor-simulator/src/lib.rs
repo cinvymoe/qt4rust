@@ -1,25 +1,26 @@
-// Unified Sensor Library
-//
-// 提供统一的传感器接口，支持模拟传感器和真实传感器
-
 pub mod config;
-pub mod error;
-pub mod traits;
 pub mod simulated;
-pub mod real;
-pub mod modbus_tcp;
-
-// 保留旧的 simulator 模块以保持向后兼容
-pub mod simulator;
 
 pub mod prelude {
     pub use crate::config::*;
-    pub use crate::error::*;
-    pub use crate::traits::*;
     pub use crate::simulated::*;
-    pub use crate::real::*;
-    pub use crate::modbus_tcp::*;
-    
-    // 向后兼容
-    pub use crate::simulator::SineSimulator;
+    pub use crane_data_layer::prelude::*;
 }
+
+pub use crate::config::SimulatorConfig;
+pub use crate::simulated::{SimulatedSensor, SimulatorType};
+
+#[deprecated(
+    since = "0.2.0",
+    note = "use SimulatedSensor with SimulatorType::Sine instead"
+)]
+pub type SineSimulator = SimulatedSensor;
+
+#[deprecated(since = "0.2.0", note = "use crane_data_layer::SensorProvider instead")]
+pub use crane_data_layer::traits::SensorProvider;
+
+#[deprecated(since = "0.2.0", note = "use crane_data_layer::SensorResult instead")]
+pub use crane_data_layer::error::SensorResult;
+
+#[deprecated(since = "0.2.0", note = "use crane_data_layer::SensorError instead")]
+pub use crane_data_layer::error::SensorError;

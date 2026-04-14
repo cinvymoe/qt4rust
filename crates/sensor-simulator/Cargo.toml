@@ -3,11 +3,8 @@ name = "sensor-simulator"
 version = "0.2.0"
 edition = "2021"
 authors = ["Qt Rust Demo Team"]
-description = "Unified sensor library supporting both simulated and real sensor interfaces"
+description = "Simulated sensor library"
 license = "MIT"
 
 [dependencies]
-thiserror = "1.0"
-tokio-modbus = { version = "0.17", features = ["tcp"] }
-tokio = { version = "1.42", features = ["rt", "net"] }
-byteorder = "1.5"
+crane-data-layer = { path = "../crane-data-layer" }
