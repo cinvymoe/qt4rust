@@ -824,6 +824,27 @@ impl SqliteStorageRepository {
     }
 }
 
+impl SqliteStorageRepository {
+    pub async fn get_table_columns(&self, table_name: &str) -> Result<Vec<String>, String> {
+        let conn = self.connection.lock().await;
+
+        let mut stmt = conn
+            .prepare(&format!(
+                "SELECT name FROM pragma_table_info('{}')",
+                table_name
+            ))
+            .map_err(|e| format!("Failed to prepare table_info query: {}", e))?;
+
+        let columns = stmt
+            .query_map([], |row| row.get::<_, String>(0))
+            .map_err(|e| format!("Failed to query table columns: {}", e))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| format!("Failed to collect columns: {}", e))?;
+
+        Ok(columns)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
