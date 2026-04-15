@@ -274,6 +274,111 @@ cd /home/user
 sudo apt install qt6-base-runtime qt6-declarative-runtime
 ```
 
+## 传感器数据管线架构
+
+sensor-core crate 实现了多源传感器数据的采集、聚合和存储管线。数据从多个独立来源流入，经过聚合后批量写入存储后端。
+
+### 管线数据流
+
+```
+┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+│  Modbus      │  │  Simulator  │  │  Mock       │
+│  Source      │  │  Source     │  │  Source      │
+└──────┬───────┘  └──────┬───────┘  └──────┬───────┘
+       │                  │                  │
+       ▼                  ▼                  ▼
+┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+│  Sensor     │  │  Sensor     │  │  Sensor      │
+│  Pipeline   │  │  Pipeline   │  │  Pipeline    │
+└──────┬───────┘  └──────┬───────┘  └──────┬───────┘
+       │                  │                  │
+       └──────────┬───────┴──────────────────┘
+                  │  mpsc channel
+                  ▼
+          ┌───────────────┐
+          │  Aggregator   │
+          │  Pipeline     │
+          └───────┬───────┘
+                  │  mpsc channel
+                  ▼
+          ┌───────────────┐
+          │  Storage      │
+          │  Pipeline     │
+          └───────┬───────┘
+                  │
+                  ▼
+          ┌───────────────┐
+          │  Storage      │
+          │  Repository   │
+          │  (trait)      │
+          └───────────────┘
+```
+
+### 核心组件
+
+| 组件 | 职责 |
+|------|------|
+| `SensorPipelineManager` | 管线总管：注册数据源、配置聚合策略、设置存储后端、启停管线 |
+| `SensorPipeline<S>` | 从 `SensorSource` 定时读取数据，带重试逻辑，通过 channel 发送 |
+| `AggregatorPipeline` | 按 `AggregationStrategy` 合并多源数据，输出 `AggregatedSensorData` |
+| `StoragePipeline` | 批量写入聚合数据，按大小或时间间隔刷盘，停机时最终刷盘 |
+| `StorageRepository` (trait) | 存储后端抽象，可替换为 SQLite、PostgreSQL 或内存实现 |
+
+### 聚合策略
+
+| 策略 | 行为 |
+|------|------|
+| `Immediate` | 任一数据源上报即发出聚合数据 |
+| `WaitAll(duration)` | 等待所有已注册数据源上报，超时后发出 |
+| `PrimaryBackup { primary, backup }` | 以主数据源为准，主源不可用时切换到备用源 |
+
+### 使用示例
+
+```rust
+use sensor_core::{
+    AggregationStrategy, DataSourceId, PipelineConfig,
+    SensorPipelineManager, StoragePipelineConfig,
+};
+use std::sync::Arc;
+use std::time::Duration;
+
+let mut manager = SensorPipelineManager::new();
+
+// 注册数据源
+manager.register_source(
+    DataSourceId::Modbus,
+    Arc::new(my_modbus_source),
+    PipelineConfig {
+        read_interval: Duration::from_millis(100),
+        max_retries: 3,
+        debug_logging: false,
+    },
+);
+
+// 配置聚合策略
+manager.set_aggregation_strategy(
+    AggregationStrategy::WaitAll(Duration::from_millis(50))
+);
+
+// 配置存储
+manager.set_storage_config(StoragePipelineConfig {
+    storage_interval: Duration::from_secs(5),
+    batch_size: 100,
+    enable_compression: false,
+});
+manager.set_storage_repository(Arc::new(my_storage_impl));
+
+// 启动所有管线
+manager.start_all()?;
+
+// ... 运行应用 ...
+
+// 按序停机：传感器 → 存储 → 聚合器
+manager.stop_all();
+```
+
+详细文档见 [crates/sensor-core/README.md](crates/sensor-core/README.md)。
+
 ## 项目结构
 
 本项目采用 Cargo Workspace 结构，将核心业务逻辑和 Qt UI 分离：
@@ -293,6 +398,26 @@ qt-rust-demo/                           # Workspace 根目录
 │   │       ├── application.rs          # Qt 应用初始化
 │   │       ├── monitoring_viewmodel.rs # 监控 ViewModel
 │   │       └── ...
+│   ├── sensor-core/                    # 传感器管线核心库
+│   │   ├── Cargo.toml
+│   │   ├── README.md                   # 管线架构文档
+│   │   └── src/
+│   │       ├── lib.rs                  # 公共 API 导出
+│   │       ├── pipeline/               # 多源管线架构
+│   │       │   ├── manager.rs          # SensorPipelineManager
+│   │       │   ├── sensor_pipeline.rs  # 单源采集管线
+│   │       │   ├── aggregator.rs       # 聚合管线 + 策略
+│   │       │   ├── storage.rs          # 存储管线
+│   │       │   ├── config.rs           # 管线配置
+│   │       │   └── data_source.rs      # DataSourceId, SourceSensorData
+│   │       ├── storage/                # 存储抽象
+│   │       │   └── repository.rs       # StorageRepository trait
+│   │       ├── sensors/                # 传感器实现
+│   │       ├── calibration/            # 标定模块
+│   │       ├── algorithms/             # AD 转换算法
+│   │       ├── data/                   # 数据模型
+│   │       ├── traits.rs               # SensorSource, SensorProvider
+│   │       └── error.rs                # 错误类型
 │   ├── cxx-qt-mvi-core/                # MVI 架构核心库
 │   ├── sensor-simulator/               # 传感器模拟器
 │   ├── qt-threading-utils/             # Qt 线程工具
@@ -312,10 +437,11 @@ qt-rust-demo/                           # Workspace 根目录
 ### 架构优势
 
 - **lib (qt-rust-demo)**: 核心业务逻辑，不依赖 Qt，可独立测试和复用
+- **sensor-core**: 传感器管线核心，纯 Rust 异步实现，无 Qt 依赖
 - **qt-app**: Qt GUI 应用，依赖 lib，只包含 UI 相关代码
 - **分离的好处**:
-  1. lib 可以在没有 Qt 环境的机器上编译和测试
-  2. lib 可以被其他项目复用（CLI 工具、Web 服务等）
+  1. lib 和 sensor-core 可以在没有 Qt 环境的机器上编译和测试
+  2. sensor-core 可以被其他项目复用（CLI 工具、Web 服务等）
   3. 职责清晰，易于维护
 
 ## 编译和运行
