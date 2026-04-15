@@ -2,11 +2,11 @@
 //!
 //! 提供线程安全的配置缓存，包含所有配置类型
 
-use std::time::SystemTime;
 use qt_rust_demo::config::pipeline_config::PipelineConfig;
 use qt_rust_demo::logging::config::LogConfig;
-use qt_rust_demo::models::sensor_calibration::{AlarmThresholds, SensorCalibration};
 use qt_rust_demo::models::rated_load_table::RatedLoadTable;
+use sensor_core::{AlarmThresholds, SensorCalibration};
+use std::time::SystemTime;
 
 use crate::parser::ModbusConfig;
 

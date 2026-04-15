@@ -38,7 +38,7 @@ pub mod load_calibration_bridge {
 
         #[qinvokable]
         unsafe fn capture_point2(self: Pin<&mut LoadCalibrationViewModel>);
-        
+
         #[qinvokable]
         unsafe fn set_multiplier(self: Pin<&mut LoadCalibrationViewModel>, multiplier: f64);
     }
@@ -60,7 +60,8 @@ pub struct LoadCalibrationViewModelRust {
 impl Default for LoadCalibrationViewModelRust {
     fn default() -> Self {
         let config_path = "config/sensor_calibration.toml".to_string();
-        let manager = qt_rust_demo::config::calibration_manager::CalibrationManager::new(&config_path);
+        let manager =
+            qt_rust_demo::config::calibration_manager::CalibrationManager::new(&config_path);
         let calibration = manager.load().unwrap_or_default();
 
         Self {
@@ -84,7 +85,8 @@ impl load_calibration_bridge::LoadCalibrationViewModel {
         let p2_wt = *self.as_ref().point2_weight();
         let multiplier = *self.as_ref().calibration_multiplier();
 
-        let manager = qt_rust_demo::config::calibration_manager::CalibrationManager::new(&self.config_path);
+        let manager =
+            qt_rust_demo::config::calibration_manager::CalibrationManager::new(&self.config_path);
         let mut calibration = match manager.load() {
             Ok(c) => c,
             Err(e) => {
@@ -101,7 +103,10 @@ impl load_calibration_bridge::LoadCalibrationViewModel {
 
         match manager.save(&calibration) {
             Ok(_) => {
-                tracing::info!("Load calibration saved successfully with multiplier: {}", multiplier);
+                tracing::info!(
+                    "Load calibration saved successfully with multiplier: {}",
+                    multiplier
+                );
                 true
             }
             Err(e) => {
@@ -112,7 +117,7 @@ impl load_calibration_bridge::LoadCalibrationViewModel {
     }
 
     pub fn reset_to_default(mut self: Pin<&mut Self>) {
-        let calibration = qt_rust_demo::models::sensor_calibration::SensorCalibration::default();
+        let calibration = sensor_core::SensorCalibration::default();
         self.as_mut().set_point1_ad(calibration.weight.zero_ad);
         self.as_mut()
             .set_point1_weight(calibration.weight.zero_value);
@@ -140,7 +145,7 @@ impl load_calibration_bridge::LoadCalibrationViewModel {
         self.as_mut().set_point2_ad(cad);
         self.as_mut().set_point2_weight(cload);
     }
-    
+
     pub fn set_multiplier(mut self: Pin<&mut Self>, multiplier: f64) {
         self.as_mut().set_calibration_multiplier(multiplier);
         tracing::info!("Load calibration multiplier set to: {}", multiplier);

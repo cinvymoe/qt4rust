@@ -104,8 +104,8 @@ async fn main() -> Result<(), String> {
     println!("[INFO] 开始模拟数据采集...");
     println!("[INFO] 采集间隔: {}ms\n", config.collection.interval_ms);
     
-    use qt_rust_demo::models::sensor_data::SensorData;
-    use qt_rust_demo::models::processed_data::ProcessedData;
+    use qt_rust_demo::models::SensorData;
+    use qt_rust_demo::models::ProcessedData;
     
     let collection_interval = Duration::from_millis(config.collection.interval_ms);
     let total_iterations = 10;

@@ -1,7 +1,7 @@
 // 滤波缓冲区 - 多速率数据流架构
 // 采集(10ms) → 滤波层 → 计算(100ms) → 存储(500ms)
 
-use crate::models::sensor_data::SensorData;
+use sensor_core::SensorData;
 use std::collections::VecDeque;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

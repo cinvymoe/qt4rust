@@ -7,3 +7,4 @@ description = "Data layer abstraction library with Repository pattern"
 license = "MIT"
 
 [dependencies]
+sensor-core = { path = "../sensor-core" }

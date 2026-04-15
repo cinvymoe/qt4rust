@@ -8,6 +8,7 @@ description = "Configuration hot reload system for crane data display applicatio
 [dependencies]
 # 依赖主项目以访问配置类型定义
 qt-rust-demo = { path = "../.." }
+sensor-core = { path = "../sensor-core" }
 
 notify = "6.1"
 tokio = { version = "1.42", features = ["full"] }

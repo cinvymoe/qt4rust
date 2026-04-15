@@ -1,7 +1,7 @@
 // 报警检查器（策略模式）
 
+use super::alarm_type::{AlarmLevel, AlarmSource, AlarmType};
 use crate::models::ProcessedData;
-use super::alarm_type::{AlarmType, AlarmLevel, AlarmSource};
 
 /// 报警检查结果
 #[derive(Debug, Clone)]
@@ -25,7 +25,7 @@ impl AlarmCheckResult {
             value: 0.0,
         }
     }
-    
+
     pub fn alarm(alarm_type: AlarmType, message: String, value: f64) -> Self {
         Self {
             triggered: true,
@@ -40,10 +40,10 @@ impl AlarmCheckResult {
 pub trait AlarmChecker: Send + Sync {
     /// 检查是否触发报警
     fn check(&self, data: &ProcessedData) -> AlarmCheckResult;
-    
+
     /// 获取报警来源
     fn source(&self) -> AlarmSource;
-    
+
     /// 是否启用
     fn is_enabled(&self) -> bool {
         true
@@ -65,7 +65,7 @@ impl MomentAlarmChecker {
             enabled: true,
         }
     }
-    
+
     pub fn set_enabled(&mut self, enabled: bool) {
         self.enabled = enabled;
     }
@@ -74,28 +74,34 @@ impl MomentAlarmChecker {
 impl AlarmChecker for MomentAlarmChecker {
     fn check(&self, data: &ProcessedData) -> AlarmCheckResult {
         let percentage = data.moment_percentage;
-        
+
         if percentage >= self.danger_threshold {
             AlarmCheckResult::alarm(
                 AlarmType::new(AlarmSource::Moment, AlarmLevel::Danger),
-                format!("力矩百分比 {:.1}% 超过危险阈值 {:.1}%", percentage, self.danger_threshold),
+                format!(
+                    "力矩百分比 {:.1}% 超过危险阈值 {:.1}%",
+                    percentage, self.danger_threshold
+                ),
                 percentage,
             )
         } else if percentage >= self.warning_threshold {
             AlarmCheckResult::alarm(
                 AlarmType::new(AlarmSource::Moment, AlarmLevel::Warning),
-                format!("力矩百分比 {:.1}% 超过预警阈值 {:.1}%", percentage, self.warning_threshold),
+                format!(
+                    "力矩百分比 {:.1}% 超过预警阈值 {:.1}%",
+                    percentage, self.warning_threshold
+                ),
                 percentage,
             )
         } else {
             AlarmCheckResult::no_alarm()
         }
     }
-    
+
     fn source(&self) -> AlarmSource {
         AlarmSource::Moment
     }
-    
+
     fn is_enabled(&self) -> bool {
         self.enabled
     }
@@ -116,7 +122,7 @@ impl AngleAlarmChecker {
             enabled: true,
         }
     }
-    
+
     pub fn set_enabled(&mut self, enabled: bool) {
         self.enabled = enabled;
     }
@@ -125,7 +131,7 @@ impl AngleAlarmChecker {
 impl AlarmChecker for AngleAlarmChecker {
     fn check(&self, data: &ProcessedData) -> AlarmCheckResult {
         let angle = data.boom_angle;
-        
+
         if angle < self.min_angle {
             AlarmCheckResult::alarm(
                 AlarmType::new(AlarmSource::Angle, AlarmLevel::Danger),
@@ -142,11 +148,11 @@ impl AlarmChecker for AngleAlarmChecker {
             AlarmCheckResult::no_alarm()
         }
     }
-    
+
     fn source(&self) -> AlarmSource {
         AlarmSource::Angle
     }
-    
+
     fn is_enabled(&self) -> bool {
         self.enabled
     }
@@ -165,7 +171,7 @@ impl LoadOverloadChecker {
             enabled: true,
         }
     }
-    
+
     pub fn set_enabled(&mut self, enabled: bool) {
         self.enabled = enabled;
     }
@@ -174,7 +180,7 @@ impl LoadOverloadChecker {
 impl AlarmChecker for LoadOverloadChecker {
     fn check(&self, data: &ProcessedData) -> AlarmCheckResult {
         let load = data.current_load;
-        
+
         if load > self.max_load {
             AlarmCheckResult::alarm(
                 AlarmType::new(AlarmSource::LoadOverload, AlarmLevel::Critical),
@@ -185,11 +191,11 @@ impl AlarmChecker for LoadOverloadChecker {
             AlarmCheckResult::no_alarm()
         }
     }
-    
+
     fn source(&self) -> AlarmSource {
         AlarmSource::LoadOverload
     }
-    
+
     fn is_enabled(&self) -> bool {
         self.enabled
     }
@@ -198,25 +204,25 @@ impl AlarmChecker for LoadOverloadChecker {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::sensor_data::SensorData;
-    
+    use sensor_core::SensorData;
+
     #[test]
     fn test_moment_alarm_checker() {
         let checker = MomentAlarmChecker::new(90.0, 100.0);
         let sensor_data = SensorData::new(23.0, 10.0, 60.0);
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
-        
+
         let result = checker.check(&processed);
         assert!(result.triggered);
         assert_eq!(result.alarm_type.unwrap().source, AlarmSource::Moment);
     }
-    
+
     #[test]
     fn test_angle_alarm_checker() {
         let checker = AngleAlarmChecker::new(0.0, 85.0);
         let sensor_data = SensorData::new(20.0, 10.0, 90.0); // 角度超限
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
-        
+
         let result = checker.check(&processed);
         assert!(result.triggered);
         assert_eq!(result.alarm_type.unwrap().source, AlarmSource::Angle);

@@ -1,0 +1,11 @@
+[package]
+name = "sensor-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["Qt Rust Demo Team"]
+description = "Core sensor abstraction layer with data models, calibration, and transport"
+license = "MIT"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+thiserror = "1.0"

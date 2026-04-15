@@ -1,7 +1,7 @@
 // src/config/calibration_manager.rs
 
-use crate::models::sensor_calibration::SensorCalibration;
 use crane_data_layer::error::{DataError, DataResult};
+use sensor_core::SensorCalibration;
 use std::fs;
 use std::path::Path;
 
@@ -185,7 +185,7 @@ mod tests {
         let manager = CalibrationManager::new(&config_path);
 
         let original_config = SensorCalibration {
-            weight: crate::models::sensor_calibration::SensorCalibrationParams {
+            weight: sensor_core::SensorCalibrationParams {
                 zero_ad: 100.0,
                 zero_value: 5.0,
                 scale_ad: 4000.0,
@@ -193,7 +193,7 @@ mod tests {
                 multiplier: 1.0,
                 actual_multiplier: 1.0,
             },
-            angle: crate::models::sensor_calibration::SensorCalibrationParams {
+            angle: sensor_core::SensorCalibrationParams {
                 zero_ad: 200.0,
                 zero_value: 10.0,
                 scale_ad: 3800.0,
@@ -201,7 +201,7 @@ mod tests {
                 multiplier: 1.0,
                 actual_multiplier: 1.0,
             },
-            radius: crate::models::sensor_calibration::SensorCalibrationParams {
+            radius: sensor_core::SensorCalibrationParams {
                 zero_ad: 150.0,
                 zero_value: 2.0,
                 scale_ad: 3900.0,

@@ -18,9 +18,7 @@ impl ConfigValidator {
     /// - scale_ad - zero_ad != 0 (分母不能为零)
     ///
     /// # 需求: 3.1, 3.2
-    pub fn validate_sensor_calibration(
-        config: &SensorCalibration,
-    ) -> Result<(), ValidationError> {
+    pub fn validate_sensor_calibration(config: &SensorCalibration) -> Result<(), ValidationError> {
         // 验证重量传感器
         let weight_denominator = config.weight.scale_ad - config.weight.zero_ad;
         if weight_denominator.abs() < f64::EPSILON {
@@ -320,10 +318,10 @@ impl ConfigValidator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qt_rust_demo::models::sensor_calibration::{
+    use qt_rust_demo::models::rated_load_table::RatedLoadTable;
+    use sensor_core::{
         AlarmThresholds, MomentThresholds, SensorCalibration, SensorCalibrationParams,
     };
-    use qt_rust_demo::models::rated_load_table::RatedLoadTable;
 
     #[test]
     fn test_validate_sensor_calibration_success() {
@@ -334,6 +332,7 @@ mod tests {
                 scale_ad: 4095.0,
                 scale_value: 50.0,
                 multiplier: 1.0,
+                actual_multiplier: 1.0,
             },
             angle: SensorCalibrationParams {
                 zero_ad: 0.0,
@@ -341,6 +340,7 @@ mod tests {
                 scale_ad: 4095.0,
                 scale_value: 90.0,
                 multiplier: 1.0,
+                actual_multiplier: 1.0,
             },
             radius: SensorCalibrationParams {
                 zero_ad: 0.0,
@@ -348,6 +348,7 @@ mod tests {
                 scale_ad: 4095.0,
                 scale_value: 20.0,
                 multiplier: 1.0,
+                actual_multiplier: 1.0,
             },
         };
 
@@ -361,9 +362,10 @@ mod tests {
             weight: SensorCalibrationParams {
                 zero_ad: 100.0,
                 zero_value: 0.0,
-                scale_ad: 100.0, // 分母为零
+                scale_ad: 100.0,
                 scale_value: 50.0,
                 multiplier: 1.0,
+                actual_multiplier: 1.0,
             },
             angle: SensorCalibrationParams::default(),
             radius: SensorCalibrationParams::default(),
@@ -387,6 +389,9 @@ mod tests {
                 warning_percentage: 85.0,
                 alarm_percentage: 95.0,
             },
+            angle: sensor_core::AngleThresholds::default(),
+            main_hook_switch: sensor_core::HookSwitchThresholds::default(),
+            aux_hook_switch: sensor_core::HookSwitchThresholds::default(),
         };
 
         let result = ConfigValidator::validate_alarm_thresholds(&config);
@@ -398,8 +403,11 @@ mod tests {
         let config = AlarmThresholds {
             moment: MomentThresholds {
                 warning_percentage: 95.0,
-                alarm_percentage: 85.0, // 报警阈值小于警告阈值
+                alarm_percentage: 85.0,
             },
+            angle: sensor_core::AngleThresholds::default(),
+            main_hook_switch: sensor_core::HookSwitchThresholds::default(),
+            aux_hook_switch: sensor_core::HookSwitchThresholds::default(),
         };
 
         let result = ConfigValidator::validate_alarm_thresholds(&config);
@@ -417,9 +425,12 @@ mod tests {
     fn test_validate_alarm_thresholds_out_of_range() {
         let config = AlarmThresholds {
             moment: MomentThresholds {
-                warning_percentage: 250.0, // 超出范围
+                warning_percentage: 250.0,
                 alarm_percentage: 260.0,
             },
+            angle: sensor_core::AngleThresholds::default(),
+            main_hook_switch: sensor_core::HookSwitchThresholds::default(),
+            aux_hook_switch: sensor_core::HookSwitchThresholds::default(),
         };
 
         let result = ConfigValidator::validate_alarm_thresholds(&config);

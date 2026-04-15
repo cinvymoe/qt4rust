@@ -1,5 +1,5 @@
 use crate::simulated::{SimulatedSensor, SimulatorType};
-use crane_data_layer::prelude::*;
+use sensor_core::{SensorProvider, SensorResult, SensorSource};
 
 pub struct SimulatedDataSource {
     ad1: SimulatedSensor,

@@ -8,6 +8,7 @@ members = [
     "crates/modbus-tcp",
     "crates/qt-app",
     "crates/config-hot-reload",
+    "crates/sensor-core",
 ]
 resolver = "2"
 
@@ -19,6 +20,7 @@ tokio = { version = "1.42", features = ["full"] }
 sensor-simulator = { path = "crates/sensor-simulator" }
 crane-data-layer = { path = "crates/crane-data-layer" }
 modbus-tcp = { path = "crates/modbus-tcp" }
+sensor-core = { path = "crates/sensor-core" }
 tracing = "0.1"
 
 [package]
@@ -31,6 +33,7 @@ description = "A demonstration application integrating Rust with Qt 6.x using cx
 
 
 [dependencies]
+sensor-core = { workspace = true }
 sensor-simulator = { workspace = true }
 qt-threading-utils = { path = "crates/qt-threading-utils" }
 crane-data-layer = { workspace = true }

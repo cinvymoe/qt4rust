@@ -1,8 +1,8 @@
 // 处理后的数据模型
 
 use super::crane_config::CraneConfig;
-use super::sensor_data::SensorData;
 use crate::alarm::alarm_type::AlarmSource;
+use sensor_core::SensorData;
 use std::time::SystemTime;
 
 /// 处理后的数据（计算后的结果）

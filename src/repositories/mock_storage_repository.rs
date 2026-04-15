@@ -163,7 +163,7 @@ impl StorageRepository for MockStorageRepository {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::sensor_data::SensorData;
+    use sensor_core::SensorData;
     
     #[tokio::test]
     async fn test_new() {

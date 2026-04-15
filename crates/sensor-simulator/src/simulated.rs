@@ -1,5 +1,5 @@
 use crate::config::SimulatorConfig;
-use crane_data_layer::prelude::*;
+use sensor_core::{SensorProvider, SensorResult};
 use std::time::SystemTime;
 
 #[derive(Debug, Clone)]

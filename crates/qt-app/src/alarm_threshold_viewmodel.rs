@@ -29,7 +29,7 @@ pub mod alarm_threshold_bridge {
 }
 
 use core::pin::Pin;
-use qt_rust_demo::models::sensor_calibration::HookSwitchMode;
+use sensor_core::HookSwitchMode;
 
 fn mode_to_i32(mode: &HookSwitchMode) -> i32 {
     match mode {
@@ -133,8 +133,8 @@ impl alarm_threshold_bridge::AlarmThresholdViewModel {
     }
 
     pub fn reset_to_default(mut self: Pin<&mut Self>) {
-        let alarm_thresholds = qt_rust_demo::models::sensor_calibration::AlarmThresholds::default();
-        let calibration = qt_rust_demo::models::sensor_calibration::SensorCalibration::default();
+        let alarm_thresholds = sensor_core::AlarmThresholds::default();
+        let calibration = sensor_core::SensorCalibration::default();
 
         self.as_mut()
             .set_moment_warning_threshold(alarm_thresholds.moment.warning_percentage);

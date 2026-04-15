@@ -10,7 +10,7 @@ use std::time::Duration;
 
 mod mock_repository {
     use std::sync::{Arc, Mutex};
-    use qt_rust_demo::models::sensor_data::SensorData;
+    use qt_rust_demo::models::SensorData;
 
     #[allow(dead_code)]
     pub struct MockRepository {
@@ -53,7 +53,7 @@ async fn main() -> Result<(), String> {
 
 fn test_filter_buffer_basic() -> Result<(), String> {
     use qt_rust_demo::pipeline::filter_buffer::{FilterBuffer, FilterBufferConfig, FilterType};
-    use qt_rust_demo::models::sensor_data::SensorData;
+    use qt_rust_demo::models::SensorData;
 
     println!("  - 测试无滤波 (None)");
     {

@@ -232,7 +232,7 @@ impl AlarmManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::sensor_data::SensorData;
+    use sensor_core::SensorData;
 
     #[test]
     fn test_alarm_manager_check() {

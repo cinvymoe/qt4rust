@@ -8,7 +8,7 @@ use crate::subscriber::ConfigSubscriber;
 use crate::parser::ModbusConfig;
 use qt_rust_demo::config::pipeline_config::PipelineConfig;
 use qt_rust_demo::logging::config::LogConfig;
-use qt_rust_demo::models::sensor_calibration::{SensorCalibration, AlarmThresholds};
+use sensor_core::{SensorCalibration, AlarmThresholds};
 use qt_rust_demo::models::rated_load_table::RatedLoadTable;
 
 /// Pipeline 配置订阅者 - 在下一周期应用新的采集/存储/显示配置

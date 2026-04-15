@@ -7,7 +7,7 @@ use std::time::Duration;
 use tokio::task::JoinHandle;
 use crate::repositories::CraneDataRepository;
 use crate::models::{ProcessedData, SensorData};
-use crate::models::sensor_calibration::{SensorCalibration, AlarmThresholds};
+use sensor_core::{SensorCalibration, AlarmThresholds};
 use crate::models::rated_load_table::RatedLoadTable;
 use crate::models::crane_config::CraneConfig;
 use crate::alarm::{AlarmChecker, AngleAlarmChecker};

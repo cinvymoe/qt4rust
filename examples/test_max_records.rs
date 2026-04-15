@@ -12,8 +12,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
 
-use qt_rust_demo::models::ProcessedData;
-use qt_rust_demo::models::sensor_data::SensorData;
+use qt_rust_demo::models::{ProcessedData, SensorData};
 use qt_rust_demo::repositories::sqlite_storage_repository::SqliteStorageRepository;
 use qt_rust_demo::repositories::storage_repository::StorageRepository;
 

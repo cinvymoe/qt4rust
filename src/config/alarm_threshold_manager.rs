@@ -1,7 +1,7 @@
 // src/config/alarm_threshold_manager.rs
 
-use crate::models::sensor_calibration::AlarmThresholds;
 use crane_data_layer::error::{DataError, DataResult};
+use sensor_core::AlarmThresholds;
 use std::fs;
 use std::path::Path;
 

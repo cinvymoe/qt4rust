@@ -6,7 +6,7 @@ use std::time::SystemTime;
 use qt_rust_demo::config::pipeline_config::PipelineConfig;
 use qt_rust_demo::logging::config::LogConfig;
 use qt_rust_demo::models::rated_load_table::RatedLoadTable;
-use qt_rust_demo::models::sensor_calibration::{AlarmThresholds, SensorCalibration};
+use sensor_core::{AlarmThresholds, SensorCalibration};
 
 use crate::parser::ModbusConfig;
 

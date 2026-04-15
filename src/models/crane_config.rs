@@ -1,7 +1,7 @@
 // src/models/crane_config.rs
 
 use crate::models::rated_load_table::RatedLoadTable;
-use crate::models::sensor_calibration::{SensorCalibration, AlarmThresholds};
+use sensor_core::{AlarmThresholds, SensorCalibration};
 
 /// 起重机配置
 ///

@@ -59,7 +59,8 @@ pub struct RadiusCalibrationViewModelRust {
 impl Default for RadiusCalibrationViewModelRust {
     fn default() -> Self {
         let config_path = "config/sensor_calibration.toml".to_string();
-        let manager = qt_rust_demo::config::calibration_manager::CalibrationManager::new(&config_path);
+        let manager =
+            qt_rust_demo::config::calibration_manager::CalibrationManager::new(&config_path);
         let calibration = manager.load().unwrap_or_default();
 
         Self {
@@ -83,7 +84,8 @@ impl radius_calibration_bridge::RadiusCalibrationViewModel {
         let p2_ad = *self.as_ref().point2_ad();
         let p2_rad = *self.as_ref().point2_radius();
 
-        let manager = qt_rust_demo::config::calibration_manager::CalibrationManager::new(&self.config_path);
+        let manager =
+            qt_rust_demo::config::calibration_manager::CalibrationManager::new(&self.config_path);
         let mut calibration = match manager.load() {
             Ok(c) => c,
             Err(e) => {
@@ -110,7 +112,7 @@ impl radius_calibration_bridge::RadiusCalibrationViewModel {
     }
 
     pub fn reset_to_default(mut self: Pin<&mut Self>) {
-        let calibration = qt_rust_demo::models::sensor_calibration::SensorCalibration::default();
+        let calibration = sensor_core::SensorCalibration::default();
         self.as_mut().set_point1_ad(calibration.radius.zero_ad);
         self.as_mut()
             .set_point1_radius(calibration.radius.zero_value);

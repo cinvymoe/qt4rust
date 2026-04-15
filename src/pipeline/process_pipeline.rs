@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use tokio::task::JoinHandle;
 use crate::models::ProcessedData;
 use crate::models::crane_config::CraneConfig;
-use crate::models::sensor_calibration::{SensorCalibration, AlarmThresholds};
+use sensor_core::{SensorCalibration, AlarmThresholds};
 use crate::models::rated_load_table::RatedLoadTable;
 use crate::pipeline::filter_buffer::FilterBuffer;
 use crate::pipeline::shared_buffer::SharedBuffer;

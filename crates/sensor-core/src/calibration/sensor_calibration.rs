@@ -1,23 +1,14 @@
-// src/models/sensor_calibration.rs
-
 use crate::algorithms::ad_converter::AdConverter;
 use serde::{Deserialize, Serialize};
 
-/// 单个传感器的标定参数
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SensorCalibrationParams {
-    /// 零点 AD 值
     pub zero_ad: f64,
-    /// 零点物理值
     pub zero_value: f64,
-    /// 放大 AD 值（满量程）
     pub scale_ad: f64,
-    /// 放大物理值
     pub scale_value: f64,
-    /// 标定倍率（默认为 1.0）
     #[serde(default = "default_multiplier")]
     pub multiplier: f64,
-    /// 实际倍率（默认为 1.0）
     #[serde(default = "default_multiplier")]
     pub actual_multiplier: f64,
 }
@@ -40,12 +31,10 @@ impl Default for SensorCalibrationParams {
 }
 
 impl SensorCalibrationParams {
-    /// 验证标定参数有效性
     pub fn validate(&self) -> Result<(), String> {
         AdConverter::validate_calibration(self.zero_ad, self.scale_ad)
     }
 
-    /// 将 AD 值转换为物理值
     pub fn convert_ad_to_value(&self, ad: f64) -> f64 {
         AdConverter::convert(
             ad,
@@ -57,16 +46,10 @@ impl SensorCalibrationParams {
     }
 }
 
-/// 传感器标定配置（结构化）
-///
-/// 存储所有传感器的标定参数，用于将 AD 采集值转换为物理值
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SensorCalibration {
-    /// 重量传感器标定参数
     pub weight: SensorCalibrationParams,
-    /// 角度传感器标定参数
     pub angle: SensorCalibrationParams,
-    /// 半径传感器标定参数
     pub radius: SensorCalibrationParams,
 }
 
@@ -77,7 +60,7 @@ impl Default for SensorCalibration {
                 zero_ad: 0.0,
                 zero_value: 0.0,
                 scale_ad: 4095.0,
-                scale_value: 50.0, // 50 tons
+                scale_value: 50.0,
                 multiplier: 1.0,
                 actual_multiplier: 1.0,
             },
@@ -85,7 +68,7 @@ impl Default for SensorCalibration {
                 zero_ad: 0.0,
                 zero_value: 0.0,
                 scale_ad: 4095.0,
-                scale_value: 90.0, // 90 degrees
+                scale_value: 90.0,
                 multiplier: 1.0,
                 actual_multiplier: 1.0,
             },
@@ -93,7 +76,7 @@ impl Default for SensorCalibration {
                 zero_ad: 0.0,
                 zero_value: 0.0,
                 scale_ad: 4095.0,
-                scale_value: 20.0, // 20 meters
+                scale_value: 20.0,
                 multiplier: 1.0,
                 actual_multiplier: 1.0,
             },
@@ -102,22 +85,18 @@ impl Default for SensorCalibration {
 }
 
 impl SensorCalibration {
-    /// 转换重量 AD 值为物理值（吨）
     pub fn convert_weight_ad_to_value(&self, ad: f64) -> f64 {
         self.weight.convert_ad_to_value(ad)
     }
 
-    /// 转换角度 AD 值为物理值（度）
     pub fn convert_angle_ad_to_value(&self, ad: f64) -> f64 {
         self.angle.convert_ad_to_value(ad)
     }
 
-    /// 转换半径 AD 值为物理值（米）
     pub fn convert_radius_ad_to_value(&self, ad: f64) -> f64 {
         self.radius.convert_ad_to_value(ad)
     }
 
-    /// 验证标定参数的有效性
     pub fn validate(&self) -> Result<(), String> {
         self.weight
             .validate()
@@ -132,18 +111,13 @@ impl SensorCalibration {
     }
 }
 
-/// 报警阈值配置
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AlarmThresholds {
-    /// 力矩报警阈值
     pub moment: MomentThresholds,
-    /// 角度报警阈值
     #[serde(default)]
     pub angle: AngleThresholds,
-    /// 主钩勾头开关报警
     #[serde(default)]
     pub main_hook_switch: HookSwitchThresholds,
-    /// 副钩勾头开关报警
     #[serde(default)]
     pub aux_hook_switch: HookSwitchThresholds,
 }
@@ -159,12 +133,9 @@ impl Default for AlarmThresholds {
     }
 }
 
-/// 力矩报警阈值
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct MomentThresholds {
-    /// 预警百分比（%）
     pub warning_percentage: f64,
-    /// 报警百分比（%）
     pub alarm_percentage: f64,
 }
 
@@ -177,33 +148,26 @@ impl Default for MomentThresholds {
     }
 }
 
-/// 角度报警阈值
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AngleThresholds {
-    /// 最小角度报警（度）
     pub min_angle: f64,
-    /// 最大角度报警（度）
     pub max_angle: f64,
 }
 
 impl Default for AngleThresholds {
     fn default() -> Self {
         Self {
-            min_angle: 0.0,  // 最小角度 0 度
-            max_angle: 85.0, // 最大角度 85 度
+            min_angle: 0.0,
+            max_angle: 85.0,
         }
     }
 }
 
-/// 勾头开关报警模式（单参数替代原有的双 bool）
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum HookSwitchMode {
-    /// 不启用报警
     None,
-    /// 常开状态报警
     NormallyOpen,
-    /// 常闭状态报警
     NormallyClosed,
 }
 
@@ -213,17 +177,13 @@ impl Default for HookSwitchMode {
     }
 }
 
-/// 勾头开关报警阈值
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub struct HookSwitchThresholds {
-    /// 报警模式（单参数，替代原有的 normally_open_alarm + normally_closed_alarm）
     #[serde(default)]
     pub mode: HookSwitchMode,
 }
 
 impl HookSwitchThresholds {
-    /// 根据开关当前状态判断是否应触发报警
-    /// `state`: true = 常开状态, false = 常闭状态
     pub fn is_alarm_triggered(&self, state: bool) -> bool {
         match self.mode {
             HookSwitchMode::None => false,
@@ -234,24 +194,19 @@ impl HookSwitchThresholds {
 }
 
 impl AlarmThresholds {
-    /// 检查力矩百分比是否超过预警值
     pub fn is_moment_warning(&self, moment_percentage: f64) -> bool {
         moment_percentage >= self.moment.warning_percentage
     }
 
-    /// 检查力矩百分比是否超过报警值
     pub fn is_moment_alarm(&self, moment_percentage: f64) -> bool {
         moment_percentage >= self.moment.alarm_percentage
     }
 
-    /// 检查角度是否超出范围
     pub fn is_angle_alarm(&self, angle: f64) -> bool {
         angle < self.angle.min_angle || angle > self.angle.max_angle
     }
 
-    /// 验证报警阈值的有效性
     pub fn validate(&self) -> Result<(), String> {
-        // 验证力矩预警百分比范围
         if self.moment.warning_percentage < 0.0 || self.moment.warning_percentage > 100.0 {
             return Err(format!(
                 "moment.warning_percentage 必须在 0-100 范围内，当前值: {}",
@@ -259,7 +214,6 @@ impl AlarmThresholds {
             ));
         }
 
-        // 验证力矩报警百分比范围
         if self.moment.alarm_percentage < 0.0 || self.moment.alarm_percentage > 100.0 {
             return Err(format!(
                 "moment.alarm_percentage 必须在 0-100 范围内，当前值: {}",
@@ -267,7 +221,6 @@ impl AlarmThresholds {
             ));
         }
 
-        // 验证力矩报警百分比必须大于等于预警百分比
         if self.moment.alarm_percentage < self.moment.warning_percentage {
             return Err(format!(
                 "moment.alarm_percentage ({}) 必须大于等于 moment.warning_percentage ({})",
@@ -275,7 +228,6 @@ impl AlarmThresholds {
             ));
         }
 
-        // 验证角度范围
         if self.angle.min_angle < 0.0 || self.angle.min_angle > 90.0 {
             return Err(format!(
                 "angle.min_angle 必须在 0-90 范围内，当前值: {}",
@@ -290,7 +242,6 @@ impl AlarmThresholds {
             ));
         }
 
-        // 验证最大角度必须大于最小角度
         if self.angle.max_angle <= self.angle.min_angle {
             return Err(format!(
                 "angle.max_angle ({}) 必须大于 angle.min_angle ({})",
@@ -310,15 +261,12 @@ mod tests {
     fn test_convert_weight_ad_to_value() {
         let calibration = SensorCalibration::default();
 
-        // 测试零点
         let weight = calibration.convert_weight_ad_to_value(0.0);
         assert!((weight - 0.0).abs() < 0.01);
 
-        // 测试中点
         let weight = calibration.convert_weight_ad_to_value(2047.5);
         assert!((weight - 25.0).abs() < 0.1);
 
-        // 测试满量程
         let weight = calibration.convert_weight_ad_to_value(4095.0);
         assert!((weight - 50.0).abs() < 0.01);
     }

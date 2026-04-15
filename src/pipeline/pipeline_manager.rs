@@ -8,7 +8,7 @@ use crate::repositories::storage_repository::StorageRepository;
 use crate::repositories::sqlite_storage_repository::SqliteStorageRepository;
 use crate::repositories::sensor_data_repository::SensorDataRepository;
 use crate::models::crane_config::CraneConfig;
-use crate::models::sensor_calibration::{SensorCalibration, AlarmThresholds};
+use sensor_core::{SensorCalibration, AlarmThresholds};
 use crate::models::rated_load_table::RatedLoadTable;
 use super::shared_buffer::{ProcessedDataBuffer, SharedBuffer};
 use super::collection_pipeline::{CollectionPipeline, CollectionPipelineConfig};
