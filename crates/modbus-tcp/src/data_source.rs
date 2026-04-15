@@ -249,8 +249,10 @@ impl ModbusDataSource {
 }
 
 impl SensorSource for ModbusDataSource {
-    fn read_all(&self) -> SensorResult<(f64, f64, f64)> {
-        self.read_all().map_err(Self::convert_error)
+    fn read_all(&self) -> SensorResult<(f64, f64, f64, bool, bool)> {
+        let (ad1, ad2, ad3) = self.read_all().map_err(Self::convert_error)?;
+        // Modbus 数据源暂时不支持数字输入，返回 false
+        Ok((ad1, ad2, ad3, false, false))
     }
 
     fn is_connected(&self) -> bool {

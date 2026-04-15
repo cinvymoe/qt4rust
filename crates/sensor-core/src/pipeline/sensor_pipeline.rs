@@ -72,8 +72,8 @@ impl<S: SensorSource + Send + Sync + 'static> SensorPipeline<S> {
                 let mut retry_count = 0;
                 let data = loop {
                     match block_in_place(|| source.read_all()) {
-                        Ok((weight, angle, radius)) => {
-                            break Ok((weight, angle, radius));
+                        Ok((weight, angle, radius, di1, di2)) => {
+                            break Ok((weight, angle, radius, di1, di2));
                         }
                         Err(e) => {
                             retry_count += 1;
@@ -87,14 +87,14 @@ impl<S: SensorSource + Send + Sync + 'static> SensorPipeline<S> {
                 };
 
                 match data {
-                    Ok((weight, angle, radius)) => {
+                    Ok((weight, angle, radius, di1, di2)) => {
                         let sensor_data = SourceSensorData::new(
                             source_id,
                             weight as u16,
                             angle as u16,
                             radius as u16,
-                            false,
-                            false,
+                            di1,
+                            di2,
                             std::time::SystemTime::now()
                                 .duration_since(std::time::UNIX_EPOCH)
                                 .unwrap()
@@ -149,7 +149,7 @@ mod tests {
     use tokio::sync::mpsc;
 
     fn create_test_pipeline(
-        data: Vec<(f64, f64, f64)>,
+        data: Vec<(f64, f64, f64, bool, bool)>,
     ) -> (SensorPipeline<MockSensorSource>, mpsc::Receiver<SourceSensorData>) {
         let (tx, rx) = mpsc::channel(100);
         let source = Arc::new(MockSensorSource::new(data));
@@ -164,7 +164,7 @@ mod tests {
 
     #[test]
     fn test_pipeline_creation() {
-        let (pipeline, _rx) = create_test_pipeline(vec![(1.0, 2.0, 3.0)]);
+        let (pipeline, _rx) = create_test_pipeline(vec![(1.0, 2.0, 3.0, false, false)]);
 
         assert_eq!(pipeline.id, DataSourceId::Mock);
         assert!(!pipeline.is_running());
@@ -172,7 +172,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_pipeline_start_sets_running() {
-        let (mut pipeline, _rx) = create_test_pipeline(vec![(1.0, 2.0, 3.0)]);
+        let (mut pipeline, _rx) = create_test_pipeline(vec![(1.0, 2.0, 3.0, false, false)]);
 
         let result = pipeline.start();
         assert!(result.is_ok());
@@ -183,7 +183,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_pipeline_start_twice_fails() {
-        let (mut pipeline, _rx) = create_test_pipeline(vec![(1.0, 2.0, 3.0)]);
+        let (mut pipeline, _rx) = create_test_pipeline(vec![(1.0, 2.0, 3.0, false, false)]);
 
         let result1 = pipeline.start();
         assert!(result1.is_ok());
@@ -200,7 +200,7 @@ mod tests {
 
     #[test]
     fn test_pipeline_stop_when_not_running_fails() {
-        let (mut pipeline, _rx) = create_test_pipeline(vec![(1.0, 2.0, 3.0)]);
+        let (mut pipeline, _rx) = create_test_pipeline(vec![(1.0, 2.0, 3.0, false, false)]);
 
         let result = pipeline.stop();
         assert!(result.is_err());
@@ -212,7 +212,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_pipeline_sends_data_through_channel() {
-        let (mut pipeline, mut rx) = create_test_pipeline(vec![(100.0, 200.0, 300.0)]);
+        let (mut pipeline, mut rx) = create_test_pipeline(vec![(100.0, 200.0, 300.0, true, false)]);
 
         pipeline.start().unwrap();
 
@@ -225,13 +225,15 @@ mod tests {
         assert_eq!(data.weight_ad, 100);
         assert_eq!(data.angle_ad, 200);
         assert_eq!(data.radius_ad, 300);
+        assert!(data.di1);
+        assert!(!data.di2);
 
         let _ = pipeline.stop();
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_pipeline_stop_aborts_task() {
-        let (mut pipeline, _rx) = create_test_pipeline(vec![(1.0, 2.0, 3.0)]);
+        let (mut pipeline, _rx) = create_test_pipeline(vec![(1.0, 2.0, 3.0, false, false)]);
 
         pipeline.start().unwrap();
         assert!(pipeline.is_running());
