@@ -588,27 +588,21 @@ impl SensorDataRepository for SqliteStorageRepository {
             .map_err(|e| format!("Failed to begin transaction: {}", e))?;
 
         let mut saved_count = 0;
+        let sql = SensorData::insert_sql();
 
-        for (idx, item) in data.iter().enumerate() {
-            let timestamp = SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|d| d.as_secs() as i64)
-                .unwrap_or(0);
+        for item in data {
+            let values = item.field_values();
 
-            let result = conn.execute(
-                "INSERT OR IGNORE INTO sensor_data
-                 (timestamp, sequence_number, ad1_load, ad2_radius, ad3_angle)
-                 VALUES (?1, ?2, ?3, ?4, ?5)",
-                params![
-                    timestamp,
-                    idx as i64,
-                    item.ad1_load,
-                    item.ad2_radius,
-                    item.ad3_angle,
-                ],
+            // Runtime assertion to ensure field count matches
+            assert_eq!(
+                values.len(),
+                SensorData::columns().len(),
+                "field_values() returned {} values but columns() defines {} fields",
+                values.len(),
+                SensorData::columns().len()
             );
 
-            match result {
+            match conn.execute(&sql, &*values) {
                 Ok(rows) => {
                     saved_count += rows;
                 }
@@ -622,6 +616,7 @@ impl SensorDataRepository for SqliteStorageRepository {
         conn.execute("COMMIT", [])
             .map_err(|e| format!("Failed to commit transaction: {}", e))?;
 
+        tracing::info!("Saved {} sensor records to database", saved_count);
         Ok(saved_count)
     }
 
