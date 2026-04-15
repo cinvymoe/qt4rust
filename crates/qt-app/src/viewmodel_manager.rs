@@ -6,6 +6,12 @@ use qt_rust_demo::pipeline::shared_buffer::SharedBuffer;
 use qt_rust_demo::pipeline::shared_sensor_buffer::SharedSensorBuffer;
 use std::sync::{Arc, Mutex};
 use config_hot_reload::{HotReloadConfigManager, SharedConfigRefs, register_all_subscribers};
+use sensor_core::{
+    DataSourceId,
+    PipelineConfig,
+    SensorPipelineManager,
+};
+use sensor_simulator::prelude::SimulatedDataSource;
 
 /// ViewModel 管理器
 pub struct ViewModelManager {
@@ -13,10 +19,9 @@ pub struct ViewModelManager {
     shared_buffer: Option<SharedBuffer>,
     shared_sensor_buffer: Option<SharedSensorBuffer>,
     viewmodel_ready: bool,
-    /// 热加载配置管理器
     hot_reload_manager: Option<HotReloadConfigManager>,
-    /// 共享配置引用
     shared_config_refs: Option<SharedConfigRefs>,
+    sensor_manager: Option<SensorPipelineManager>,
 }
 
 impl ViewModelManager {
@@ -29,6 +34,7 @@ impl ViewModelManager {
             viewmodel_ready: false,
             hot_reload_manager: None,
             shared_config_refs: None,
+            sensor_manager: None,
         }
     }
     
@@ -133,6 +139,10 @@ impl ViewModelManager {
         self.pipeline_manager = Some(manager);
         self.shared_buffer = Some(shared_buffer.clone());
         self.shared_sensor_buffer = shared_sensor_buffer;
+        
+        // Initialize the new SensorPipelineManager
+        self.initialize_sensor_pipeline_manager(db_path);
+        
         self.viewmodel_ready = true;
 
         tracing::info!("Three-pipeline data collection started");
@@ -144,6 +154,42 @@ impl ViewModelManager {
         if self.hot_reload_manager.is_some() {
             tracing::info!("配置热加载已启用 - 修改配置文件后立即生效");
         }
+    }
+    
+    fn initialize_sensor_pipeline_manager(&mut self, db_path: &str) {
+        tracing::info!("Initializing SensorPipelineManager...");
+        
+        let mut sensor_manager = SensorPipelineManager::new();
+        
+        // Register simulated data source
+        let simulated_source = Arc::new(SimulatedDataSource::new());
+        let config = PipelineConfig::default();
+        sensor_manager.register_source(DataSourceId::Simulator, simulated_source, config);
+        
+        // Set up storage repository
+        let storage_result = qt_threading_utils::runtime::global_runtime().block_on(async {
+            qt_rust_demo::repositories::sqlite_storage_repository::SqliteStorageRepository::new(db_path).await
+        });
+        
+        match storage_result {
+            Ok(storage) => {
+                let storage_arc: Arc<dyn sensor_core::StorageRepository> = Arc::new(storage);
+                sensor_manager.set_storage_repository(storage_arc);
+                
+                // Start all pipelines
+                if let Err(e) = sensor_manager.start_all() {
+                    tracing::error!("Failed to start SensorPipelineManager: {}", e);
+                } else {
+                    tracing::info!("SensorPipelineManager started successfully with {} sensor(s)", 
+                        sensor_manager.sensor_count());
+                }
+            }
+            Err(e) => {
+                tracing::error!("Failed to create storage repository for SensorPipelineManager: {}", e);
+            }
+        }
+        
+        self.sensor_manager = Some(sensor_manager);
     }
 
     /// 获取共享缓冲区（用于初始化 ViewModel 的显示管道）
@@ -158,12 +204,21 @@ impl ViewModelManager {
 
     /// 停止数据采集
     pub fn stop_data_collection(&mut self) {
+        // Stop the legacy pipeline manager
         if let Some(mut manager) = self.pipeline_manager.take() {
             manager.stop_all();
-            tracing::info!("Data collection stopped");
+            tracing::info!("Legacy pipeline manager stopped");
         }
+        
+        // Stop the new sensor pipeline manager
+        if let Some(mut sensor_manager) = self.sensor_manager.take() {
+            sensor_manager.stop_all();
+            tracing::info!("SensorPipelineManager stopped");
+        }
+        
         self.shared_buffer = None;
         self.viewmodel_ready = false;
+        tracing::info!("Data collection stopped");
     }
 }
 

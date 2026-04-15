@@ -1,4 +1,5 @@
 use crate::error::SensorResult;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub trait SensorSource {
     fn read_all(&self) -> SensorResult<(f64, f64, f64)>;
@@ -18,7 +19,7 @@ pub trait SensorProvider {
 #[cfg(test)]
 pub struct MockSensorSource {
     data: Vec<(f64, f64, f64)>,
-    current_index: std::cell::Cell<usize>,
+    current_index: AtomicUsize,
 }
 
 #[cfg(test)]
@@ -26,7 +27,7 @@ impl MockSensorSource {
     pub fn new(data: Vec<(f64, f64, f64)>) -> Self {
         Self {
             data,
-            current_index: std::cell::Cell::new(0),
+            current_index: AtomicUsize::new(0),
         }
     }
 }
@@ -34,13 +35,10 @@ impl MockSensorSource {
 #[cfg(test)]
 impl SensorSource for MockSensorSource {
     fn read_all(&self) -> SensorResult<(f64, f64, f64)> {
-        let index = self.current_index.get();
+        let index = self.current_index.fetch_add(1, Ordering::SeqCst);
         if index < self.data.len() {
-            let value = self.data[index];
-            self.current_index.set(index + 1);
-            Ok(value)
+            Ok(self.data[index])
         } else {
-            // Return last value when exhausted
             Ok(*self.data.last().unwrap_or(&(0.0, 0.0, 0.0)))
         }
     }

@@ -1299,6 +1299,7 @@ dependencies = [
  "qt-rust-demo",
  "qt-threading-utils",
  "sensor-core",
+ "sensor-simulator",
  "tracing",
 ]
 
@@ -1572,8 +1573,11 @@ checksum = "d767eb0aabc880b29956c35734170f26ed551a859dbd361d140cdbeca61ab1e2"
 name = "sensor-core"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
+ "qt-threading-utils",
  "serde",
  "thiserror 1.0.69",
+ "tokio",
 ]
 
 [[package]]

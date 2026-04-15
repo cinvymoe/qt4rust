@@ -9,3 +9,6 @@ license = "MIT"
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "1.0"
+async-trait = "0.1"
+tokio = { version = "1.0", features = ["sync", "time", "rt", "rt-multi-thread", "macros", "test-util"] }
+qt-threading-utils = { path = "../qt-threading-utils" }

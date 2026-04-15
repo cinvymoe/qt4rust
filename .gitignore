@@ -65,7 +65,11 @@ crane_data_device.db
 *.db-shm
 *.db-wal
 .opencode
-.sisyphus/*
+
+.sisyphus
 
 # Development
 /dev/
+
+# Superpowers
+docs/superpowers/

@@ -8,6 +8,10 @@ use rusqlite::{Connection, params};
 use crate::repositories::storage_repository::StorageRepository;
 use crate::repositories::sensor_data_repository::SensorDataRepository;
 use crate::models::{ProcessedData, AlarmRecord, AlarmType, SensorData};
+use sensor_core::storage::repository::StorageRepository as SensorCoreStorageRepository;
+use sensor_core::pipeline::aggregator::AggregatedSensorData;
+use sensor_core::pipeline::data_source::DataSourceId;
+use sensor_core::error::StorageError;
 
 /// SQLite 存储仓库
 pub struct SqliteStorageRepository {
@@ -672,6 +676,73 @@ impl SensorDataRepository for SqliteStorageRepository {
             .map_err(|e| format!("Health check failed: {}", e))?;
 
         Ok(())
+    }
+}
+
+// Implementation of sensor-core StorageRepository trait
+#[async_trait]
+impl SensorCoreStorageRepository for SqliteStorageRepository {
+    async fn save_aggregated_data_batch(
+        &self,
+        data: Vec<AggregatedSensorData>,
+    ) -> Result<(), StorageError> {
+        if data.is_empty() {
+            return Ok(());
+        }
+
+        // Convert AggregatedSensorData to ProcessedData and save
+        let records: Vec<ProcessedData> = data
+            .iter()
+            .enumerate()
+            .map(|(idx, agg)| self.convert_aggregated_to_processed(agg, idx as u64))
+            .collect();
+
+        self.save_runtime_data_batch(&records)
+            .await
+            .map_err(StorageError::Database)?;
+
+        Ok(())
+    }
+
+    async fn query_recent_aggregated_data(
+        &self,
+        _limit: usize,
+    ) -> Result<Vec<AggregatedSensorData>, StorageError> {
+        // For now, UI uses existing query methods
+        // Return empty vector as the main UI path uses query_recent_runtime_data
+        Ok(Vec::new())
+    }
+
+    async fn health_check(&self) -> Result<(), StorageError> {
+        StorageRepository::health_check(self)
+            .await
+            .map_err(|e| StorageError::Database(e))
+    }
+
+    async fn get_last_sequence(&self) -> Result<u64, StorageError> {
+        self.get_last_stored_sequence()
+            .await
+            .map_err(StorageError::Database)
+    }
+}
+
+impl SqliteStorageRepository {
+    /// Converts AggregatedSensorData to ProcessedData for storage.
+    ///
+    /// Uses primary source (Modbus) if available, otherwise falls back to first available source.
+    fn convert_aggregated_to_processed(
+        &self,
+        aggregated: &AggregatedSensorData,
+        sequence_number: u64,
+    ) -> ProcessedData {
+        // Prefer Modbus source, fallback to first available
+        let sensor_data = aggregated
+            .get_source(DataSourceId::Modbus)
+            .or_else(|| aggregated.sources.values().next())
+            .cloned()
+            .unwrap_or_else(|| SensorData::new(0.0, 0.0, 0.0));
+
+        ProcessedData::from_sensor_data(sensor_data, sequence_number)
     }
 }
 
