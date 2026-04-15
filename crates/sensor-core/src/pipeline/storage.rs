@@ -150,7 +150,7 @@ mod tests {
         let mut sources = HashMap::new();
         sources.insert(
             DataSourceId::Simulator,
-            SensorData::new(weight, 50.0, 45.0),
+            SensorData::new(weight, 50.0, 45.0, false, false),
         );
         AggregatedSensorData::new(sources)
     }

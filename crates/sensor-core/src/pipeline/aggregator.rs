@@ -102,6 +102,8 @@ impl AggregatorPipeline {
                             data.weight_ad as f64,
                             data.radius_ad as f64,
                             data.angle_ad as f64,
+                            false, // digital_input_0 - TODO: add to SourceSensorData
+                            false, // digital_input_1 - TODO: add to SourceSensorData
                         );
 
                         cache.insert(data.source, (sensor_data.clone(), Instant::now()));
@@ -175,7 +177,7 @@ mod tests {
     #[test]
     fn test_aggregated_sensor_data_creation() {
         let mut sources = HashMap::new();
-        sources.insert(DataSourceId::Modbus, SensorData::new(100.0, 50.0, 45.0));
+        sources.insert(DataSourceId::Modbus, SensorData::new(100.0, 50.0, 45.0, false, false));
         let aggregated = AggregatedSensorData::new(sources);
         assert_eq!(aggregated.valid_source_count, 1);
     }
@@ -183,8 +185,8 @@ mod tests {
     #[test]
     fn test_aggregated_sensor_data_add_source() {
         let mut aggregated = AggregatedSensorData::new(HashMap::new());
-        aggregated.add_source(DataSourceId::Modbus, SensorData::new(100.0, 50.0, 45.0));
-        aggregated.add_source(DataSourceId::Simulator, SensorData::new(101.0, 51.0, 46.0));
+        aggregated.add_source(DataSourceId::Modbus, SensorData::new(100.0, 50.0, 45.0, false, false));
+        aggregated.add_source(DataSourceId::Simulator, SensorData::new(101.0, 51.0, 46.0, false, false));
         assert_eq!(aggregated.valid_source_count, 2);
     }
 
