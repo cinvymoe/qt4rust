@@ -32,3 +32,20 @@ register_address = 2
 register_count = 1
 data_type = "UInt16"
 byte_order = "BigEndian"
+
+# 数字输入配置
+[digital_input]
+source_type = "simulator"  # simulator | gpio | spi | modbus
+toggle_interval_secs = 10
+
+# GPIO 配置示例（仅 source_type = "gpio" 时需要）
+# [digital_input.gpio]
+# pin_0 = 17
+# pin_1 = 18
+# active_low = false
+
+# SPI 配置示例（仅 source_type = "spi" 时需要）
+# [digital_input.spi]
+# device = "/dev/spidev0.0"
+# chip_select = 0
+# speed_hz = 1000000

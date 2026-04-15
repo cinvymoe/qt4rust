@@ -4,7 +4,7 @@ use crate::pipeline::data_source::DataSourceId;
 use crate::pipeline::sensor_pipeline::SensorPipeline;
 use crate::pipeline::storage::StoragePipeline;
 use crate::storage::repository::StorageRepository;
-use crate::traits::SensorSource;
+use sensor_traits::SensorSource;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::mpsc;
@@ -102,6 +102,22 @@ impl SensorPipelineManager {
         config: PipelineConfig,
     ) {
         let pipeline = SensorPipeline::new(id, source, config, self.sensor_tx.clone());
+        self.sensor_pipelines.insert(id, Box::new(pipeline));
+    }
+
+    /// Registers a boxed sensor source (dynamic dispatch).
+    ///
+    /// # Arguments
+    /// * `id` - Unique identifier for the data source
+    /// * `source` - Boxed sensor source implementation
+    /// * `config` - Configuration for reading from this source
+    pub fn register_boxed_source(
+        &mut self,
+        id: DataSourceId,
+        source: Box<dyn SensorSource + Send + Sync>,
+        config: PipelineConfig,
+    ) {
+        let pipeline = SensorPipeline::<crate::pipeline::sensor_pipeline::BoxedSensorSource>::new_boxed(id, source, config, self.sensor_tx.clone());
         self.sensor_pipelines.insert(id, Box::new(pipeline));
     }
 
@@ -239,7 +255,7 @@ impl Default for SensorPipelineManager {
 mod tests {
     use super::*;
     use crate::storage::repository::MockStorageRepository;
-    use crate::traits::MockSensorSource;
+    use sensor_traits::MockSensorSource;
     use std::time::Duration;
 
     #[test]

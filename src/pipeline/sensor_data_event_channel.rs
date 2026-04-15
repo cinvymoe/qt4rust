@@ -69,6 +69,8 @@ mod tests {
             ad1_load: 10.0,
             ad2_radius: 5.0,
             ad3_angle: 45.0,
+            digital_input_0: false,
+            digital_input_1: false,
         }
     }
 

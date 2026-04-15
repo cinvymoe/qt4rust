@@ -4,8 +4,8 @@ pub mod data;
 pub mod error;
 pub mod pipeline;
 pub mod sensors;
+pub mod source;
 pub mod storage;
-pub mod traits;
 
 pub use algorithms::ad_converter::AdConverter;
 pub use calibration::sensor_calibration::{
@@ -13,11 +13,13 @@ pub use calibration::sensor_calibration::{
     SensorCalibration, SensorCalibrationParams,
 };
 pub use data::sensor_data::SensorData;
-pub use error::{SensorError, SensorResult};
+pub use error::{PipelineError, SensorError, SensorResult, StorageError};
 pub use pipeline::{
     AggregatedSensorData, AggregationStrategy, AggregatorPipeline, DataSourceId, PipelineConfig,
     SensorPipelineManager, SourceSensorData, StoragePipelineConfig,
 };
 pub use sensors::{AngleSensor, CalibratedSensor, LoadSensor, RadiusSensor};
 pub use storage::{ColumnDef, DatabaseSchema, MockStorageRepository, StorageRepository};
-pub use traits::{SensorProvider, SensorSource};
+pub use source::{init_builtin_sources, SensorSourceFactory};
+
+pub use sensor_traits::{AnalogSource, DigitalInputSource, SensorProvider, SensorSource};

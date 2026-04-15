@@ -209,7 +209,7 @@ mod tests {
     #[test]
     fn test_moment_alarm_checker() {
         let checker = MomentAlarmChecker::new(90.0, 100.0);
-        let sensor_data = SensorData::new(23.0, 10.0, 60.0);
+        let sensor_data = SensorData::new(23.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
 
         let result = checker.check(&processed);
@@ -220,7 +220,7 @@ mod tests {
     #[test]
     fn test_angle_alarm_checker() {
         let checker = AngleAlarmChecker::new(0.0, 85.0);
-        let sensor_data = SensorData::new(20.0, 10.0, 90.0); // 角度超限
+        let sensor_data = SensorData::new(20.0, 10.0, 90.0, false, false); // 角度超限
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
 
         let result = checker.check(&processed);

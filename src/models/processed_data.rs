@@ -218,7 +218,7 @@ mod tests {
 
     #[test]
     fn test_from_sensor_data() {
-        let sensor_data = SensorData::new(20.0, 10.0, 60.0);
+        let sensor_data = SensorData::new(20.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
 
         assert_eq!(processed.sequence_number, 1);
@@ -233,7 +233,7 @@ mod tests {
     #[test]
     fn test_warning_detection() {
         // 90-100% triggers warning but not danger
-        let sensor_data = SensorData::new(23.0, 10.0, 60.0); // 92%
+        let sensor_data = SensorData::new(23.0, 10.0, 60.0, false, false); // 92%
         let processed = ProcessedData::from_sensor_data(sensor_data, 2);
 
         assert!(processed.is_warning); // 92% >= 90%
@@ -244,7 +244,7 @@ mod tests {
     #[test]
     fn test_danger_detection() {
         // >=100% triggers both warning and danger
-        let sensor_data = SensorData::new(25.0, 10.0, 60.0); // 100%
+        let sensor_data = SensorData::new(25.0, 10.0, 60.0, false, false); // 100%
         let processed = ProcessedData::from_sensor_data(sensor_data, 2);
 
         assert!(processed.is_warning); // 100% >= 90%
@@ -254,7 +254,7 @@ mod tests {
 
     #[test]
     fn test_validation_error() {
-        let sensor_data = SensorData::new(-5.0, 10.0, 60.0); // Invalid negative load
+        let sensor_data = SensorData::new(-5.0, 10.0, 60.0, false, false); // Invalid negative load
         let processed = ProcessedData::from_sensor_data(sensor_data, 3);
 
         assert!(processed.validation_error.is_some());
@@ -268,7 +268,7 @@ mod tests {
 
         // 创建传感器数据（AD 值：中点，角度为0使工作半径=臂长）
         // ad3=0 表示臂角为0°（水平），此时 working_radius = boom_length
-        let sensor_data = SensorData::new(2047.5, 2047.5, 0.0);
+        let sensor_data = SensorData::new(2047.5, 2047.5, 0.0, false, false);
 
         // 使用配置处理数据
         let processed = ProcessedData::from_sensor_data_with_config(sensor_data, &config, 1);
@@ -288,7 +288,7 @@ mod tests {
         // 创建传感器数据，工作半径对应 5 米（AD 值约 1023.75）
         // ad3=0 使臂角为0°，此时 working_radius = boom_length
         // 根据默认载荷表，5 米对应 40 吨额定载荷
-        let sensor_data = SensorData::new(2047.5, 1023.75, 0.0);
+        let sensor_data = SensorData::new(2047.5, 1023.75, 0.0, false, false);
 
         let processed = ProcessedData::from_sensor_data_with_config(sensor_data, &config, 1);
 
@@ -308,7 +308,7 @@ mod tests {
         // 额定载荷 25 吨
         // 需要载荷 = 25 * 0.9 = 22.5 吨
         // AD 值 = 22.5 / 50 * 4095 ≈ 1842.75
-        let sensor_data = SensorData::new(1842.75, 2047.5, 0.0);
+        let sensor_data = SensorData::new(1842.75, 2047.5, 0.0, false, false);
 
         let processed = ProcessedData::from_sensor_data_with_config(sensor_data, &config, 1);
 
@@ -328,7 +328,7 @@ mod tests {
         // 额定载荷 25 吨
         // 需要载荷 = 25 吨
         // AD 值 = 25 / 50 * 4095 ≈ 2047.5
-        let sensor_data = SensorData::new(2047.5, 2047.5, 0.0);
+        let sensor_data = SensorData::new(2047.5, 2047.5, 0.0, false, false);
 
         let processed = ProcessedData::from_sensor_data_with_config(sensor_data, &config, 1);
 

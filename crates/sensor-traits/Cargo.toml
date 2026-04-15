@@ -1,0 +1,15 @@
+[package]
+name = "sensor-traits"
+version = "0.1.0"
+edition = "2021"
+authors = ["Qt Rust Demo Team"]
+description = "Core sensor traits for abstraction layer"
+license = "MIT"
+
+[dependencies]
+thiserror = "1.0"
+async-trait = { version = "0.1", optional = true }
+
+[features]
+default = []
+async = ["async-trait"]

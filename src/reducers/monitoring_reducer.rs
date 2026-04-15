@@ -106,7 +106,7 @@ mod tests {
         let state = MonitoringState::default();
 
         // 创建已处理的数据
-        let sensor_data = SensorData::new(2047.5, 2047.5, 2047.5);
+        let sensor_data = SensorData::new(2047.5, 2047.5, 2047.5, false, false);
         let processed_data = ProcessedData::from_sensor_data(sensor_data, 1);
 
         let new_state = reducer.reduce(

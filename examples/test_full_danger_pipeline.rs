@@ -90,7 +90,7 @@ async fn main() {
     println!("周期 1-3: 正常载荷");
     for _i in 1..=3 {
         sequence += 1;
-        let sensor_data = SensorData::new(10.0, 10.0, 60.0); // 低载荷
+        let sensor_data = SensorData::new(10.0, 10.0, 60.0, false, false); // 低载荷
         simulate_collection_cycle(&pipeline, sensor_data, sequence, &mut last_was_danger).await;
         sleep(Duration::from_millis(50)).await;
     }
@@ -99,7 +99,7 @@ async fn main() {
     // 周期 4: 首次报警
     println!("周期 4: 载荷升高，触发报警");
     sequence += 1;
-    let sensor_data = SensorData::new(23.0, 10.0, 60.0); // 高载荷
+    let sensor_data = SensorData::new(23.0, 10.0, 60.0, false, false); // 高载荷
     simulate_collection_cycle(&pipeline, sensor_data, sequence, &mut last_was_danger).await;
     sleep(Duration::from_millis(100)).await;
     println!();
@@ -108,7 +108,7 @@ async fn main() {
     println!("周期 5-7: 载荷持续高位");
     for i in 5..=7 {
         sequence += 1;
-        let sensor_data = SensorData::new(24.0 + (i as f64 * 0.1), 10.0, 60.0);
+        let sensor_data = SensorData::new(24.0 + (i as f64 * 0.1), 10.0, 60.0, false, false);
         simulate_collection_cycle(&pipeline, sensor_data, sequence, &mut last_was_danger).await;
         sleep(Duration::from_millis(50)).await;
     }
@@ -117,7 +117,7 @@ async fn main() {
     // 周期 8: 报警解除
     println!("周期 8: 载荷下降，报警解除");
     sequence += 1;
-    let sensor_data = SensorData::new(12.0, 10.0, 60.0); // 载荷下降
+    let sensor_data = SensorData::new(12.0, 10.0, 60.0, false, false); // 载荷下降
     simulate_collection_cycle(&pipeline, sensor_data, sequence, &mut last_was_danger).await;
     sleep(Duration::from_millis(100)).await;
     println!();
@@ -126,7 +126,7 @@ async fn main() {
     println!("周期 9-10: 正常载荷");
     for _ in 9..=10 {
         sequence += 1;
-        let sensor_data = SensorData::new(8.0, 10.0, 60.0);
+        let sensor_data = SensorData::new(8.0, 10.0, 60.0, false, false);
         simulate_collection_cycle(&pipeline, sensor_data, sequence, &mut last_was_danger).await;
         sleep(Duration::from_millis(50)).await;
     }
@@ -135,7 +135,7 @@ async fn main() {
     // 周期 11: 再次报警
     println!("周期 11: 载荷再次升高");
     sequence += 1;
-    let sensor_data = SensorData::new(25.0, 10.0, 60.0);
+    let sensor_data = SensorData::new(25.0, 10.0, 60.0, false, false);
     simulate_collection_cycle(&pipeline, sensor_data, sequence, &mut last_was_danger).await;
     sleep(Duration::from_millis(100)).await;
     println!();
@@ -143,7 +143,7 @@ async fn main() {
     // 周期 12: 报警解除
     println!("周期 12: 载荷下降");
     sequence += 1;
-    let sensor_data = SensorData::new(10.0, 10.0, 60.0);
+    let sensor_data = SensorData::new(10.0, 10.0, 60.0, false, false);
     simulate_collection_cycle(&pipeline, sensor_data, sequence, &mut last_was_danger).await;
     sleep(Duration::from_millis(100)).await;
     println!();

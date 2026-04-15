@@ -69,7 +69,7 @@ mod tests {
     #[test]
     fn test_push_and_get_latest() {
         let mut buffer = SensorDataBuffer::new(10);
-        let data = SensorData::new(100.0, 50.0, 45.0);
+        let data = SensorData::new(100.0, 50.0, 45.0, false, false);
 
         buffer.push(data.clone());
 
@@ -84,7 +84,7 @@ mod tests {
     #[test]
     fn test_get_latest_raw() {
         let mut buffer = SensorDataBuffer::new(10);
-        let data = SensorData::new(200.0, 75.0, 60.0);
+        let data = SensorData::new(200.0, 75.0, 60.0, false, false);
 
         buffer.push(data);
 
@@ -102,7 +102,13 @@ mod tests {
 
         // Add 10 items
         for i in 0..10 {
-            buffer.push(SensorData::new(i as f64, (i * 2) as f64, (i * 3) as f64));
+            buffer.push(SensorData::new(
+                i as f64,
+                (i * 2) as f64,
+                (i * 3) as f64,
+                false,
+                false,
+            ));
         }
 
         // Should only keep last 5
@@ -117,7 +123,7 @@ mod tests {
         let mut buffer = SensorDataBuffer::new(10);
 
         for i in 0..5 {
-            buffer.push(SensorData::new(i as f64, 0.0, 0.0));
+            buffer.push(SensorData::new(i as f64, 0.0, 0.0, false, false));
         }
 
         // Get history returns newest first
@@ -132,13 +138,13 @@ mod tests {
     fn test_latest_updates_correctly() {
         let mut buffer = SensorDataBuffer::new(10);
 
-        buffer.push(SensorData::new(1.0, 1.0, 1.0));
+        buffer.push(SensorData::new(1.0, 1.0, 1.0, false, false));
         assert_eq!(buffer.get_latest_raw().unwrap().0, 1.0);
 
-        buffer.push(SensorData::new(2.0, 2.0, 2.0));
+        buffer.push(SensorData::new(2.0, 2.0, 2.0, false, false));
         assert_eq!(buffer.get_latest_raw().unwrap().0, 2.0);
 
-        buffer.push(SensorData::new(3.0, 3.0, 3.0));
+        buffer.push(SensorData::new(3.0, 3.0, 3.0, false, false));
         assert_eq!(buffer.get_latest_raw().unwrap().0, 3.0);
     }
 
@@ -150,7 +156,7 @@ mod tests {
         // Test that we can write and read through the lock
         {
             let mut locked = shared.write().unwrap();
-            locked.push(SensorData::new(42.0, 24.0, 12.0));
+            locked.push(SensorData::new(42.0, 24.0, 12.0, false, false));
         }
 
         {

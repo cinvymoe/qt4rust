@@ -9,6 +9,7 @@ members = [
     "crates/qt-app",
     "crates/config-hot-reload",
     "crates/sensor-core",
+    "crates/sensor-traits",
 ]
 resolver = "2"
 
@@ -21,6 +22,7 @@ sensor-simulator = { path = "crates/sensor-simulator" }
 crane-data-layer = { path = "crates/crane-data-layer" }
 modbus-tcp = { path = "crates/modbus-tcp" }
 sensor-core = { path = "crates/sensor-core" }
+sensor-traits = { path = "crates/sensor-traits" }
 tracing = "0.1"
 
 [package]

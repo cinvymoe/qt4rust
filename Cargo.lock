@@ -1106,7 +1106,7 @@ name = "modbus-tcp"
 version = "0.1.0"
 dependencies = [
  "byteorder",
- "sensor-core",
+ "sensor-traits",
  "thiserror 1.0.69",
  "tokio",
  "tokio-modbus",
@@ -1299,7 +1299,6 @@ dependencies = [
  "qt-rust-demo",
  "qt-threading-utils",
  "sensor-core",
- "sensor-simulator",
  "tracing",
 ]
 
@@ -1574,10 +1573,17 @@ name = "sensor-core"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "modbus-tcp",
  "qt-threading-utils",
+ "rand 0.8.5",
+ "rusqlite",
+ "sensor-traits",
  "serde",
+ "tempfile",
  "thiserror 1.0.69",
  "tokio",
+ "toml",
+ "tracing",
 ]
 
 [[package]]
@@ -1585,6 +1591,14 @@ name = "sensor-simulator"
 version = "0.2.0"
 dependencies = [
  "sensor-core",
+]
+
+[[package]]
+name = "sensor-traits"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "thiserror 1.0.69",
 ]
 
 [[package]]

@@ -45,7 +45,7 @@ async fn main() {
     println!("  - last_was_danger = false");
     println!("  - 预期：保存报警记录，设置 last_was_danger = true");
 
-    let sensor_data_1 = SensorData::new(23.0, 10.0, 60.0); // 高载荷，触发报警
+    let sensor_data_1 = SensorData::new(23.0, 10.0, 60.0, false, false); // 高载荷，触发报警
     let processed_1 = ProcessedData::from_sensor_data(sensor_data_1, 1);
     assert!(processed_1.is_danger, "数据应该触发报警");
 
@@ -63,7 +63,7 @@ async fn main() {
     println!("  - last_was_danger = true");
     println!("  - 预期：跳过，不保存重复报警");
 
-    let sensor_data_2 = SensorData::new(24.0, 10.0, 60.0); // 仍然高载荷
+    let sensor_data_2 = SensorData::new(24.0, 10.0, 60.0, false, false); // 仍然高载荷
     let processed_2 = ProcessedData::from_sensor_data(sensor_data_2, 2);
     assert!(processed_2.is_danger, "数据应该触发报警");
 
@@ -81,7 +81,7 @@ async fn main() {
     println!("  - last_was_danger = true");
     println!("  - 预期：调用 notify_danger_cleared()，重置 last_was_danger = false");
 
-    let sensor_data_3 = SensorData::new(10.0, 10.0, 60.0); // 低载荷，解除报警
+    let sensor_data_3 = SensorData::new(10.0, 10.0, 60.0, false, false); // 低载荷，解除报警
     let processed_3 = ProcessedData::from_sensor_data(sensor_data_3, 3);
     assert!(!processed_3.is_danger, "数据不应该触发报警");
 
@@ -101,7 +101,7 @@ async fn main() {
     println!("  - last_was_danger = false（已重置）");
     println!("  - 预期：保存新的报警记录");
 
-    let sensor_data_4 = SensorData::new(25.0, 10.0, 60.0); // 再次高载荷
+    let sensor_data_4 = SensorData::new(25.0, 10.0, 60.0, false, false); // 再次高载荷
     let processed_4 = ProcessedData::from_sensor_data(sensor_data_4, 4);
     assert!(processed_4.is_danger, "数据应该触发报警");
 
@@ -121,7 +121,7 @@ async fn main() {
 
     pipeline.notify_danger_cleared();
 
-    let sensor_data_5 = SensorData::new(8.0, 10.0, 60.0); // 低载荷
+    let sensor_data_5 = SensorData::new(8.0, 10.0, 60.0, false, false); // 低载荷
     let processed_5 = ProcessedData::from_sensor_data(sensor_data_5, 5);
     assert!(!processed_5.is_danger, "数据不应该触发报警");
 

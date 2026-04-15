@@ -1,7 +1,7 @@
 use crate::client::{ModbusProvider, ModbusTcpClient};
 use crate::config::{ModbusByteOrder, ModbusDataType, ModbusTcpConfig};
 use crate::error::{ModbusError, ModbusResult};
-use sensor_core::{SensorError, SensorResult, SensorSource};
+use sensor_traits::{SensorError, SensorResult, SensorSource};
 
 pub struct ModbusDataSource {
     ad1: ModbusTcpClient,

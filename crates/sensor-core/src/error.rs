@@ -1,26 +1,6 @@
 use thiserror::Error;
 
-#[derive(Debug, Clone, Error)]
-pub enum SensorError {
-    #[error("读取传感器数据失败: {0}")]
-    ReadError(String),
-    #[error("初始化传感器失败: {0}")]
-    InitError(String),
-    #[error("传感器连接超时")]
-    Timeout,
-    #[error("传感器配置错误: {0}")]
-    ConfigError(String),
-    #[error("传感器未连接")]
-    NotConnected,
-    #[error("I/O 错误: {0}")]
-    IoError(String),
-    #[error("{0}")]
-    Pipeline(#[from] PipelineError),
-    #[error("{0}")]
-    Storage(#[from] StorageError),
-}
-
-pub type SensorResult<T> = Result<T, SensorError>;
+pub use sensor_traits::{SensorError, SensorResult};
 
 #[derive(Debug, Clone, Error)]
 pub enum StorageError {
@@ -44,4 +24,16 @@ pub enum PipelineError {
     ChannelSend,
     #[error("Channel receive error")]
     ChannelRecv,
+}
+
+impl From<PipelineError> for SensorError {
+    fn from(err: PipelineError) -> Self {
+        SensorError::Pipeline(err.to_string())
+    }
+}
+
+impl From<StorageError> for SensorError {
+    fn from(err: StorageError) -> Self {
+        SensorError::Storage(err.to_string())
+    }
 }

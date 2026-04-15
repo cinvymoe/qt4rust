@@ -1,6 +1,6 @@
 use crate::error::{PipelineError, SensorError};
 use crate::pipeline::{DataSourceId, PipelineConfig, SourceSensorData};
-use crate::traits::SensorSource;
+use sensor_traits::SensorSource;
 use qt_threading_utils::runtime::spawn;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -8,24 +8,27 @@ use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::task::{block_in_place, JoinHandle};
 
-/// A pipeline that reads data from a sensor source at regular intervals.
+pub struct BoxedSensorSource(pub Box<dyn SensorSource + Send + Sync>);
+
+impl SensorSource for BoxedSensorSource {
+    fn read_all(&self) -> crate::SensorResult<(f64, f64, f64, bool, bool)> {
+        self.0.read_all()
+    }
+    fn is_connected(&self) -> bool {
+        self.0.is_connected()
+    }
+}
+
 pub struct SensorPipeline<S: SensorSource + Send + Sync + 'static> {
-    /// Unique identifier for the data source
     id: DataSourceId,
-    /// The sensor source to read from
     source: Arc<S>,
-    /// Pipeline configuration
     config: PipelineConfig,
-    /// Channel transmitter for sending sensor data
     tx: mpsc::Sender<SourceSensorData>,
-    /// Flag indicating if the pipeline is running
     running: Arc<AtomicBool>,
-    /// Handle to the spawned tokio task
     handle: Option<JoinHandle<()>>,
 }
 
 impl<S: SensorSource + Send + Sync + 'static> SensorPipeline<S> {
-    /// Creates a new SensorPipeline.
     pub fn new(
         id: DataSourceId,
         source: Arc<S>,
@@ -42,11 +45,27 @@ impl<S: SensorSource + Send + Sync + 'static> SensorPipeline<S> {
         }
     }
 
+    pub fn new_boxed(
+        id: DataSourceId,
+        source: Box<dyn SensorSource + Send + Sync>,
+        config: PipelineConfig,
+        tx: mpsc::Sender<SourceSensorData>,
+    ) -> SensorPipeline<BoxedSensorSource> {
+        SensorPipeline {
+            id,
+            source: Arc::new(BoxedSensorSource(source)),
+            config,
+            tx,
+            running: Arc::new(AtomicBool::new(false)),
+            handle: None,
+        }
+    }
+
     /// Starts the pipeline, spawning a tokio task to read sensor data.
     /// Returns an error if the pipeline is already running.
     pub fn start(&mut self) -> Result<(), SensorError> {
         if self.running.load(Ordering::SeqCst) {
-            return Err(SensorError::Pipeline(PipelineError::AlreadyRunning));
+            return Err(SensorError::Pipeline(PipelineError::AlreadyRunning.to_string()));
         }
 
         self.running.store(true, Ordering::SeqCst);
@@ -123,7 +142,7 @@ impl<S: SensorSource + Send + Sync + 'static> SensorPipeline<S> {
     /// Stops the pipeline, aborting the running task.
     pub fn stop(&mut self) -> Result<(), SensorError> {
         if !self.running.load(Ordering::SeqCst) {
-            return Err(SensorError::Pipeline(PipelineError::NotRunning));
+            return Err(SensorError::Pipeline(PipelineError::NotRunning.to_string()));
         }
 
         self.running.store(false, Ordering::SeqCst);
@@ -144,7 +163,7 @@ impl<S: SensorSource + Send + Sync + 'static> SensorPipeline<S> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::traits::MockSensorSource;
+    use sensor_traits::MockSensorSource;
     use std::time::Duration;
     use tokio::sync::mpsc;
 

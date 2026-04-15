@@ -124,7 +124,7 @@ mod tests {
 
     #[test]
     fn test_from_processed_data_warning() {
-        let sensor_data = SensorData::new(23.0, 10.0, 60.0);
+        let sensor_data = SensorData::new(23.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
         let alarm = AlarmRecord::from_processed_data(&processed);
 
@@ -136,7 +136,7 @@ mod tests {
 
     #[test]
     fn test_from_processed_data_danger() {
-        let sensor_data = SensorData::new(26.0, 10.0, 60.0);
+        let sensor_data = SensorData::new(26.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 2);
         let alarm = AlarmRecord::from_processed_data(&processed);
 

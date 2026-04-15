@@ -12,4 +12,4 @@ tokio-modbus = { version = "0.17", features = ["tcp"] }
 tokio = { version = "1.42", features = ["rt", "net"] }
 byteorder = "1.5"
 toml = "0.8"
-sensor-core = { path = "../sensor-core" }
+sensor-traits = { path = "../sensor-traits" }

@@ -160,7 +160,7 @@ mod tests {
     use std::time::Duration;
 
     fn create_test_data(seq: u64) -> ProcessedData {
-        let sensor_data = SensorData::new(10.0 + seq as f64, 8.0, 60.0);
+        let sensor_data = SensorData::new(10.0 + seq as f64, 8.0, 60.0, false, false);
         ProcessedData::from_sensor_data(sensor_data, seq)
     }
 

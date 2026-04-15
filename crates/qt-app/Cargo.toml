@@ -6,10 +6,8 @@ authors = ["Qt Rust Demo Team"]
 description = "Qt GUI application for crane monitoring system"
 
 [dependencies]
-# 依赖主 lib（不带 qt-ui feature）
 qt-rust-demo = { path = "../.." }
 sensor-core = { path = "../sensor-core" }
-sensor-simulator = { path = "../sensor-simulator" }
 qt-threading-utils = { path = "../qt-threading-utils" }
 config-hot-reload = { path = "../config-hot-reload" }
 

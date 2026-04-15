@@ -73,6 +73,8 @@ async fn test_max_records_scenario(
             10.0 + i as f64,
             8.0 + (i % 5) as f64,
             60.0 + (i % 10) as f64,
+            false,
+            false,
         );
         let processed = ProcessedData::from_sensor_data(sensor_data, i as u64);
 
@@ -146,7 +148,7 @@ async fn test_unlimited_records() -> Result<(), Box<dyn std::error::Error>> {
 
     // 插入 50 条记录
     for i in 1..=50 {
-        let sensor_data = SensorData::new(10.0 + i as f64, 8.0, 60.0);
+        let sensor_data = SensorData::new(10.0 + i as f64, 8.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, i as u64);
         repo.save_runtime_data_batch(&vec![processed]).await?;
     }

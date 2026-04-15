@@ -5,8 +5,7 @@ use qt_rust_demo::pipeline::shared_buffer::SharedBuffer;
 use qt_rust_demo::pipeline::shared_sensor_buffer::SharedSensorBuffer;
 use qt_rust_demo::pipeline::PipelineManager;
 use qt_rust_demo::repositories::CraneDataRepository;
-use sensor_core::{DataSourceId, PipelineConfig, SensorPipelineManager};
-use sensor_simulator::prelude::SimulatedDataSource;
+use sensor_core::{init_builtin_sources, DataSourceId, PipelineConfig, SensorPipelineManager, SensorSourceFactory};
 use std::sync::{Arc, Mutex};
 
 /// ViewModel 管理器
@@ -155,12 +154,15 @@ impl ViewModelManager {
     fn initialize_sensor_pipeline_manager(&mut self, db_path: &str) {
         tracing::info!("Initializing SensorPipelineManager...");
 
+        init_builtin_sources();
+
+        let config_path = std::path::PathBuf::from("config/modbus_sensors.toml");
+        let sensor_source = SensorSourceFactory::create_from_config(&config_path);
+
         let mut sensor_manager = SensorPipelineManager::new();
 
-        // Register simulated data source
-        let simulated_source = Arc::new(SimulatedDataSource::new());
         let config = PipelineConfig::default();
-        sensor_manager.register_source(DataSourceId::Simulator, simulated_source, config);
+        sensor_manager.register_boxed_source(DataSourceId::Simulator, sensor_source, config);
 
         // Set up storage repository
         let storage_result = qt_threading_utils::runtime::global_runtime().block_on(async {

@@ -32,7 +32,7 @@ mod mock_repository {
             let load = 15.0 + 5.0 * (t * 0.5).sin();
             let radius = 8.0 + 3.0 * (t * 0.3).cos();
             let angle = 60.0 + 10.0 * (t * 0.2).sin();
-            Ok(SensorData::new(load, radius, angle))
+            Ok(SensorData::new(load, radius, angle, false, false))
         }
     }
 }
@@ -64,8 +64,8 @@ fn test_filter_buffer_basic() -> Result<(), String> {
             window_size: 5,
         };
         let mut buffer = FilterBuffer::new(config);
-        buffer.push(SensorData::new(10.0, 5.0, 30.0));
-        buffer.push(SensorData::new(20.0, 6.0, 31.0));
+        buffer.push(SensorData::new(10.0, 5.0, 30.0, false, false));
+        buffer.push(SensorData::new(20.0, 6.0, 31.0, false, false));
         let result = buffer.get_filtered().unwrap();
         assert_eq!(result.ad1_load, 20.0);
         println!("    ✓ None滤波返回最新数据: ad1={}", result.ad1_load);
@@ -79,7 +79,7 @@ fn test_filter_buffer_basic() -> Result<(), String> {
         };
         let mut buffer = FilterBuffer::new(config);
         for i in 0..5 {
-            buffer.push(SensorData::new((i + 1) as f64 * 10.0, 5.0, 30.0));
+            buffer.push(SensorData::new((i + 1) as f64 * 10.0, 5.0, 30.0, false, false));
         }
         let result = buffer.get_filtered().unwrap();
         assert_eq!(result.ad1_load, 30.0);
@@ -93,11 +93,11 @@ fn test_filter_buffer_basic() -> Result<(), String> {
             window_size: 5,
         };
         let mut buffer = FilterBuffer::new(config);
-        buffer.push(SensorData::new(10.0, 5.0, 30.0));
-        buffer.push(SensorData::new(50.0, 5.0, 30.0));
-        buffer.push(SensorData::new(20.0, 5.0, 30.0));
-        buffer.push(SensorData::new(40.0, 5.0, 30.0));
-        buffer.push(SensorData::new(30.0, 5.0, 30.0));
+        buffer.push(SensorData::new(10.0, 5.0, 30.0, false, false));
+        buffer.push(SensorData::new(50.0, 5.0, 30.0, false, false));
+        buffer.push(SensorData::new(20.0, 5.0, 30.0, false, false));
+        buffer.push(SensorData::new(40.0, 5.0, 30.0, false, false));
+        buffer.push(SensorData::new(30.0, 5.0, 30.0, false, false));
         let result = buffer.get_filtered().unwrap();
         assert_eq!(result.ad1_load, 30.0);
         println!("    ✓ Median滤波正确: ad1={} (期望30)", result.ad1_load);
@@ -111,7 +111,7 @@ fn test_filter_buffer_basic() -> Result<(), String> {
         };
         let mut buffer = FilterBuffer::new(config);
         for i in 0..5 {
-            buffer.push(SensorData::new((i + 1) as f64 * 10.0, 5.0, 30.0));
+            buffer.push(SensorData::new((i + 1) as f64 * 10.0, 5.0, 30.0, false, false));
         }
         let result = buffer.get_filtered().unwrap();
         assert_eq!(result.ad1_load, 40.0);
@@ -129,11 +129,11 @@ fn test_filter_buffer_basic() -> Result<(), String> {
         };
         let mut buffer = FilterBuffer::new(config);
         assert!(!buffer.is_ready());
-        buffer.push(SensorData::new(10.0, 5.0, 30.0));
+        buffer.push(SensorData::new(10.0, 5.0, 30.0, false, false));
         assert!(!buffer.is_ready());
-        buffer.push(SensorData::new(20.0, 5.0, 30.0));
+        buffer.push(SensorData::new(20.0, 5.0, 30.0, false, false));
         assert!(!buffer.is_ready());
-        buffer.push(SensorData::new(30.0, 5.0, 30.0));
+        buffer.push(SensorData::new(30.0, 5.0, 30.0, false, false));
         assert!(buffer.is_ready());
         println!("    ✓ is_ready正确: 0/1/2条时false,3条时true");
     }
