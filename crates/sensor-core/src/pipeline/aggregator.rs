@@ -102,8 +102,8 @@ impl AggregatorPipeline {
                             data.weight_ad as f64,
                             data.radius_ad as f64,
                             data.angle_ad as f64,
-                            false, // digital_input_0 - TODO: add to SourceSensorData
-                            false, // digital_input_1 - TODO: add to SourceSensorData
+                            data.digital_input_0,
+                            data.digital_input_1,
                         );
 
                         cache.insert(data.source, (sensor_data.clone(), Instant::now()));

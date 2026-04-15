@@ -255,7 +255,7 @@ mod tests {
     #[test]
     fn test_register_source() {
         let mut manager = SensorPipelineManager::new();
-        let source = Arc::new(MockSensorSource::new(vec![(1.0, 2.0, 3.0)]));
+        let source = Arc::new(MockSensorSource::new(vec![(1.0, 2.0, 3.0, false, false)]));
         let config = PipelineConfig::default();
 
         manager.register_source(DataSourceId::Mock, source, config);
@@ -267,8 +267,8 @@ mod tests {
     fn test_register_multiple_sources() {
         let mut manager = SensorPipelineManager::new();
 
-        let source1 = Arc::new(MockSensorSource::new(vec![(1.0, 2.0, 3.0)]));
-        let source2 = Arc::new(MockSensorSource::new(vec![(4.0, 5.0, 6.0)]));
+        let source1 = Arc::new(MockSensorSource::new(vec![(1.0, 2.0, 3.0, false, false)]));
+        let source2 = Arc::new(MockSensorSource::new(vec![(4.0, 5.0, 6.0, false, false)]));
         let config = PipelineConfig::default();
 
         manager.register_source(DataSourceId::Mock, source1, config.clone());
@@ -310,7 +310,7 @@ mod tests {
     async fn test_start_and_stop_all() {
         let mut manager = SensorPipelineManager::new();
 
-        let source = Arc::new(MockSensorSource::new(vec![(1.0, 2.0, 3.0)]));
+        let source = Arc::new(MockSensorSource::new(vec![(1.0, 2.0, 3.0, false, false)]));
         let config = PipelineConfig {
             read_interval: Duration::from_millis(10),
             max_retries: 3,
@@ -347,7 +347,7 @@ mod tests {
         // Set up a separate receiver to capture aggregated data
         let (test_tx, mut test_rx) = mpsc::channel::<AggregatedSensorData>(100);
 
-        let source = Arc::new(MockSensorSource::new(vec![(100.0, 200.0, 300.0)]));
+        let source = Arc::new(MockSensorSource::new(vec![(100.0, 200.0, 300.0, false, false)]));
         let config = PipelineConfig {
             read_interval: Duration::from_millis(10),
             max_retries: 3,
@@ -387,8 +387,8 @@ mod tests {
     async fn test_multiple_sensors_with_different_configs() {
         let mut manager = SensorPipelineManager::new();
 
-        let source1 = Arc::new(MockSensorSource::new(vec![(1.0, 2.0, 3.0)]));
-        let source2 = Arc::new(MockSensorSource::new(vec![(4.0, 5.0, 6.0)]));
+        let source1 = Arc::new(MockSensorSource::new(vec![(1.0, 2.0, 3.0, false, false)]));
+        let source2 = Arc::new(MockSensorSource::new(vec![(4.0, 5.0, 6.0, false, false)]));
 
         let config1 = PipelineConfig {
             read_interval: Duration::from_millis(50),

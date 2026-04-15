@@ -16,12 +16,12 @@ use std::time::Duration;
 /// 
 /// Provides sequential data values and can be configured with specific test data.
 struct TestMockSensorSource {
-    data: Vec<(f64, f64, f64)>,
+    data: Vec<(f64, f64, f64, bool, bool)>,
     current_index: AtomicUsize,
 }
 
 impl TestMockSensorSource {
-    fn new(data: Vec<(f64, f64, f64)>) -> Self {
+    fn new(data: Vec<(f64, f64, f64, bool, bool)>) -> Self {
         Self {
             data,
             current_index: AtomicUsize::new(0),
@@ -30,12 +30,12 @@ impl TestMockSensorSource {
 }
 
 impl SensorSource for TestMockSensorSource {
-    fn read_all(&self) -> SensorResult<(f64, f64, f64)> {
+    fn read_all(&self) -> SensorResult<(f64, f64, f64, bool, bool)> {
         let index = self.current_index.fetch_add(1, Ordering::SeqCst);
         if index < self.data.len() {
             Ok(self.data[index])
         } else {
-            Ok(*self.data.last().unwrap_or(&(0.0, 0.0, 0.0)))
+            Ok(*self.data.last().unwrap_or(&(0.0, 0.0, 0.0, false, false)))
         }
     }
 
@@ -49,9 +49,9 @@ async fn test_full_pipeline_with_single_source() {
     let mut manager = SensorPipelineManager::new();
 
     let source = Arc::new(TestMockSensorSource::new(vec![
-        (100.0, 50.0, 45.0),
-        (101.0, 51.0, 46.0),
-        (102.0, 52.0, 47.0),
+        (100.0, 50.0, 45.0, false, false),
+        (101.0, 51.0, 46.0, false, false),
+        (102.0, 52.0, 47.0, false, false),
     ]));
 
     manager.register_source(
@@ -85,13 +85,13 @@ async fn test_full_pipeline_with_multiple_sources() {
     let mut manager = SensorPipelineManager::new();
 
     let modbus_source = Arc::new(TestMockSensorSource::new(vec![
-        (100.0, 50.0, 45.0),
-        (101.0, 50.5, 45.5),
+        (100.0, 50.0, 45.0, false, false),
+        (101.0, 50.5, 45.5, false, false),
     ]));
 
     let simulator_source = Arc::new(TestMockSensorSource::new(vec![
-        (100.5, 50.2, 45.2),
-        (101.5, 50.7, 45.7),
+        (100.5, 50.2, 45.2, false, false),
+        (101.5, 50.7, 45.7, false, false),
     ]));
 
     manager.register_source(

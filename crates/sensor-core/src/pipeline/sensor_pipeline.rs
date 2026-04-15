@@ -225,8 +225,8 @@ mod tests {
         assert_eq!(data.weight_ad, 100);
         assert_eq!(data.angle_ad, 200);
         assert_eq!(data.radius_ad, 300);
-        assert!(data.di1);
-        assert!(!data.di2);
+        assert!(data.digital_input_0);
+        assert!(!data.digital_input_1);
 
         let _ = pipeline.stop();
     }
