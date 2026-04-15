@@ -6,6 +6,7 @@ use crate::repositories::storage_repository::StorageRepository;
 use async_trait::async_trait;
 use rusqlite::{params, Connection};
 use sensor_core::error::StorageError;
+use sensor_core::DatabaseSchema;
 use sensor_core::pipeline::aggregator::AggregatedSensorData;
 use sensor_core::pipeline::data_source::DataSourceId;
 use sensor_core::storage::repository::StorageRepository as SensorCoreStorageRepository;
@@ -110,30 +111,10 @@ impl SqliteStorageRepository {
 
         // 创建传感器数据表
         conn.execute(
-            "CREATE TABLE IF NOT EXISTS sensor_data (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp INTEGER NOT NULL,
-                sequence_number INTEGER NOT NULL UNIQUE,
-                ad1_load REAL NOT NULL,
-                ad2_radius REAL NOT NULL,
-                ad3_angle REAL NOT NULL,
-                created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
-            )",
+            &SensorData::create_table_sql(),
             [],
         )
         .map_err(|e| format!("Failed to create sensor_data table: {}", e))?;
-
-        // 创建传感器数据表索引
-        conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_sensor_timestamp ON sensor_data(timestamp)",
-            [],
-        )
-        .map_err(|e| format!("Failed to create sensor_data index: {}", e))?;
-        conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_sensor_sequence ON sensor_data(sequence_number)",
-            [],
-        )
-        .map_err(|e| format!("Failed to create sensor_data index: {}", e))?;
 
         tracing::info!("Database tables initialized");
         Ok(())
