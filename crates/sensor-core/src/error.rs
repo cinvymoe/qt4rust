@@ -1,28 +1,47 @@
-use std::fmt;
+use thiserror::Error;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Error)]
 pub enum SensorError {
+    #[error("读取传感器数据失败: {0}")]
     ReadError(String),
+    #[error("初始化传感器失败: {0}")]
     InitError(String),
+    #[error("传感器连接超时")]
     Timeout,
+    #[error("传感器配置错误: {0}")]
     ConfigError(String),
+    #[error("传感器未连接")]
     NotConnected,
+    #[error("I/O 错误: {0}")]
     IoError(String),
+    #[error("{0}")]
+    Pipeline(#[from] PipelineError),
+    #[error("{0}")]
+    Storage(#[from] StorageError),
 }
-
-impl fmt::Display for SensorError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::ReadError(msg) => write!(f, "读取传感器数据失败: {}", msg),
-            Self::InitError(msg) => write!(f, "初始化传感器失败: {}", msg),
-            Self::Timeout => write!(f, "传感器连接超时"),
-            Self::ConfigError(msg) => write!(f, "传感器配置错误: {}", msg),
-            Self::NotConnected => write!(f, "传感器未连接"),
-            Self::IoError(msg) => write!(f, "I/O 错误: {}", msg),
-        }
-    }
-}
-
-impl std::error::Error for SensorError {}
 
 pub type SensorResult<T> = Result<T, SensorError>;
+
+#[derive(Debug, Clone, Error)]
+pub enum StorageError {
+    #[error("Database error: {0}")]
+    Database(String),
+    #[error("Sequence conflict")]
+    SequenceConflict,
+    #[error("Health check failed")]
+    HealthCheckFailed,
+}
+
+#[derive(Debug, Clone, Error)]
+pub enum PipelineError {
+    #[error("Pipeline already running")]
+    AlreadyRunning,
+    #[error("Pipeline not running")]
+    NotRunning,
+    #[error("Data source error: {data_source} - {error}")]
+    DataSource { data_source: String, error: String },
+    #[error("Channel send error")]
+    ChannelSend,
+    #[error("Channel receive error")]
+    ChannelRecv,
+}
