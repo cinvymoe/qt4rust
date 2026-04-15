@@ -19,5 +19,5 @@ pub use pipeline::{
     SensorPipelineManager, SourceSensorData, StoragePipelineConfig,
 };
 pub use sensors::{AngleSensor, CalibratedSensor, LoadSensor, RadiusSensor};
-pub use storage::{MockStorageRepository, StorageRepository};
+pub use storage::{ColumnDef, DatabaseSchema, MockStorageRepository, StorageRepository};
 pub use traits::{SensorProvider, SensorSource};
