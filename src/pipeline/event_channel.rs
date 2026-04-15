@@ -135,8 +135,12 @@ mod tests {
         let (sender, receiver) = create_storage_channels(10);
         let sender2 = sender.clone();
 
-        sender.try_send_data(vec![create_test_processed_data()]).unwrap();
-        sender2.try_send_data(vec![create_test_processed_data()]).unwrap();
+        sender
+            .try_send_data(vec![create_test_processed_data()])
+            .unwrap();
+        sender2
+            .try_send_data(vec![create_test_processed_data()])
+            .unwrap();
 
         let mut rx = receiver.data_rx.lock().await;
         let count = rx.recv().await.unwrap().len() + rx.recv().await.unwrap().len();

@@ -103,9 +103,7 @@ mod tests {
             create_test_data(200.0, false, false),
         ];
 
-        repo.save_aggregated_data_batch(data.clone())
-            .await
-            .unwrap();
+        repo.save_aggregated_data_batch(data.clone()).await.unwrap();
 
         let result = repo.query_recent_aggregated_data(10).await.unwrap();
         assert_eq!(result.len(), 2);
@@ -160,9 +158,7 @@ mod tests {
             create_test_data(200.0, false, false),
         ];
 
-        repo.save_aggregated_data_batch(data.clone())
-            .await
-            .unwrap();
+        repo.save_aggregated_data_batch(data.clone()).await.unwrap();
 
         let stored = repo.get_stored_data().await;
         assert_eq!(stored.len(), 2);

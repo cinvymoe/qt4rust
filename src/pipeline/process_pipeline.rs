@@ -1,21 +1,21 @@
 // 计算管道 - 多速率数据流架构
 // 从滤波层获取数据 -> 计算处理 -> 发送给显示/存储层
 
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Mutex, RwLock};
-use std::time::Duration;
-use std::collections::HashMap;
-use tokio::task::JoinHandle;
-use crate::models::ProcessedData;
+use crate::alarm::alarm_type::AlarmSource;
+use crate::alarm::{AlarmConfig, AlarmManager};
 use crate::models::crane_config::CraneConfig;
-use sensor_core::{SensorCalibration, AlarmThresholds};
 use crate::models::rated_load_table::RatedLoadTable;
+use crate::models::ProcessedData;
+use crate::pipeline::event_channel::StorageEventSender;
 use crate::pipeline::filter_buffer::FilterBuffer;
 use crate::pipeline::shared_buffer::SharedBuffer;
-use crate::pipeline::event_channel::StorageEventSender;
-use crate::alarm::{AlarmManager, AlarmConfig};
-use crate::alarm::alarm_type::AlarmSource;
+use sensor_core::{AlarmThresholds, SensorCalibration};
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::Arc;
+use std::sync::{Mutex, RwLock};
+use std::time::Duration;
+use tokio::task::JoinHandle;
 
 #[derive(Debug, Clone)]
 pub struct ProcessPipelineConfig {
@@ -91,7 +91,7 @@ impl ProcessPipeline {
             alarm_manager: None,
         }
     }
-    
+
     /// 设置热重载配置引用（用于配置热重载）
     pub fn set_hot_reload_config(
         &mut self,
@@ -102,7 +102,7 @@ impl ProcessPipeline {
         self.sensor_calibration = Some(sensor_calibration.clone());
         self.rated_load_table = Some(rated_load_table.clone());
         self.alarm_thresholds = Some(alarm_thresholds.clone());
-        
+
         // 打印当前配置值
         if let Ok(cal) = sensor_calibration.read() {
             tracing::info!("🔧 [ProcessPipeline] 热重载配置已设置");
@@ -113,12 +113,14 @@ impl ProcessPipeline {
                 cal.weight.scale_value,
                 cal.weight.multiplier);
         }
-        
+
         if let Ok(thresholds) = alarm_thresholds.read() {
-            tracing::info!("⚠️  [ProcessPipeline] 预警阈值已设置: warning={}%, alarm={}%",
+            tracing::info!(
+                "⚠️  [ProcessPipeline] 预警阈值已设置: warning={}%, alarm={}%",
                 thresholds.moment.warning_percentage,
-                thresholds.moment.alarm_percentage);
-            
+                thresholds.moment.alarm_percentage
+            );
+
             // 从 AlarmThresholds 创建 AlarmConfig
             let alarm_config = AlarmConfig {
                 moment: crate::alarm::alarm_config::MomentAlarmConfig {
@@ -138,7 +140,7 @@ impl ProcessPipeline {
                     map
                 },
             };
-            
+
             let alarm_manager = AlarmManager::new(alarm_config);
             self.alarm_manager = Some(Arc::new(RwLock::new(alarm_manager)));
             tracing::info!("🔔 [ProcessPipeline] AlarmManager 已初始化，角度报警已启用");
@@ -189,14 +191,14 @@ impl ProcessPipeline {
 
                 if let Some(raw_data) = sensor_data {
                     let seq = sequence_number.fetch_add(1, Ordering::Relaxed);
-                    
+
                     // 如果有热重载配置，使用热重载配置；否则使用静态配置
                     let processed = if let (Some(cal), Some(table), Some(thresholds)) = (&sensor_calibration, &rated_load_table, &alarm_thresholds) {
                         // 使用热重载配置
                         let cal_guard = cal.read().unwrap();
                         let table_guard = table.read().unwrap();
                         let thresholds_guard = thresholds.read().unwrap();
-                        
+
                         tracing::info!("🔥 [ProcessPipeline] 使用热重载配置进行AD转换");
                         tracing::info!("📊 [标定参数] weight.zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}, multiplier={:.2}",
                             cal_guard.weight.zero_ad,
@@ -217,14 +219,14 @@ impl ProcessPipeline {
                         tracing::info!("⚠️  [预警阈值] warning={}%, alarm={}%",
                             thresholds_guard.moment.warning_percentage,
                             thresholds_guard.moment.alarm_percentage);
-                        
+
                         // 创建临时CraneConfig
                         let hot_config = CraneConfig {
                             sensor_calibration: cal_guard.clone(),
                             rated_load_table: table_guard.clone(),
                             alarm_thresholds: thresholds_guard.clone(),
                         };
-                        
+
                         ProcessedData::from_sensor_data_with_config(
                             raw_data.clone(),
                             &hot_config,
@@ -235,14 +237,14 @@ impl ProcessPipeline {
                         tracing::warn!("⚠️  [ProcessPipeline] 热重载配置未设置，使用静态配置");
                         tracing::info!("📊 [静态配置] weight.scale_value={:.2}",
                             crane_config.sensor_calibration.weight.scale_value);
-                        
+
                         ProcessedData::from_sensor_data_with_config(
                             raw_data.clone(),
                             &crane_config,
                             seq,
                         )
                     };
-                    
+
                     tracing::info!("✅ [ProcessPipeline] AD转换完成: ad1={:.2} -> load={:.2}吨, ad2={:.2} -> radius={:.2}米, ad3={:.2} -> angle={:.2}度",
                         raw_data.ad1_load, processed.current_load,
                         raw_data.ad2_radius, processed.working_radius,
@@ -253,13 +255,13 @@ impl ProcessPipeline {
                     if let Some(ref am) = alarm_manager {
                         if let Ok(manager) = am.read() {
                             let alarm_results: Vec<_> = manager.check_alarms(&processed);
-                            
+
                             for result in alarm_results {
                                 if result.triggered {
                                     if let Some(ref alarm_type) = result.alarm_type {
                                         processed.alarm_sources.push(alarm_type.source.clone());
                                         processed.alarm_messages.push(result.message.clone());
-                                        
+
                                         // 如果是角度报警，设置危险状态
                                         if alarm_type.source == AlarmSource::Angle {
                                             processed.is_danger = true;
@@ -321,16 +323,12 @@ mod tests {
     fn test_process_pipeline_creation() {
         let filter_buffer = Arc::new(Mutex::new(FilterBuffer::default()));
         let display_buffer = Arc::new(std::sync::RwLock::new(
-            crate::pipeline::ProcessedDataBuffer::new(100)
+            crate::pipeline::ProcessedDataBuffer::new(100),
         ));
         let crane_config = Arc::new(CraneConfig::default());
 
-        let pipeline = ProcessPipeline::new(
-            make_config(),
-            filter_buffer,
-            display_buffer,
-            crane_config,
-        );
+        let pipeline =
+            ProcessPipeline::new(make_config(), filter_buffer, display_buffer, crane_config);
 
         assert!(!pipeline.is_running());
     }

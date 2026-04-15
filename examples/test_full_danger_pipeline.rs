@@ -5,11 +5,11 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
 
-use qt_rust_demo::models::{SensorData, ProcessedData};
+use qt_rust_demo::models::{ProcessedData, SensorData};
+use qt_rust_demo::pipeline::shared_buffer::ProcessedDataBuffer;
+use qt_rust_demo::pipeline::storage_pipeline::{StoragePipeline, StoragePipelineConfig};
 use qt_rust_demo::repositories::mock_storage_repository::MockStorageRepository;
 use qt_rust_demo::repositories::storage_repository::StorageRepository;
-use qt_rust_demo::pipeline::storage_pipeline::{StoragePipeline, StoragePipelineConfig};
-use qt_rust_demo::pipeline::shared_buffer::ProcessedDataBuffer;
 use std::sync::RwLock;
 
 /// 模拟采集管道的数据处理逻辑
@@ -21,16 +21,18 @@ async fn simulate_collection_cycle(
 ) -> ProcessedData {
     // 1. 采集传感器数据
     let processed = ProcessedData::from_sensor_data(sensor_data, sequence);
-    
-    println!("  [采集] seq={}, load={:.1}t, moment={:.1}%, is_danger={}", 
-             processed.sequence_number,
-             processed.current_load,
-             processed.moment_percentage,
-             processed.is_danger);
-    
+
+    println!(
+        "  [采集] seq={}, load={:.1}t, moment={:.1}%, is_danger={}",
+        processed.sequence_number,
+        processed.current_load,
+        processed.moment_percentage,
+        processed.is_danger
+    );
+
     // 2. 检测危险状态切换
     let current_danger = processed.is_danger;
-    
+
     if current_danger {
         // 当前是危险状态
         if *last_was_danger {
@@ -54,7 +56,7 @@ async fn simulate_collection_cycle(
             println!("  [正常] 无报警");
         }
     }
-    
+
     processed
 }
 
@@ -64,28 +66,26 @@ async fn main() {
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::INFO)
         .init();
-    
+
     println!("=== 完整采集管道危险状态切换测试 ===\n");
-    
+
     // 创建存储管道
     let repo = Arc::new(MockStorageRepository::new());
     let buffer = Arc::new(RwLock::new(ProcessedDataBuffer::new(100)));
     let config = StoragePipelineConfig::default();
-    let pipeline = StoragePipeline::new(
-        config,
-        repo.clone() as Arc<dyn StorageRepository>,
-        buffer,
-    ).await.expect("Failed to create storage pipeline");
-    
+    let pipeline = StoragePipeline::new(config, repo.clone() as Arc<dyn StorageRepository>, buffer)
+        .await
+        .expect("Failed to create storage pipeline");
+
     println!("✓ 存储管道创建成功\n");
-    
+
     // 模拟采集管道的状态
     let mut last_was_danger = false;
     let mut sequence = 0u64;
-    
+
     // 模拟采集循环
     println!("【模拟采集循环】\n");
-    
+
     // 周期 1-3: 正常状态
     println!("周期 1-3: 正常载荷");
     for _i in 1..=3 {
@@ -95,7 +95,7 @@ async fn main() {
         sleep(Duration::from_millis(50)).await;
     }
     println!();
-    
+
     // 周期 4: 首次报警
     println!("周期 4: 载荷升高，触发报警");
     sequence += 1;
@@ -103,7 +103,7 @@ async fn main() {
     simulate_collection_cycle(&pipeline, sensor_data, sequence, &mut last_was_danger).await;
     sleep(Duration::from_millis(100)).await;
     println!();
-    
+
     // 周期 5-7: 持续报警
     println!("周期 5-7: 载荷持续高位");
     for i in 5..=7 {
@@ -113,7 +113,7 @@ async fn main() {
         sleep(Duration::from_millis(50)).await;
     }
     println!();
-    
+
     // 周期 8: 报警解除
     println!("周期 8: 载荷下降，报警解除");
     sequence += 1;
@@ -121,7 +121,7 @@ async fn main() {
     simulate_collection_cycle(&pipeline, sensor_data, sequence, &mut last_was_danger).await;
     sleep(Duration::from_millis(100)).await;
     println!();
-    
+
     // 周期 9-10: 正常状态
     println!("周期 9-10: 正常载荷");
     for _ in 9..=10 {
@@ -131,7 +131,7 @@ async fn main() {
         sleep(Duration::from_millis(50)).await;
     }
     println!();
-    
+
     // 周期 11: 再次报警
     println!("周期 11: 载荷再次升高");
     sequence += 1;
@@ -139,7 +139,7 @@ async fn main() {
     simulate_collection_cycle(&pipeline, sensor_data, sequence, &mut last_was_danger).await;
     sleep(Duration::from_millis(100)).await;
     println!();
-    
+
     // 周期 12: 报警解除
     println!("周期 12: 载荷下降");
     sequence += 1;
@@ -147,24 +147,24 @@ async fn main() {
     simulate_collection_cycle(&pipeline, sensor_data, sequence, &mut last_was_danger).await;
     sleep(Duration::from_millis(100)).await;
     println!();
-    
+
     // 验证结果
     let alarm_count = repo.get_alarm_count();
     println!("=== 测试结果 ===");
     println!("总采集周期: {}", sequence);
     println!("报警记录数: {}", alarm_count);
     println!();
-    
+
     // 预期：2 次报警（周期 4 和周期 11）
     assert_eq!(alarm_count, 2, "应该保存 2 条报警记录");
-    
+
     println!("✓ 测试通过！");
     println!("  - 首次报警（周期 4）: 已保存");
     println!("  - 持续报警（周期 5-7）: 已跳过");
     println!("  - 报警解除（周期 8）: 状态已重置");
     println!("  - 再次报警（周期 11）: 已保存");
     println!("  - 报警解除（周期 12）: 状态已重置");
-    
+
     // 等待异步任务完成
     sleep(Duration::from_millis(200)).await;
 }

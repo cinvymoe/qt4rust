@@ -41,7 +41,9 @@ impl SensorDataEventReceiver {
 }
 
 /// Factory for creating connected channel pairs
-pub fn create_sensor_data_channels(capacity: usize) -> (SensorDataEventSender, SensorDataEventReceiver) {
+pub fn create_sensor_data_channels(
+    capacity: usize,
+) -> (SensorDataEventSender, SensorDataEventReceiver) {
     let (data_tx, data_rx) = mpsc::channel(capacity);
     let (shutdown_tx, shutdown_rx) = watch::channel(false);
 

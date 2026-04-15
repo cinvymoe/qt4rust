@@ -68,7 +68,7 @@ impl settings_main_bridge::SettingsViewModel {
     pub fn export_config(self: Pin<&mut Self>, path: QString) -> bool {
         let path_str = path.to_string();
         tracing::info!("Exporting configuration to: {}", path_str);
-        
+
         // 实现配置导出逻辑
         match std::fs::copy("config/sensor_calibration.toml", &path_str) {
             Ok(_) => {
@@ -85,7 +85,7 @@ impl settings_main_bridge::SettingsViewModel {
     pub fn import_config(mut self: Pin<&mut Self>, path: QString) -> bool {
         let path_str = path.to_string();
         tracing::info!("Importing configuration from: {}", path_str);
-        
+
         // 实现配置导入逻辑
         match std::fs::copy(&path_str, "config/sensor_calibration.toml") {
             Ok(_) => {

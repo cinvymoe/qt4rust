@@ -2,8 +2,8 @@
 //!
 //! 定义配置变更通知的订阅者接口。
 
-use async_trait::async_trait;
 use crate::{ConfigChange, ConfigSnapshot};
+use async_trait::async_trait;
 
 /// 配置订阅者 trait
 ///

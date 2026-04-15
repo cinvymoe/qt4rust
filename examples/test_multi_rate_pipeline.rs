@@ -9,8 +9,8 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 mod mock_repository {
-    use std::sync::{Arc, Mutex};
     use qt_rust_demo::models::SensorData;
+    use std::sync::{Arc, Mutex};
 
     #[allow(dead_code)]
     pub struct MockRepository {
@@ -20,7 +20,9 @@ mod mock_repository {
     #[allow(dead_code)]
     impl MockRepository {
         pub fn new() -> Self {
-            Self { counter: Arc::new(Mutex::new(0)) }
+            Self {
+                counter: Arc::new(Mutex::new(0)),
+            }
         }
 
         pub fn get_latest_sensor_data(&self) -> Result<SensorData, String> {
@@ -52,12 +54,15 @@ async fn main() -> Result<(), String> {
 }
 
 fn test_filter_buffer_basic() -> Result<(), String> {
-    use qt_rust_demo::pipeline::filter_buffer::{FilterBuffer, FilterBufferConfig, FilterType};
     use qt_rust_demo::models::SensorData;
+    use qt_rust_demo::pipeline::filter_buffer::{FilterBuffer, FilterBufferConfig, FilterType};
 
     println!("  - 测试无滤波 (None)");
     {
-        let config = FilterBufferConfig { filter_type: FilterType::None, window_size: 5 };
+        let config = FilterBufferConfig {
+            filter_type: FilterType::None,
+            window_size: 5,
+        };
         let mut buffer = FilterBuffer::new(config);
         buffer.push(SensorData::new(10.0, 5.0, 30.0));
         buffer.push(SensorData::new(20.0, 6.0, 31.0));
@@ -68,7 +73,10 @@ fn test_filter_buffer_basic() -> Result<(), String> {
 
     println!("  - 测试均值滤波 (Mean)");
     {
-        let config = FilterBufferConfig { filter_type: FilterType::Mean, window_size: 5 };
+        let config = FilterBufferConfig {
+            filter_type: FilterType::Mean,
+            window_size: 5,
+        };
         let mut buffer = FilterBuffer::new(config);
         for i in 0..5 {
             buffer.push(SensorData::new((i + 1) as f64 * 10.0, 5.0, 30.0));
@@ -80,7 +88,10 @@ fn test_filter_buffer_basic() -> Result<(), String> {
 
     println!("  - 测试中值滤波 (Median)");
     {
-        let config = FilterBufferConfig { filter_type: FilterType::Median, window_size: 5 };
+        let config = FilterBufferConfig {
+            filter_type: FilterType::Median,
+            window_size: 5,
+        };
         let mut buffer = FilterBuffer::new(config);
         buffer.push(SensorData::new(10.0, 5.0, 30.0));
         buffer.push(SensorData::new(50.0, 5.0, 30.0));
@@ -94,19 +105,28 @@ fn test_filter_buffer_basic() -> Result<(), String> {
 
     println!("  - 测试窗口溢出 (窗口3,数据5)");
     {
-        let config = FilterBufferConfig { filter_type: FilterType::Mean, window_size: 3 };
+        let config = FilterBufferConfig {
+            filter_type: FilterType::Mean,
+            window_size: 3,
+        };
         let mut buffer = FilterBuffer::new(config);
         for i in 0..5 {
             buffer.push(SensorData::new((i + 1) as f64 * 10.0, 5.0, 30.0));
         }
         let result = buffer.get_filtered().unwrap();
         assert_eq!(result.ad1_load, 40.0);
-        println!("    ✓ 窗口溢出正确: ad1={} (期望40,只用最近3条)", result.ad1_load);
+        println!(
+            "    ✓ 窗口溢出正确: ad1={} (期望40,只用最近3条)",
+            result.ad1_load
+        );
     }
 
     println!("  - 测试is_ready状态");
     {
-        let config = FilterBufferConfig { filter_type: FilterType::Mean, window_size: 3 };
+        let config = FilterBufferConfig {
+            filter_type: FilterType::Mean,
+            window_size: 3,
+        };
         let mut buffer = FilterBuffer::new(config);
         assert!(!buffer.is_ready());
         buffer.push(SensorData::new(10.0, 5.0, 30.0));
@@ -122,16 +142,16 @@ fn test_filter_buffer_basic() -> Result<(), String> {
 }
 
 async fn test_multi_rate_flow() -> Result<(), String> {
+    use qt_rust_demo::config::config_manager::ConfigManager;
+    use qt_rust_demo::models::crane_config::CraneConfig;
     use qt_rust_demo::pipeline::filter_buffer::{FilterBuffer, FilterBufferConfig, FilterType};
     use qt_rust_demo::pipeline::process_pipeline::{ProcessPipeline, ProcessPipelineConfig};
     use qt_rust_demo::pipeline::shared_buffer::{ProcessedDataBuffer, SharedBuffer};
-    use qt_rust_demo::models::crane_config::CraneConfig;
     use qt_rust_demo::repositories::CraneDataRepository;
-    use qt_rust_demo::config::config_manager::ConfigManager;
     use std::sync::RwLock;
 
     println!("  - 初始化组件...");
-    
+
     let collection_interval_ms = 10u64;
     let filter_window_size = 10;
     let process_interval_ms = 100u64;
@@ -142,7 +162,8 @@ async fn test_multi_rate_flow() -> Result<(), String> {
         filter_type: FilterType::Mean,
         window_size: filter_window_size,
     };
-    let filter_buffer: Arc<Mutex<FilterBuffer>> = Arc::new(Mutex::new(FilterBuffer::new(filter_config)));
+    let filter_buffer: Arc<Mutex<FilterBuffer>> =
+        Arc::new(Mutex::new(FilterBuffer::new(filter_config)));
 
     // 创建显示缓冲区
     let display_buffer: SharedBuffer = Arc::new(RwLock::new(ProcessedDataBuffer::new(100)));
@@ -163,8 +184,10 @@ async fn test_multi_rate_flow() -> Result<(), String> {
         Arc::clone(&crane_config),
     );
 
-    println!("  - 配置: 采集={}ms, 滤波窗口={}, 计算={}ms, 测试={}ms",
-        collection_interval_ms, filter_window_size, process_interval_ms, test_duration_ms);
+    println!(
+        "  - 配置: 采集={}ms, 滤波窗口={}, 计算={}ms, 测试={}ms",
+        collection_interval_ms, filter_window_size, process_interval_ms, test_duration_ms
+    );
 
     // 启动计算管道
     process_pipeline.start();
@@ -177,12 +200,13 @@ async fn test_multi_rate_flow() -> Result<(), String> {
 
     for i in 0..total_collections {
         tokio::time::sleep(collection_interval).await;
-        
-        let sensor_data = repository.get_latest_sensor_data()
+
+        let sensor_data = repository
+            .get_latest_sensor_data()
             .map_err(|e| format!("采集失败: {}", e))?;
-        
+
         filter_buffer.lock().unwrap().push(sensor_data);
-        
+
         if i % 5 == 0 {
             println!("    采集进度: {}/{}", i, total_collections);
         }
@@ -195,23 +219,29 @@ async fn test_multi_rate_flow() -> Result<(), String> {
     // 检查结果
     let display_data = display_buffer.read().unwrap();
     let latest = display_data.get_latest();
-    
+
     process_pipeline.stop();
 
     if let Some(data) = latest {
-        println!("  ✓ 处理成功: seq={}, load={:.2}t, radius={:.2}m, angle={:.2}°, moment={:.1}%",
+        println!(
+            "  ✓ 处理成功: seq={}, load={:.2}t, radius={:.2}m, angle={:.2}°, moment={:.1}%",
             data.sequence_number,
             data.current_load,
             data.working_radius,
             data.boom_angle,
-            data.moment_percentage);
+            data.moment_percentage
+        );
     } else {
         return Err("没有处理后的数据".to_string());
     }
 
     // 验证滤波缓冲区状态
     let fb = filter_buffer.lock().unwrap();
-    println!("  ✓ 滤波缓冲区状态: len={}, ready={}", fb.len(), fb.is_ready());
+    println!(
+        "  ✓ 滤波缓冲区状态: len={}, ready={}",
+        fb.len(),
+        fb.is_ready()
+    );
 
     Ok(())
 }

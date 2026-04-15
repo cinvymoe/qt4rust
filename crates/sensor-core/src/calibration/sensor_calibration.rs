@@ -111,8 +111,9 @@ impl SensorCalibration {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub struct AlarmThresholds {
+    #[serde(default)]
     pub moment: MomentThresholds,
     #[serde(default)]
     pub angle: AngleThresholds,
@@ -120,17 +121,6 @@ pub struct AlarmThresholds {
     pub main_hook_switch: HookSwitchThresholds,
     #[serde(default)]
     pub aux_hook_switch: HookSwitchThresholds,
-}
-
-impl Default for AlarmThresholds {
-    fn default() -> Self {
-        Self {
-            moment: MomentThresholds::default(),
-            angle: AngleThresholds::default(),
-            main_hook_switch: HookSwitchThresholds::default(),
-            aux_hook_switch: HookSwitchThresholds::default(),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -163,18 +153,13 @@ impl Default for AngleThresholds {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum HookSwitchMode {
+    #[default]
     None,
     NormallyOpen,
     NormallyClosed,
-}
-
-impl Default for HookSwitchMode {
-    fn default() -> Self {
-        Self::None
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]

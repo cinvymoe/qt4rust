@@ -4,16 +4,15 @@
 //! aggregation to storage.
 
 use sensor_core::{
-    DataSourceId, PipelineConfig,
-    SensorPipelineManager, SensorSource, SensorResult, StoragePipelineConfig,
-    MockStorageRepository,
+    DataSourceId, MockStorageRepository, PipelineConfig, SensorPipelineManager, SensorResult,
+    SensorSource, StoragePipelineConfig,
 };
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
 /// Mock sensor source for testing.
-/// 
+///
 /// Provides sequential data values and can be configured with specific test data.
 struct TestMockSensorSource {
     data: Vec<(f64, f64, f64, bool, bool)>,

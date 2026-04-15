@@ -78,16 +78,14 @@ impl FileWatcher {
 
         // 创建 notify watcher
         let watcher = RecommendedWatcher::new(
-            move |res: Result<Event, notify::Error>| {
-                match res {
-                    Ok(event) => {
-                        if notify_tx.send(event).is_err() {
-                            error!("Failed to send file event to processing task");
-                        }
+            move |res: Result<Event, notify::Error>| match res {
+                Ok(event) => {
+                    if notify_tx.send(event).is_err() {
+                        error!("Failed to send file event to processing task");
                     }
-                    Err(e) => {
-                        error!("File watcher error: {}", e);
-                    }
+                }
+                Err(e) => {
+                    error!("File watcher error: {}", e);
                 }
             },
             Config::default(),
@@ -100,9 +98,7 @@ impl FileWatcher {
         if let Some(watcher) = &mut self.watcher {
             watcher
                 .watch(&config_dir, RecursiveMode::NonRecursive)
-                .map_err(|e| {
-                    HotReloadError::WatcherError(format!("监控目录失败: {}", e))
-                })?;
+                .map_err(|e| HotReloadError::WatcherError(format!("监控目录失败: {}", e)))?;
         }
 
         info!("文件监控器已启动，监控目录: {}", config_dir.display());

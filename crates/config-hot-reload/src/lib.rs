@@ -32,35 +32,35 @@
 //! ```
 
 pub mod error;
-pub mod types;
-pub mod parser;
-pub mod validator;
-pub mod watcher;
 pub mod manager;
+pub mod parser;
 pub mod subscriber;
 pub mod subscribers;
+pub mod types;
+pub mod validator;
+pub mod watcher;
 
 // 重新导出常用类型
 pub use error::{HotReloadError, ValidationError};
-pub use types::{ConfigChange, ConfigFileEvent, ConfigFileType, ConfigSnapshot};
-pub use parser::ConfigParser;
-pub use validator::ConfigValidator;
-pub use watcher::FileWatcher;
 pub use manager::{ConfigCache, HotReloadConfigManager};
+pub use parser::ConfigParser;
 pub use subscriber::ConfigSubscriber;
 pub use subscribers::{
-    PipelineConfigSubscriber, DataProcessingSubscriber, AlarmDetectionSubscriber,
-    LoggingConfigSubscriber, SensorDataSourceSubscriber, SharedConfigRefs,
-    register_all_subscribers,
+    register_all_subscribers, AlarmDetectionSubscriber, DataProcessingSubscriber,
+    LoggingConfigSubscriber, PipelineConfigSubscriber, SensorDataSourceSubscriber,
+    SharedConfigRefs,
 };
+pub use types::{ConfigChange, ConfigFileEvent, ConfigFileType, ConfigSnapshot};
+pub use validator::ConfigValidator;
+pub use watcher::FileWatcher;
 
 /// Prelude 模块，包含最常用的导入
 pub mod prelude {
     pub use crate::error::{HotReloadError, ValidationError};
-    pub use crate::types::{ConfigChange, ConfigFileType, ConfigSnapshot};
+    pub use crate::manager::{ConfigCache, HotReloadConfigManager};
     pub use crate::parser::ConfigParser;
+    pub use crate::subscriber::ConfigSubscriber;
+    pub use crate::types::{ConfigChange, ConfigFileType, ConfigSnapshot};
     pub use crate::validator::ConfigValidator;
     pub use crate::watcher::FileWatcher;
-    pub use crate::manager::{ConfigCache, HotReloadConfigManager};
-    pub use crate::subscriber::ConfigSubscriber;
 }

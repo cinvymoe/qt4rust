@@ -105,7 +105,7 @@ impl OneShotTimer {
 }
 
 /// 阻塞式周期定时器 - 使用全局运行时
-/// 
+///
 /// 适用于 Qt 信号槽等同步场景
 pub struct BlockingPeriodicTimer {
     interval: Duration,
@@ -124,18 +124,18 @@ impl BlockingPeriodicTimer {
     }
 
     /// 启动定时器（阻塞调用）
-    /// 
+    ///
     /// 使用全局运行时生成任务
     pub fn start<F>(&self, callback: F)
     where
         F: Fn() + Send + Sync + 'static,
     {
         use std::sync::atomic::Ordering;
-        
+
         if self.running.load(Ordering::Relaxed) {
             return;
         }
-        
+
         self.running.store(true, Ordering::Relaxed);
 
         let running_clone = Arc::clone(&self.running);
@@ -145,19 +145,19 @@ impl BlockingPeriodicTimer {
         // 使用全局运行时生成任务
         let handle = crate::runtime::global_runtime().spawn(async move {
             let mut interval_timer = tokio::time::interval(interval);
-            
+
             loop {
                 if !running_clone.load(Ordering::Relaxed) {
                     break;
                 }
 
                 interval_timer.tick().await;
-                
+
                 // 捕获 panic
                 let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                     callback();
                 }));
-                
+
                 if let Err(e) = result {
                     tracing::error!("Timer callback panicked: {:?}", e);
                 }
@@ -172,7 +172,7 @@ impl BlockingPeriodicTimer {
     /// 停止定时器（阻塞调用）
     pub fn stop(&self) {
         use std::sync::atomic::Ordering;
-        
+
         self.running.store(false, Ordering::Relaxed);
 
         if let Ok(mut handle_lock) = self.handle.lock() {

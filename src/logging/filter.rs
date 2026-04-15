@@ -1,33 +1,28 @@
 use super::config::LogConfig;
-use tracing_subscriber::{
-    fmt,
-    layer::SubscriberExt,
-    util::SubscriberInitExt,
-    EnvFilter,
-};
+use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 /// 初始化日志系统
-/// 
+///
 /// # 参数
 /// * `config` - 日志配置，如果为 None 则使用默认配置
-/// 
+///
 /// # 示例
 /// ```no_run
 /// use qt_rust_demo::logging::{init_logging, LogConfig};
-/// 
+///
 /// // 使用默认配置
 /// init_logging(None);
-/// 
+///
 /// // 使用自定义配置
 /// let config = LogConfig::from_file("config/logging.toml").ok();
 /// init_logging(config);
 /// ```
 pub fn init_logging(config: Option<LogConfig>) {
     let config = config.unwrap_or_default();
-    
+
     // 构建环境过滤器
     let env_filter = build_env_filter(&config);
-    
+
     // 构建格式化层
     let fmt_layer = fmt::layer()
         .with_target(true)
@@ -35,7 +30,7 @@ pub fn init_logging(config: Option<LogConfig>) {
         .with_thread_names(false)
         .with_line_number(true)
         .with_file(true);
-    
+
     // 根据配置决定输出目标
     if config.console_output && !config.file_output {
         // 仅控制台输出
@@ -56,7 +51,7 @@ pub fn init_logging(config: Option<LogConfig>) {
                 .with_line_number(true)
                 .with_file(true)
                 .with_ansi(false);
-            
+
             tracing_subscriber::registry()
                 .with(env_filter)
                 .with(file_layer)
@@ -83,7 +78,7 @@ pub fn init_logging(config: Option<LogConfig>) {
                 .with_line_number(true)
                 .with_file(true)
                 .with_ansi(false);
-            
+
             tracing_subscriber::registry()
                 .with(env_filter)
                 .with(fmt_layer)
@@ -99,11 +94,9 @@ pub fn init_logging(config: Option<LogConfig>) {
         }
     } else {
         // 都不输出（不推荐）
-        tracing_subscriber::registry()
-            .with(env_filter)
-            .init();
+        tracing_subscriber::registry().with(env_filter).init();
     }
-    
+
     // 保存配置到全局
     let _ = super::set_log_config(config);
 }
@@ -111,10 +104,11 @@ pub fn init_logging(config: Option<LogConfig>) {
 /// 根据配置构建环境过滤器
 fn build_env_filter(config: &LogConfig) -> EnvFilter {
     let mut filter = EnvFilter::new(level_to_str(config.default_level));
-    
+
     // 添加各模块的过滤规则
     for module_config in &config.modules {
-        let directive = format!("{}={}", 
+        let directive = format!(
+            "{}={}",
             module_config.module.replace("::*", ""),
             level_to_str(module_config.level)
         );
@@ -124,14 +118,14 @@ fn build_env_filter(config: &LogConfig) -> EnvFilter {
             format!("{}=info", module_config.module).parse().unwrap()
         }));
     }
-    
+
     // 允许通过环境变量 RUST_LOG 覆盖
     if let Ok(rust_log) = std::env::var("RUST_LOG") {
         if !rust_log.is_empty() {
             return EnvFilter::new(rust_log);
         }
     }
-    
+
     filter
 }
 

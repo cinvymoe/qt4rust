@@ -7,19 +7,19 @@ use tokio::task::JoinHandle;
 use tracing;
 
 /// 数据采集器 - 使用 Tokio 在后台异步执行定期任务
-/// 
+///
 /// # 示例
 /// ```rust
 /// use qt_threading_utils::prelude::*;
 /// use std::time::Duration;
-/// 
+///
 /// let collector = DataCollector::new(Duration::from_secs(1));
-/// 
+///
 /// // 在异步上下文中使用
 /// collector.start(|| {
 ///     println!("采集数据...");
 /// }).await;
-/// 
+///
 /// // ... 执行其他操作
 /// collector.stop().await;
 /// ```
@@ -31,7 +31,7 @@ pub struct DataCollector {
 
 impl DataCollector {
     /// 创建新的数据采集器
-    /// 
+    ///
     /// # 参数
     /// - `interval`: 采集间隔
     pub fn new(interval: Duration) -> Self {
@@ -60,7 +60,7 @@ impl DataCollector {
 
         let handle = tokio::spawn(async move {
             let mut interval_timer = tokio::time::interval(interval);
-            
+
             loop {
                 let is_running = *running_clone.read().await;
                 if !is_running {
@@ -92,7 +92,7 @@ impl DataCollector {
     pub fn interval(&self) -> Duration {
         self.interval
     }
-    
+
     /// 检查是否正在运行（异步）
     pub async fn is_running(&self) -> bool {
         *self.running.read().await
@@ -100,9 +100,9 @@ impl DataCollector {
 }
 
 /// 同步版本的数据采集器 - 使用全局运行时
-/// 
+///
 /// 适用于不能使用 async/await 的场景（如 Qt 信号槽）
-/// 
+///
 /// # 重要
 /// 使用全局运行时，避免创建多个运行时实例导致资源浪费
 pub struct BlockingDataCollector {
@@ -122,18 +122,18 @@ impl BlockingDataCollector {
     }
 
     /// 启动数据采集（阻塞调用）
-    /// 
+    ///
     /// 使用全局运行时生成任务，避免创建新的运行时
     pub fn start<F>(&self, callback: F)
     where
         F: Fn() + Send + Sync + 'static,
     {
         use std::sync::atomic::Ordering;
-        
+
         if self.running.load(Ordering::Relaxed) {
             return;
         }
-        
+
         self.running.store(true, Ordering::Relaxed);
 
         let running_clone = Arc::clone(&self.running);
@@ -143,19 +143,19 @@ impl BlockingDataCollector {
         // 使用全局运行时生成任务
         let handle = crate::runtime::global_runtime().spawn(async move {
             let mut interval_timer = tokio::time::interval(interval);
-            
+
             loop {
                 if !running_clone.load(Ordering::Relaxed) {
                     break;
                 }
 
                 interval_timer.tick().await;
-                
+
                 // 捕获 panic 以防止任务崩溃
                 let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                     callback();
                 }));
-                
+
                 if let Err(e) = result {
                     tracing::error!("Collector callback panicked: {:?}", e);
                     // 继续运行，不中断采集
@@ -171,7 +171,7 @@ impl BlockingDataCollector {
     /// 停止数据采集（阻塞调用）
     pub fn stop(&self) {
         use std::sync::atomic::Ordering;
-        
+
         self.running.store(false, Ordering::Relaxed);
 
         if let Ok(mut handle_lock) = self.handle.lock() {
@@ -188,7 +188,7 @@ impl BlockingDataCollector {
     pub fn interval(&self) -> Duration {
         self.interval
     }
-    
+
     /// 检查是否正在运行（阻塞调用）
     pub fn is_running(&self) -> bool {
         use std::sync::atomic::Ordering;

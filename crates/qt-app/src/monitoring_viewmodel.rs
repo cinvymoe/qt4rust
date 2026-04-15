@@ -252,7 +252,7 @@ impl monitoring_viewmodel_bridge::MonitoringViewModel {
     /// 测试方法：更新模拟数据（仅用于开发测试）
     pub fn update_test_data(mut self: Pin<&mut Self>, load: f64, radius: f64, angle: f64) {
         // 创建模拟的传感器数据
-        let sensor_data = qt_rust_demo::models::SensorData::new(load, radius, angle);
+        let sensor_data = qt_rust_demo::models::SensorData::new(load, radius, angle, false, false);
 
         // 使用简单转换（不依赖配置）
         let processed_data = qt_rust_demo::models::ProcessedData::from_sensor_data(sensor_data, 0);

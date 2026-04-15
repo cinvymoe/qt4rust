@@ -4,6 +4,7 @@ use crate::config::config_manager::ConfigManager;
 use crate::models::crane_config::CraneConfig;
 use crate::models::SensorData;
 use crane_data_layer::error::DataResult;
+use sensor_core::SensorSource;
 use sensor_simulator::prelude::SimulatedDataSource;
 use std::sync::{Arc, Mutex};
 
@@ -14,10 +15,14 @@ pub enum SensorSourceEnum {
 }
 
 impl SensorSourceEnum {
-    fn read_all(&self) -> Result<(f64, f64, f64), String> {
+    fn read_all(&self) -> Result<(f64, f64, f64, bool, bool), String> {
         match self {
-            SensorSourceEnum::Simulated(ds) => ds.read_all().map_err(|e| e.to_string()),
-            SensorSourceEnum::Modbus(ds) => ds.read_all().map_err(|e| e.to_string()),
+            SensorSourceEnum::Simulated(ds) => {
+                SensorSource::read_all(ds).map_err(|e| e.to_string())
+            }
+            SensorSourceEnum::Modbus(ds) => {
+                SensorSource::read_all(ds.as_ref()).map_err(|e| e.to_string())
+            }
         }
     }
 }
@@ -80,9 +85,9 @@ impl CraneDataRepository {
             .lock()
             .map_err(|e| format!("Failed to lock sensor source: {}", e))?;
 
-        let (ad1, ad2, ad3) = sensor_source.read_all()?;
+        let (ad1, ad2, ad3, di0, di1) = sensor_source.read_all()?;
 
-        let data = SensorData::new(ad1, ad2, ad3);
+        let data = SensorData::new(ad1, ad2, ad3, di0, di1);
 
         if let Ok(mut cache) = self.cache.lock() {
             *cache = Some(data.clone());

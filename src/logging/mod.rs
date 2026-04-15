@@ -1,12 +1,11 @@
 /// 全局日志管理模块
-/// 
+///
 /// 提供按模块/文件单独控制日志级别的功能
-
 pub mod config;
 pub mod filter;
 
 pub use config::{LogConfig, ModuleLogLevel};
-pub use filter::{init_logging, init_default_logging, init_logging_from_file};
+pub use filter::{init_default_logging, init_logging, init_logging_from_file};
 
 use std::sync::OnceLock;
 use tracing::Level;
@@ -17,8 +16,7 @@ static LOG_CONFIG: OnceLock<LogConfig> = OnceLock::new();
 /// 获取全局日志配置
 pub fn get_log_config() -> &'static LogConfig {
     LOG_CONFIG.get_or_init(|| {
-        LogConfig::from_file("config/logging.toml")
-            .unwrap_or_else(|_| LogConfig::default())
+        LogConfig::from_file("config/logging.toml").unwrap_or_else(|_| LogConfig::default())
     })
 }
 

@@ -55,7 +55,10 @@ pub mod moment_curve_bridge {
 
         /// 从文件导入曲线数据
         #[qinvokable]
-        unsafe fn importCurveFromFile(self: Pin<&mut MomentCurveViewModel>, file_path: QString) -> bool;
+        unsafe fn importCurveFromFile(
+            self: Pin<&mut MomentCurveViewModel>,
+            file_path: QString,
+        ) -> bool;
 
         /// 获取导入状态消息
         #[qinvokable]
@@ -372,10 +375,7 @@ impl moment_curve_bridge::MomentCurveViewModel {
                 // 6. 重新加载数据
                 self.as_mut().process_loaded_data(table);
 
-                let msg = format!(
-                    "导入成功：{} 个臂长配置",
-                    self.boom_lengths.borrow().len()
-                );
+                let msg = format!("导入成功：{} 个臂长配置", self.boom_lengths.borrow().len());
                 tracing::info!("{}", msg);
                 *self.import_status_message.borrow_mut() = msg;
                 true

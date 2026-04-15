@@ -150,7 +150,10 @@ mod tests {
 
     fn create_test_pipeline(
         data: Vec<(f64, f64, f64, bool, bool)>,
-    ) -> (SensorPipeline<MockSensorSource>, mpsc::Receiver<SourceSensorData>) {
+    ) -> (
+        SensorPipeline<MockSensorSource>,
+        mpsc::Receiver<SourceSensorData>,
+    ) {
         let (tx, rx) = mpsc::channel(100);
         let source = Arc::new(MockSensorSource::new(data));
         let config = PipelineConfig {

@@ -19,11 +19,13 @@ async fn main() {
     let timer = PeriodicTimer::new(Duration::from_millis(500));
     let counter = std::sync::Arc::new(std::sync::atomic::AtomicU32::new(0));
     let counter_clone = counter.clone();
-    
-    timer.start(move || {
-        let count = counter_clone.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        println!("   定时器触发 #{}", count + 1);
-    }).await;
+
+    timer
+        .start(move || {
+            let count = counter_clone.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            println!("   定时器触发 #{}", count + 1);
+        })
+        .await;
 
     tokio::time::sleep(Duration::from_secs(2)).await;
     timer.stop().await;
@@ -32,21 +34,25 @@ async fn main() {
     // 3. 单次定时器
     println!("\n3. 单次定时器示例");
     let oneshot = OneShotTimer::new(Duration::from_secs(1));
-    oneshot.start(|| {
-        println!("   延迟任务执行！");
-    }).await;
+    oneshot
+        .start(|| {
+            println!("   延迟任务执行！");
+        })
+        .await;
 
     // 4. 异步数据采集器
     println!("\n4. 异步数据采集器示例");
     let collector = DataCollector::new(Duration::from_millis(300));
-    
+
     let data_counter = std::sync::Arc::new(std::sync::atomic::AtomicU32::new(0));
     let data_counter_clone = data_counter.clone();
-    
-    collector.start(move || {
-        let count = data_counter_clone.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        println!("   采集数据 #{}", count + 1);
-    }).await;
+
+    collector
+        .start(move || {
+            let count = data_counter_clone.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            println!("   采集数据 #{}", count + 1);
+        })
+        .await;
 
     tokio::time::sleep(Duration::from_secs(1)).await;
     collector.stop().await;

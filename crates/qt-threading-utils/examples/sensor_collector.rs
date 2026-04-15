@@ -31,7 +31,10 @@ impl MultiSensorCollector {
     pub fn new() -> Self {
         Self {
             // AD1: 随机传感器，范围 0-100
-            ad1_sensor: SimulatedSensor::new(SimulatorType::Random { min: 0.0, max: 100.0 }),
+            ad1_sensor: SimulatedSensor::new(SimulatorType::Random {
+                min: 0.0,
+                max: 100.0,
+            }),
             // AD2: 正弦波传感器，模拟周期性变化
             ad2_sensor: SimulatedSensor::new(SimulatorType::Sine(SimulatorConfig {
                 amplitude: 10.0,
@@ -40,7 +43,10 @@ impl MultiSensorCollector {
                 noise_level: 0.5,
             })),
             // AD3: 随机传感器，范围 20-80
-            ad3_sensor: SimulatedSensor::new(SimulatorType::Random { min: 20.0, max: 80.0 }),
+            ad3_sensor: SimulatedSensor::new(SimulatorType::Random {
+                min: 20.0,
+                max: 80.0,
+            }),
             latest_data: Arc::new(Mutex::new(SensorData::default())),
         }
     }
@@ -50,7 +56,7 @@ impl MultiSensorCollector {
         let ad1 = self.ad1_sensor.read().unwrap_or(0.0);
         let ad2 = self.ad2_sensor.read().unwrap_or(0.0);
         let ad3 = self.ad3_sensor.read().unwrap_or(0.0);
-        
+
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -95,41 +101,42 @@ async fn main() {
 
     // 创建多传感器采集器
     let collector = Arc::new(MultiSensorCollector::new());
-    
+
     // 数据计数器
     let counter = Arc::new(Mutex::new(0u32));
-    
+
     // 创建数据采集定时器 (每 500ms 采集一次)
     println!("1. 启动周期性定时器采集 (500ms 间隔)");
     println!("-------------------------------------------");
-    println!("{:<6} {:<12} {:<12} {:<12} {:<16}", 
-        "序号", "AD1", "AD2", "AD3", "时间戳");
+    println!(
+        "{:<6} {:<12} {:<12} {:<12} {:<16}",
+        "序号", "AD1", "AD2", "AD3", "时间戳"
+    );
     println!("-------------------------------------------");
 
     let collector_clone = Arc::clone(&collector);
     let counter_clone = Arc::clone(&counter);
-    
+
     let timer = PeriodicTimer::new(Duration::from_millis(500));
-    timer.start(move || {
-        let data = collector_clone.read_all();
-        let mut count = counter_clone.lock().unwrap();
-        *count += 1;
-        
-        // 更新最新数据
-        collector_clone.update_latest(data.clone());
-        
-        println!("{:<6} {:<12.2} {:<12.2} {:<12.2} {:<16}", 
-            *count,
-            data.ad1,
-            data.ad2,
-            data.ad3,
-            data.timestamp
-        );
-    }).await;
+    timer
+        .start(move || {
+            let data = collector_clone.read_all();
+            let mut count = counter_clone.lock().unwrap();
+            *count += 1;
+
+            // 更新最新数据
+            collector_clone.update_latest(data.clone());
+
+            println!(
+                "{:<6} {:<12.2} {:<12.2} {:<12.2} {:<16}",
+                *count, data.ad1, data.ad2, data.ad3, data.timestamp
+            );
+        })
+        .await;
 
     // 运行 5 秒
     tokio::time::sleep(Duration::from_secs(5)).await;
-    
+
     // 停止定时器
     timer.stop().await;
     println!("-------------------------------------------");
@@ -138,8 +145,10 @@ async fn main() {
     // 使用 DataCollector 采集数据
     println!("\n2. 使用 DataCollector 采集数据 (300ms 间隔)");
     println!("-------------------------------------------");
-    println!("{:<6} {:<12} {:<12} {:<12} {:<16}", 
-        "序号", "AD1", "AD2", "AD3", "时间戳");
+    println!(
+        "{:<6} {:<12} {:<12} {:<12} {:<16}",
+        "序号", "AD1", "AD2", "AD3", "时间戳"
+    );
     println!("-------------------------------------------");
 
     // 重置计数器
@@ -150,26 +159,25 @@ async fn main() {
 
     let collector_clone2 = Arc::clone(&collector);
     let counter_clone2 = Arc::clone(&counter);
-    
+
     let data_collector = DataCollector::new(Duration::from_millis(300));
-    
-    data_collector.start(move || {
-        let data = collector_clone2.read_all();
-        let mut count = counter_clone2.lock().unwrap();
-        *count += 1;
-        
-        println!("{:<6} {:<12.2} {:<12.2} {:<12.2} {:<16}", 
-            *count,
-            data.ad1,
-            data.ad2,
-            data.ad3,
-            data.timestamp
-        );
-    }).await;
+
+    data_collector
+        .start(move || {
+            let data = collector_clone2.read_all();
+            let mut count = counter_clone2.lock().unwrap();
+            *count += 1;
+
+            println!(
+                "{:<6} {:<12.2} {:<12.2} {:<12.2} {:<16}",
+                *count, data.ad1, data.ad2, data.ad3, data.timestamp
+            );
+        })
+        .await;
 
     // 运行 3 秒
     tokio::time::sleep(Duration::from_secs(3)).await;
-    
+
     // 停止采集器
     data_collector.stop().await;
     println!("-------------------------------------------");
@@ -182,6 +190,6 @@ async fn main() {
     println!("AD2: {:.2}", final_data.ad2);
     println!("AD3: {:.2}", final_data.ad3);
     println!("时间戳: {}", final_data.timestamp);
-    
+
     println!("\n=== 示例完成 ===");
 }

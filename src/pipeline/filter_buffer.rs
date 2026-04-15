@@ -138,18 +138,29 @@ impl FilterBuffer {
 
     fn mean_filter(data: &[SensorData]) -> SensorData {
         if data.is_empty() {
-            return SensorData::new(0.0, 0.0, 0.0);
+            return SensorData::new(0.0, 0.0, 0.0, false, false);
         }
         let count = data.len() as f64;
-        let (a, r, g) = data.iter().fold((0.0, 0.0, 0.0), |(a, r, g), d| {
-            (a + d.ad1_load, r + d.ad2_radius, g + d.ad3_angle)
-        });
-        SensorData::new(a / count, r / count, g / count)
+        let (a, r, g, di0_count, di1_count) =
+            data.iter()
+                .fold((0.0, 0.0, 0.0, 0usize, 0usize), |(a, r, g, di0, di1), d| {
+                    (
+                        a + d.ad1_load,
+                        r + d.ad2_radius,
+                        g + d.ad3_angle,
+                        di0 + d.digital_input_0 as usize,
+                        di1 + d.digital_input_1 as usize,
+                    )
+                });
+        // 对于数字输入，使用多数投票
+        let di0 = di0_count > data.len() / 2;
+        let di1 = di1_count > data.len() / 2;
+        SensorData::new(a / count, r / count, g / count, di0, di1)
     }
 
     fn median_filter(data: &[SensorData]) -> SensorData {
         if data.is_empty() {
-            return SensorData::new(0.0, 0.0, 0.0);
+            return SensorData::new(0.0, 0.0, 0.0, false, false);
         }
         let mut ad1: Vec<f64> = data.iter().map(|d| d.ad1_load).collect();
         let mut ad2: Vec<f64> = data.iter().map(|d| d.ad2_radius).collect();
@@ -158,7 +169,15 @@ impl FilterBuffer {
         ad2.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         ad3.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         let mid = data.len() / 2;
-        SensorData::new(ad1[mid], ad2[mid], ad3[mid])
+        // 对于数字输入，使用中间值的数字输入
+        let mid_data = &data[mid];
+        SensorData::new(
+            ad1[mid],
+            ad2[mid],
+            ad3[mid],
+            mid_data.digital_input_0,
+            mid_data.digital_input_1,
+        )
     }
 }
 
@@ -173,7 +192,7 @@ mod tests {
     use super::*;
 
     fn sd(ad1: f64, ad2: f64, ad3: f64) -> SensorData {
-        SensorData::new(ad1, ad2, ad3)
+        SensorData::new(ad1, ad2, ad3, false, false)
     }
 
     #[test]

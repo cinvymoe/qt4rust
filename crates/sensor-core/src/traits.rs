@@ -1,4 +1,6 @@
 use crate::error::SensorResult;
+
+#[cfg(test)]
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub trait SensorSource {

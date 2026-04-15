@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
-use tokio::time::{interval, Duration};
+use tokio::time::interval;
 
 /// Pipeline that batches and persists aggregated sensor data.
 pub struct StoragePipeline {
@@ -131,7 +131,7 @@ async fn flush_batch(
         return Ok(());
     }
 
-    let data_to_save: Vec<AggregatedSensorData> = batch.drain(..).collect();
+    let data_to_save = std::mem::take(batch);
     repository.save_aggregated_data_batch(data_to_save).await?;
     sequence.fetch_add(1, Ordering::SeqCst);
 
@@ -145,6 +145,7 @@ mod tests {
     use crate::pipeline::data_source::DataSourceId;
     use crate::storage::repository::MockStorageRepository;
     use std::collections::HashMap;
+    use std::time::Duration;
 
     fn create_test_aggregated_data(weight: f64) -> AggregatedSensorData {
         let mut sources = HashMap::new();

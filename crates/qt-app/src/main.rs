@@ -3,18 +3,18 @@
 
 // Qt 相关模块
 mod application;
-mod monitoring_viewmodel;
 mod calibration_viewmodel;
 mod data_collection_controller;
-mod viewmodel_manager;
+mod monitoring_viewmodel;
 mod settings_viewmodel;
+mod viewmodel_manager;
 
 // Settings ViewModels (在 src/ 根目录以满足 cxx-qt 构建限制)
-mod load_calibration_viewmodel;
-mod angle_calibration_viewmodel;
-mod radius_calibration_viewmodel;
 mod alarm_threshold_viewmodel;
+mod angle_calibration_viewmodel;
+mod load_calibration_viewmodel;
 mod moment_curve_viewmodel;
+mod radius_calibration_viewmodel;
 
 // MVI 架构模块
 mod states {
@@ -74,10 +74,10 @@ fn main() {
             qt_rust_demo::logging::init_default_logging();
         }
     }
-    
+
     setup_virtual_keyboard();
     setup_fontconfig();
-    
+
     // 创建应用程序实例
     let mut app = match Application::new() {
         Ok(app) => {
@@ -89,10 +89,10 @@ fn main() {
             std::process::exit(1); // Qt 应用初始化失败
         }
     };
-    
+
     // 启动应用程序并获取退出码
     let exit_code = app.run();
-    
+
     // 返回退出码
     std::process::exit(exit_code);
 }

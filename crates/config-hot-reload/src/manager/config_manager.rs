@@ -5,16 +5,16 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
-use tokio::sync::{mpsc, RwLock, Mutex};
+use tokio::sync::{mpsc, Mutex, RwLock};
 use tracing::{debug, error, info, warn};
 
-use crate::error::HotReloadError;
-use crate::types::{ConfigChange, ConfigFileEvent, ConfigFileType, ConfigSnapshot};
-use crate::watcher::FileWatcher;
-use crate::parser::ConfigParser;
-use crate::validator::ConfigValidator;
-use crate::subscriber::ConfigSubscriber;
 use super::config_cache::ConfigCache;
+use crate::error::HotReloadError;
+use crate::parser::ConfigParser;
+use crate::subscriber::ConfigSubscriber;
+use crate::types::{ConfigChange, ConfigFileEvent, ConfigFileType, ConfigSnapshot};
+use crate::validator::ConfigValidator;
+use crate::watcher::FileWatcher;
 
 /// 热加载配置管理器
 ///
@@ -200,13 +200,13 @@ impl HotReloadConfigManager {
     /// * `change` - 配置变更信息
     async fn notify_subscribers(&self, change: ConfigChange) {
         let start_time = Instant::now();
-        
+
         // 获取配置快照
         let snapshot = self.get_config_snapshot().await;
-        
+
         // 获取订阅者列表（读锁）
         let subscribers = self.subscribers.read().await;
-        
+
         if subscribers.is_empty() {
             debug!("没有配置订阅者需要通知");
             return;
@@ -235,10 +235,7 @@ impl HotReloadConfigManager {
                     debug!("订阅者 {} 已收到配置变更通知", subscriber_name);
                 }
                 Err(_) => {
-                    warn!(
-                        "订阅者 {} 处理配置变更超时（> 50ms）",
-                        subscriber_name
-                    );
+                    warn!("订阅者 {} 处理配置变更超时（> 50ms）", subscriber_name);
                 }
             }
         }
@@ -282,7 +279,8 @@ impl HotReloadConfigManager {
                     {
                         // 检查是否是空文件错误（编辑器保存过程中的临时状态）
                         let error_msg = e.to_string();
-                        if error_msg.contains("文件为空") || error_msg.contains("只包含空白字符") {
+                        if error_msg.contains("文件为空") || error_msg.contains("只包含空白字符")
+                        {
                             warn!(
                                 file_type = ?event.file_type,
                                 path = %event.path.display(),
@@ -346,7 +344,7 @@ impl HotReloadConfigManager {
 
                 // 原子性更新配置
                 let mut cache = config_cache.write().await;
-                
+
                 // 记录配置变更前后的关键参数差异
                 info!(
                     config_type = "SensorCalibration",
@@ -358,7 +356,7 @@ impl HotReloadConfigManager {
                     new_radius_scale = config.radius.scale_value,
                     "传感器校准配置参数变更"
                 );
-                
+
                 cache.sensor_calibration = config;
                 cache.increment_version();
 
@@ -386,7 +384,7 @@ impl HotReloadConfigManager {
                 })?;
 
                 let mut cache = config_cache.write().await;
-                
+
                 // 记录配置变更前后的关键参数差异
                 info!(
                     config_type = "AlarmThresholds",
@@ -396,7 +394,7 @@ impl HotReloadConfigManager {
                     new_alarm = config.moment.alarm_percentage,
                     "报警阈值配置参数变更"
                 );
-                
+
                 cache.alarm_thresholds = config;
                 cache.increment_version();
 
@@ -424,7 +422,7 @@ impl HotReloadConfigManager {
                 })?;
 
                 let mut cache = config_cache.write().await;
-                
+
                 // 记录配置变更前后的关键参数差异
                 info!(
                     config_type = "Logging",
@@ -434,7 +432,7 @@ impl HotReloadConfigManager {
                     new_file_output = config.file_output,
                     "日志配置参数变更"
                 );
-                
+
                 cache.logging_config = config;
                 cache.increment_version();
 
@@ -462,7 +460,7 @@ impl HotReloadConfigManager {
                 })?;
 
                 let mut cache = config_cache.write().await;
-                
+
                 // 记录配置变更前后的关键参数差异
                 info!(
                     config_type = "ModbusSensors",
@@ -472,7 +470,7 @@ impl HotReloadConfigManager {
                     new_port = config.server.port,
                     "Modbus 配置参数变更"
                 );
-                
+
                 cache.modbus_config = config;
                 cache.increment_version();
 
@@ -500,7 +498,7 @@ impl HotReloadConfigManager {
                 })?;
 
                 let mut cache = config_cache.write().await;
-                
+
                 // 记录配置变更前后的关键参数差异
                 info!(
                     config_type = "Pipeline",
@@ -512,7 +510,7 @@ impl HotReloadConfigManager {
                     new_display_interval = config.display.interval_ms,
                     "管道配置参数变更"
                 );
-                
+
                 cache.pipeline_config = config;
                 cache.increment_version();
 
@@ -540,24 +538,27 @@ impl HotReloadConfigManager {
                 })?;
 
                 let mut cache = config_cache.write().await;
-                
+
                 // 记录配置变更前后的关键参数差异
-                let old_entry_count = cache.rated_load_table.get_all_entries()
+                let old_entry_count = cache
+                    .rated_load_table
+                    .get_all_entries()
                     .iter()
                     .map(|entries| entries.len())
                     .sum::<usize>();
-                let new_entry_count = config.get_all_entries()
+                let new_entry_count = config
+                    .get_all_entries()
                     .iter()
                     .map(|entries| entries.len())
                     .sum::<usize>();
-                
+
                 info!(
                     config_type = "RatedLoadTable",
                     old_entry_count = old_entry_count,
                     new_entry_count = new_entry_count,
                     "额定负载表配置参数变更"
                 );
-                
+
                 cache.rated_load_table = config;
                 cache.increment_version();
 
@@ -643,10 +644,7 @@ impl HotReloadConfigManager {
                     debug!("订阅者 {} 已收到配置变更通知", subscriber_name);
                 }
                 Err(_) => {
-                    warn!(
-                        "订阅者 {} 处理配置变更超时（> 50ms）",
-                        subscriber_name
-                    );
+                    warn!("订阅者 {} 处理配置变更超时（> 50ms）", subscriber_name);
                 }
             }
         }

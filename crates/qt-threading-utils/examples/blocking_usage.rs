@@ -11,7 +11,7 @@ fn main() {
     let timer = BlockingPeriodicTimer::new(Duration::from_millis(200));
     let counter = std::sync::Arc::new(std::sync::atomic::AtomicU32::new(0));
     let counter_clone = counter.clone();
-    
+
     timer.start(move || {
         let count = counter_clone.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         println!("   定时器触发 #{}", count + 1);
@@ -24,10 +24,10 @@ fn main() {
     // 2. 阻塞式数据采集器
     println!("\n2. 阻塞式数据采集器示例");
     let collector = BlockingDataCollector::new(Duration::from_millis(150));
-    
+
     let data_counter = std::sync::Arc::new(std::sync::atomic::AtomicU32::new(0));
     let data_counter_clone = data_counter.clone();
-    
+
     collector.start(move || {
         let count = data_counter_clone.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         println!("   采集数据 #{}", count + 1);

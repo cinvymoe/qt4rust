@@ -1,7 +1,7 @@
-use std::time::Duration;
-use rand::{Rng, SeedableRng};
-use rand::rngs::StdRng;
 use super::StorageError;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
+use std::time::Duration;
 
 /// Configuration for retry behavior
 #[derive(Debug, Clone)]
@@ -32,26 +32,32 @@ where
 {
     let mut attempt = 0;
     let mut rng = StdRng::from_entropy();
-    
+
     loop {
         match operation().await {
             Ok(value) => return Ok(value),
             Err(e) => {
                 let _ = e;
-                
+
                 if attempt >= config.max_retries {
                     tracing::error!("Max retries ({}) exceeded", config.max_retries);
                     return Err(StorageError::MaxRetriesExceeded);
                 }
-                
+
                 // Exponential backoff with jitter
-                let exponential_delay = config.base_delay.as_secs_f64() * 2.0_f64.powi(attempt as i32);
+                let exponential_delay =
+                    config.base_delay.as_secs_f64() * 2.0_f64.powi(attempt as i32);
                 let capped_delay = exponential_delay.min(config.max_delay.as_secs_f64());
                 // Add jitter: -25% to +25%
                 let jitter_factor = 1.0 + rng.gen_range(-0.25..0.25);
                 let delay = Duration::from_secs_f64(capped_delay * jitter_factor);
-                
-                tracing::warn!("Retry attempt {}/{} after {:?}", attempt + 1, config.max_retries, delay);
+
+                tracing::warn!(
+                    "Retry attempt {}/{} after {:?}",
+                    attempt + 1,
+                    config.max_retries,
+                    delay
+                );
                 tokio::time::sleep(delay).await;
                 attempt += 1;
             }

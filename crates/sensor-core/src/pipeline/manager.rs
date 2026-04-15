@@ -215,12 +215,12 @@ impl SensorPipelineManager {
 
     /// Returns true if the aggregator is running.
     pub fn is_aggregator_running(&self) -> bool {
-        self.aggregator.as_ref().map_or(false, |a| a.is_running())
+        self.aggregator.as_ref().is_some_and(|a| a.is_running())
     }
 
     /// Returns true if storage is running.
     pub fn is_storage_running(&self) -> bool {
-        self.storage.as_ref().map_or(false, |s| s.is_running())
+        self.storage.as_ref().is_some_and(|s| s.is_running())
     }
 
     /// Returns the number of registered sensor sources.
@@ -238,8 +238,8 @@ impl Default for SensorPipelineManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::traits::MockSensorSource;
     use crate::storage::repository::MockStorageRepository;
+    use crate::traits::MockSensorSource;
     use std::time::Duration;
 
     #[test]
@@ -347,7 +347,9 @@ mod tests {
         // Set up a separate receiver to capture aggregated data
         let (test_tx, mut test_rx) = mpsc::channel::<AggregatedSensorData>(100);
 
-        let source = Arc::new(MockSensorSource::new(vec![(100.0, 200.0, 300.0, false, false)]));
+        let source = Arc::new(MockSensorSource::new(vec![(
+            100.0, 200.0, 300.0, false, false,
+        )]));
         let config = PipelineConfig {
             read_interval: Duration::from_millis(10),
             max_retries: 3,

@@ -58,19 +58,19 @@ pub struct LogConfig {
     /// 默认日志级别
     #[serde(default)]
     pub default_level: LogLevel,
-    
+
     /// 是否输出到控制台
     #[serde(default = "default_true")]
     pub console_output: bool,
-    
+
     /// 是否输出到文件
     #[serde(default)]
     pub file_output: bool,
-    
+
     /// 日志文件路径
     #[serde(default = "default_log_file")]
     pub log_file: String,
-    
+
     /// 各模块的日志级别配置
     #[serde(default)]
     pub modules: Vec<ModuleLogLevel>,
@@ -127,18 +127,18 @@ impl LogConfig {
         if pattern == module {
             return true;
         }
-        
+
         // 支持通配符匹配
         if pattern.ends_with("::*") {
             let prefix = &pattern[..pattern.len() - 3];
             return module.starts_with(prefix);
         }
-        
+
         if pattern.ends_with('*') {
             let prefix = &pattern[..pattern.len() - 1];
             return module.starts_with(prefix);
         }
-        
+
         false
     }
 
@@ -204,7 +204,13 @@ mod tests {
         };
 
         assert_eq!(config.get_module_level("myapp::other"), LogLevel::Info);
-        assert_eq!(config.get_module_level("myapp::pipeline::manager"), LogLevel::Debug);
-        assert_eq!(config.get_module_level("myapp::pipeline::storage"), LogLevel::Trace);
+        assert_eq!(
+            config.get_module_level("myapp::pipeline::manager"),
+            LogLevel::Debug
+        );
+        assert_eq!(
+            config.get_module_level("myapp::pipeline::storage"),
+            LogLevel::Trace
+        );
     }
 }

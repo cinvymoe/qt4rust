@@ -1,12 +1,12 @@
 // SensorData 存储管道
 
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::{Duration, Instant};
 use crate::config::pipeline_config::SensorDataStorageConfig;
 use crate::models::SensorData;
-use crate::repositories::sensor_data_repository::SensorDataRepository;
 use crate::pipeline::sensor_data_event_channel::SensorDataEventReceiver;
+use crate::repositories::sensor_data_repository::SensorDataRepository;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::time::{Duration, Instant};
 use tokio::sync::Mutex;
 use tracing::{info, warn};
 
@@ -54,9 +54,11 @@ impl SensorStoragePipeline {
         let pipeline = self.clone_for_callback();
 
         // 使用全局 tokio runtime 启动异步任务
-        self.handle = Some(qt_threading_utils::runtime::global_runtime().spawn(async move {
-            pipeline.run_event_loop().await;
-        }));
+        self.handle = Some(
+            qt_threading_utils::runtime::global_runtime().spawn(async move {
+                pipeline.run_event_loop().await;
+            }),
+        );
 
         info!("传感器存储管道已启动");
         Ok(())
@@ -127,9 +129,12 @@ impl SensorStoragePipeline {
 
         // Drain remaining batch before shutdown
         let batch_len = pending_batch.lock().await.len();
-        tracing::info!("Draining {} pending sensor data records before shutdown", batch_len);
+        tracing::info!(
+            "Draining {} pending sensor data records before shutdown",
+            batch_len
+        );
         Self::flush_batch(&pending_batch, &last_flush, &config, &repository).await;
-        
+
         // 确保在事件循环结束时重置 running 标志
         self.running.store(false, Ordering::Relaxed);
         tracing::debug!("Sensor storage pipeline event loop ended, running flag reset");
@@ -186,7 +191,8 @@ impl SensorStoragePipeline {
     #[allow(dead_code)]
     fn should_flush(&self) -> bool {
         let batch_full = self.pending_batch.len() >= self.config.batch_size;
-        let interval_elapsed = self.last_flush.elapsed() >= Duration::from_secs(self.config.interval_secs);
+        let interval_elapsed =
+            self.last_flush.elapsed() >= Duration::from_secs(self.config.interval_secs);
         batch_full || interval_elapsed
     }
 
@@ -254,11 +260,7 @@ mod tests {
         let config = SensorDataStorageConfig::default();
         let (_tx, rx) = create_sensor_data_channels(100);
 
-        let pipeline = SensorStoragePipeline::with_event_channel(
-            config,
-            repo,
-            rx,
-        );
+        let pipeline = SensorStoragePipeline::with_event_channel(config, repo, rx);
 
         // Verify initial state
         assert!(!pipeline.running.load(Ordering::Relaxed));
@@ -271,11 +273,7 @@ mod tests {
         let config = SensorDataStorageConfig::default();
         let (_tx, rx) = create_sensor_data_channels(100);
 
-        let mut pipeline = SensorStoragePipeline::with_event_channel(
-            config,
-            repo,
-            rx,
-        );
+        let mut pipeline = SensorStoragePipeline::with_event_channel(config, repo, rx);
 
         // Start should succeed
         assert!(pipeline.start().is_ok());
@@ -298,11 +296,7 @@ mod tests {
         };
         let (_tx, rx) = create_sensor_data_channels(100);
 
-        let mut pipeline = SensorStoragePipeline::with_event_channel(
-            config.clone(),
-            repo,
-            rx,
-        );
+        let mut pipeline = SensorStoragePipeline::with_event_channel(config.clone(), repo, rx);
 
         // Initially should not flush
         assert!(!pipeline.should_flush());
@@ -335,7 +329,8 @@ mod tests {
             &last_flush,
             &config,
             &repo as &Arc<dyn SensorDataRepository>,
-        ).await;
+        )
+        .await;
 
         // Batch should be empty after flush
         let batch = pending_batch.lock().await;
@@ -355,7 +350,8 @@ mod tests {
             &last_flush,
             &config,
             &repo as &Arc<dyn SensorDataRepository>,
-        ).await;
+        )
+        .await;
 
         let batch = pending_batch.lock().await;
         assert!(batch.is_empty());

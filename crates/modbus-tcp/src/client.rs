@@ -19,6 +19,7 @@ pub struct ModbusTcpClient {
     connected: bool,
     client: Mutex<Option<Context>>,
     runtime: Mutex<Option<tokio::runtime::Runtime>>,
+    #[allow(dead_code)]
     name: String,
 }
 

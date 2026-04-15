@@ -21,7 +21,7 @@ impl AlarmLevel {
             AlarmLevel::Critical => "critical",
         }
     }
-    
+
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "warning" => Some(AlarmLevel::Warning),
@@ -30,7 +30,7 @@ impl AlarmLevel {
             _ => None,
         }
     }
-    
+
     /// 获取优先级（数值越大优先级越高）
     pub fn priority(&self) -> u8 {
         match self {
@@ -72,7 +72,7 @@ impl AlarmSource {
             AlarmSource::SystemError => "system_error",
         }
     }
-    
+
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "moment" => Some(AlarmSource::Moment),
@@ -85,7 +85,7 @@ impl AlarmSource {
             _ => None,
         }
     }
-    
+
     /// 获取报警描述
     pub fn description(&self) -> &str {
         match self {
@@ -113,12 +113,12 @@ impl AlarmType {
     pub fn new(source: AlarmSource, level: AlarmLevel) -> Self {
         Self { source, level }
     }
-    
+
     /// 获取报警唯一标识
     pub fn id(&self) -> String {
         format!("{}_{}", self.source.as_str(), self.level.as_str())
     }
-    
+
     /// 获取报警描述
     pub fn description(&self) -> String {
         format!("{} - {}", self.source.description(), self.level.as_str())
@@ -128,13 +128,13 @@ impl AlarmType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_alarm_level_priority() {
         assert!(AlarmLevel::Critical.priority() > AlarmLevel::Danger.priority());
         assert!(AlarmLevel::Danger.priority() > AlarmLevel::Warning.priority());
     }
-    
+
     #[test]
     fn test_alarm_type_id() {
         let alarm = AlarmType::new(AlarmSource::Moment, AlarmLevel::Danger);

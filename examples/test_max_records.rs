@@ -54,16 +54,17 @@ async fn test_max_records_scenario(
 ) -> Result<(), Box<dyn std::error::Error>> {
     // 创建测试数据库
     let db_path = format!("test_max_records_{}.db", max_records);
-    
+
     // 删除旧数据库
     let _ = std::fs::remove_file(&db_path);
-    
-    // 创建 Repository
-    let repo: Arc<dyn StorageRepository> = Arc::new(
-        SqliteStorageRepository::new(&db_path).await?
-    );
 
-    println!("  配置: max_records={}, purge_threshold={}", max_records, purge_threshold);
+    // 创建 Repository
+    let repo: Arc<dyn StorageRepository> = Arc::new(SqliteStorageRepository::new(&db_path).await?);
+
+    println!(
+        "  配置: max_records={}, purge_threshold={}",
+        max_records, purge_threshold
+    );
     println!("  插入 {} 条记录...", insert_count);
 
     // 插入测试数据
@@ -74,9 +75,9 @@ async fn test_max_records_scenario(
             60.0 + (i % 10) as f64,
         );
         let processed = ProcessedData::from_sensor_data(sensor_data, i as u64);
-        
+
         repo.save_runtime_data_batch(&vec![processed]).await?;
-        
+
         // 每插入 5 条记录，执行一次清理检查
         if i % 5 == 0 {
             let purged = repo.purge_old_records(max_records, purge_threshold).await?;
@@ -98,9 +99,15 @@ async fn test_max_records_scenario(
 
     // 验证结果
     if count <= max_records as i64 {
-        println!("  ✓ 测试通过: 记录数 {} <= max_records {}", count, max_records);
+        println!(
+            "  ✓ 测试通过: 记录数 {} <= max_records {}",
+            count, max_records
+        );
     } else {
-        println!("  ✗ 测试失败: 记录数 {} > max_records {}", count, max_records);
+        println!(
+            "  ✗ 测试失败: 记录数 {} > max_records {}",
+            count, max_records
+        );
     }
 
     // 查询最早和最晚的记录
@@ -109,7 +116,9 @@ async fn test_max_records_scenario(
         println!("  最早记录: sequence={}", first.sequence_number);
     }
 
-    let records = repo.get_runtime_data_range(count.saturating_sub(1) as i64, 1).await?;
+    let records = repo
+        .get_runtime_data_range(count.saturating_sub(1) as i64, 1)
+        .await?;
     if let Some(last) = records.first() {
         println!("  最晚记录: sequence={}", last.sequence_number);
     }
@@ -125,25 +134,19 @@ async fn test_max_records_scenario(
 /// 测试不限制记录数
 async fn test_unlimited_records() -> Result<(), Box<dyn std::error::Error>> {
     let db_path = "test_unlimited.db";
-    
+
     // 删除旧数据库
     let _ = std::fs::remove_file(db_path);
-    
+
     // 创建 Repository
-    let repo: Arc<dyn StorageRepository> = Arc::new(
-        SqliteStorageRepository::new(db_path).await?
-    );
+    let repo: Arc<dyn StorageRepository> = Arc::new(SqliteStorageRepository::new(db_path).await?);
 
     println!("  配置: max_records=0 (不限制)");
     println!("  插入 50 条记录...");
 
     // 插入 50 条记录
     for i in 1..=50 {
-        let sensor_data = SensorData::new(
-            10.0 + i as f64,
-            8.0,
-            60.0,
-        );
+        let sensor_data = SensorData::new(10.0 + i as f64, 8.0, 60.0);
         let processed = ProcessedData::from_sensor_data(sensor_data, i as u64);
         repo.save_runtime_data_batch(&vec![processed]).await?;
     }

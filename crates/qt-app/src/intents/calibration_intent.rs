@@ -12,13 +12,13 @@ pub enum CalibrationIntent {
         calculated_radius: f64,
         calculated_angle: f64,
     },
-    
+
     /// 传感器断连
     SensorDisconnected,
-    
+
     /// 传感器重连
     SensorReconnected,
-    
+
     /// 清除错误信息
     ClearError,
 }

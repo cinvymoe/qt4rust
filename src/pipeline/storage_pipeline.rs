@@ -1,48 +1,48 @@
 // 存储管道（事件驱动版本）
 
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::time::Duration;
-use super::event_channel::{StorageEventReceiver, create_storage_channels};
-use super::retry_policy::{RetryConfig, with_retry};
-use crate::repositories::storage_repository::StorageRepository;
+use super::event_channel::{create_storage_channels, StorageEventReceiver};
+use super::retry_policy::{with_retry, RetryConfig};
 use crate::models::ProcessedData;
 use crate::pipeline::StorageError;
+use crate::repositories::storage_repository::StorageRepository;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::Arc;
+use std::time::Duration;
 
 /// 存储管道配置
 #[derive(Debug, Clone)]
 pub struct StoragePipelineConfig {
     /// 存储间隔（运行数据）
     pub interval: Duration,
-    
+
     /// 批量存储大小
     pub batch_size: usize,
-    
+
     /// 失败重试次数
     pub max_retries: u32,
-    
+
     /// 重试延迟
     pub retry_delay: Duration,
-    
+
     /// 管道队列最大容量
     pub max_queue_size: usize,
-    
+
     /// 数据库最大记录条数（0 表示不限制）
     pub max_records: usize,
-    
+
     /// 清理阈值（0 表示使用默认值 max_records * 1.1）
     pub purge_threshold: usize,
-    
+
     /// 报警记录最大条数（0 表示不限制）
     pub alarm_max_records: usize,
-    
+
     pub alarm_purge_threshold: usize,
 
     pub save_only_latest: bool,
-    
+
     /// 报警防抖计数阈值（连续多少次危险才触发报警，0 表示禁用防抖）
     pub alarm_debounce_count: u32,
-    
+
     /// 报警解除防抖计数阈值（连续多少次安全才解除报警，0 表示禁用防抖）
     pub alarm_clear_debounce_count: u32,
 }
@@ -60,7 +60,7 @@ impl Default for StoragePipelineConfig {
             alarm_max_records: 0,
             alarm_purge_threshold: 0,
             save_only_latest: false,
-            alarm_debounce_count: 5,        // 默认：连续 5 次危险才报警 (500ms)
+            alarm_debounce_count: 5, // 默认：连续 5 次危险才报警 (500ms)
             alarm_clear_debounce_count: 10, // 默认：连续 10 次安全才解除 (1s)
         }
     }
@@ -93,12 +93,12 @@ pub struct StoragePipeline {
     handle: Option<tokio::task::JoinHandle<()>>,
     /// 上次报警状态（用于检测持续报警）
     last_was_danger: Arc<AtomicBool>,
-    
+
     // 事件驱动新字段
     event_receiver: StorageEventReceiver,
     pending_batch: Vec<ProcessedData>,
     last_stored_sequence: Arc<AtomicU64>,
-    
+
     // 报警防抖计数器
     danger_count: Arc<std::sync::atomic::AtomicU32>,
     safe_count: Arc<std::sync::atomic::AtomicU32>,
@@ -125,7 +125,7 @@ impl StoragePipeline {
             safe_count: Arc::new(std::sync::atomic::AtomicU32::new(0)),
         }
     }
-    
+
     /// Legacy constructor (keep for backward compatibility)
     pub async fn new(
         config: StoragePipelineConfig,
@@ -134,29 +134,33 @@ impl StoragePipeline {
     ) -> Result<Self, String> {
         let (_tx, rx) = create_storage_channels(config.max_queue_size);
         let pipeline = Self::with_event_channel(config.clone(), repository, rx);
-        
+
         if let Ok(last_seq) = pipeline.repository.get_last_stored_sequence().await {
-            pipeline.last_stored_sequence.store(last_seq, Ordering::Relaxed);
+            pipeline
+                .last_stored_sequence
+                .store(last_seq, Ordering::Relaxed);
         }
-        
+
         Ok(pipeline)
     }
-    
+
     /// Start the storage pipeline (uses global runtime)
     pub fn start(&mut self) -> Result<(), String> {
         if self.running.load(Ordering::Relaxed) {
             return Err("Storage pipeline already running".to_string());
         }
-        
+
         self.running.store(true, Ordering::Relaxed);
-        
+
         let pipeline = self.clone_for_callback();
-        
+
         // Use global runtime to spawn the async task
-        self.handle = Some(qt_threading_utils::runtime::global_runtime().spawn(async move {
-            pipeline.run_event_loop().await;
-        }));
-        
+        self.handle = Some(
+            qt_threading_utils::runtime::global_runtime().spawn(async move {
+                pipeline.run_event_loop().await;
+            }),
+        );
+
         Ok(())
     }
 
@@ -168,7 +172,7 @@ impl StoragePipeline {
         }
         Ok(())
     }
-    
+
     /// Event-driven main loop
     async fn run_event_loop(&self) {
         let mut flush_interval = tokio::time::interval(self.config.interval);
@@ -181,7 +185,7 @@ impl StoragePipeline {
         let safe_count = self.safe_count.clone();
         let config = self.config.clone();
         let repository = self.repository.clone();
-        
+
         loop {
             let mut data_rx_guard = data_rx.lock().await;
             tokio::select! {
@@ -191,14 +195,14 @@ impl StoragePipeline {
                         break;
                     }
                 }
-                
+
                 data = data_rx_guard.recv() => {
                     drop(data_rx_guard);
                     if let Some(data_list) = data {
                         Self::handle_new_data(
-                            data_list, 
-                            &pending_batch, 
-                            &last_seq, 
+                            data_list,
+                            &pending_batch,
+                            &last_seq,
                             &last_was_danger,
                             &config,
                             &repository,
@@ -207,28 +211,28 @@ impl StoragePipeline {
                         ).await;
                     }
                 }
-                
+
                 _ = flush_interval.tick() => {
                     drop(data_rx_guard);
                     Self::flush_pending_batch(
-                        &pending_batch, 
-                        &last_seq, 
-                        &config, 
+                        &pending_batch,
+                        &last_seq,
+                        &config,
                         &repository
                     ).await;
                 }
             }
         }
-        
+
         let batch_len = pending_batch.lock().await.len();
         tracing::info!("Draining {} pending records before shutdown", batch_len);
         Self::flush_pending_batch(&pending_batch, &last_seq, &config, &repository).await;
-        
+
         // 确保在事件循环结束时重置 running 标志
         self.running.store(false, Ordering::Relaxed);
         tracing::debug!("Storage pipeline event loop ended, running flag reset");
     }
-    
+
     async fn handle_new_data(
         data_list: Vec<ProcessedData>,
         pending_batch: &tokio::sync::Mutex<Vec<ProcessedData>>,
@@ -240,28 +244,29 @@ impl StoragePipeline {
         safe_count: &Arc<std::sync::atomic::AtomicU32>,
     ) {
         let last_seq_val = last_seq.load(Ordering::Acquire);
-        
+
         for data in data_list {
             // Filter already stored
             if data.sequence_number > last_seq_val {
                 // 检查是否有任何报警（力矩报警或角度报警等）
                 let has_any_alarm = data.is_danger || !data.alarm_sources.is_empty();
-                
+
                 // Handle alarm state transitions with debounce
                 if has_any_alarm {
                     // 危险状态：增加危险计数，重置安全计数
                     let current_danger_count = danger_count.fetch_add(1, Ordering::Relaxed) + 1;
                     safe_count.store(0, Ordering::Relaxed);
-                    
+
                     // 检查是否达到防抖阈值
-                    if config.alarm_debounce_count == 0 || current_danger_count >= config.alarm_debounce_count {
+                    if config.alarm_debounce_count == 0
+                        || current_danger_count >= config.alarm_debounce_count
+                    {
                         // Check if this is a NEW alarm (not continuous)
                         let expected = false;
-                        if last_was_danger.compare_exchange(
-                            expected, true, 
-                            Ordering::Relaxed, 
-                            Ordering::Relaxed
-                        ).is_ok() {
+                        if last_was_danger
+                            .compare_exchange(expected, true, Ordering::Relaxed, Ordering::Relaxed)
+                            .is_ok()
+                        {
                             // 记录是哪个类型的报警
                             for source in &data.alarm_sources {
                                 tracing::warn!("Alarm triggered: {:?}", source);
@@ -283,16 +288,17 @@ impl StoragePipeline {
                     // 安全状态：增加安全计数，重置危险计数
                     let current_safe_count = safe_count.fetch_add(1, Ordering::Relaxed) + 1;
                     danger_count.store(0, Ordering::Relaxed);
-                    
+
                     // 检查是否达到解除防抖阈值
-                    if config.alarm_clear_debounce_count == 0 || current_safe_count >= config.alarm_clear_debounce_count {
+                    if config.alarm_clear_debounce_count == 0
+                        || current_safe_count >= config.alarm_clear_debounce_count
+                    {
                         // Check if alarm was cleared
                         let expected = true;
-                        if last_was_danger.compare_exchange(
-                            expected, false,
-                            Ordering::Relaxed,
-                            Ordering::Relaxed
-                        ).is_ok() {
+                        if last_was_danger
+                            .compare_exchange(expected, false, Ordering::Relaxed, Ordering::Relaxed)
+                            .is_ok()
+                        {
                             tracing::info!(
                                 "✅ Alarm CLEARED at sequence {} (safe_count: {}, threshold: {})",
                                 data.sequence_number,
@@ -303,12 +309,12 @@ impl StoragePipeline {
                     }
                     // 移除高频 DEBUG 日志，避免日志刷屏
                 }
-                
+
                 let mut batch = pending_batch.lock().await;
                 batch.push(data);
             }
         }
-        
+
         // Auto-flush if batch is full
         let mut batch = pending_batch.lock().await;
         if batch.len() >= config.batch_size {
@@ -322,7 +328,7 @@ impl StoragePipeline {
             Self::flush_pending_batch(pending_batch, last_seq, config, repository).await;
         }
     }
-    
+
     async fn flush_pending_batch(
         pending_batch: &tokio::sync::Mutex<Vec<ProcessedData>>,
         last_seq: &Arc<AtomicU64>,
@@ -336,15 +342,16 @@ impl StoragePipeline {
             }
             std::mem::take(&mut *batch)
         };
-        
-        let max_seq = data_to_save.iter()
+
+        let max_seq = data_to_save
+            .iter()
             .map(|d| d.sequence_number)
             .max()
             .unwrap_or(0);
-        
+
         let max_records = config.max_records;
         let purge_threshold = config.purge_threshold;
-        
+
         // Use retry with exponential backoff
         let result = with_retry(
             &RetryConfig {
@@ -356,17 +363,19 @@ impl StoragePipeline {
                 let data = data_to_save.clone();
                 let repo = Arc::clone(repository);
                 async move {
-                    repo.save_runtime_data_batch(&data).await
+                    repo.save_runtime_data_batch(&data)
+                        .await
                         .map_err(|e| StorageError::Database(e.to_string()))
                 }
             },
-        ).await;
-        
+        )
+        .await;
+
         match result {
             Ok(saved) => {
                 tracing::info!("Saved {} records (seq <= {})", saved, max_seq);
                 last_seq.store(max_seq, Ordering::Release);
-                
+
                 // Trigger purge in background
                 if max_records > 0 {
                     let repo = Arc::clone(repository);
@@ -384,7 +393,7 @@ impl StoragePipeline {
             }
         }
     }
-    
+
     async fn save_alarm_inner(
         data: ProcessedData,
         config: &StoragePipelineConfig,
@@ -393,7 +402,7 @@ impl StoragePipeline {
         let repo = Arc::clone(repository);
         let alarm_max = config.alarm_max_records;
         let alarm_purge = config.alarm_purge_threshold;
-        
+
         tokio::spawn(async move {
             match repo.save_alarm_record(&data).await {
                 Ok(alarm_id) => {
@@ -410,7 +419,7 @@ impl StoragePipeline {
             }
         });
     }
-    
+
     /// Save alarm asynchronously (public API for callbacks)
     pub fn save_alarm_async(&self, data: ProcessedData) {
         let config = self.config.clone();
@@ -419,29 +428,29 @@ impl StoragePipeline {
             Self::save_alarm_inner(data, &config, &repository).await;
         });
     }
-    
+
     /// Stop the storage pipeline (graceful)
     pub fn stop(&mut self) {
         self.running.store(false, Ordering::Relaxed);
         // Send shutdown signal through event receiver
         self.event_receiver.shutdown();
-        
+
         // Abort the handle but don't block
         if let Some(handle) = self.handle.take() {
             handle.abort();
         }
     }
-    
+
     /// Get pending batch length
     pub fn queue_len(&self) -> usize {
         self.pending_batch.len()
     }
-    
+
     /// Get last stored sequence
     pub fn last_stored_sequence(&self) -> u64 {
         self.last_stored_sequence.load(Ordering::Relaxed)
     }
-    
+
     /// Clone for callback (matches old interface)
     pub fn clone_for_callback(&self) -> Self {
         Self {
@@ -460,41 +469,45 @@ impl StoragePipeline {
             safe_count: Arc::clone(&self.safe_count),
         }
     }
-    
+
     /// Notify danger cleared (legacy compatibility)
     pub fn notify_danger_cleared(&self) {
         self.last_was_danger.store(false, Ordering::Relaxed);
         tracing::debug!("Danger state reset to false");
     }
-    
+
     /// Save alarm async (legacy public interface)
-    /// 
+    ///
     /// Note: This method is retained for backward compatibility.
     /// The internal alarm saving is now handled automatically via event handling.
     pub fn save_alarm_async_legacy(&self, data: ProcessedData) {
         // Check if we need to skip (continuous alarm logic)
         let last_was_danger = self.last_was_danger.load(Ordering::Relaxed);
-        
+
         if last_was_danger {
             // Already in alarm state, skip
             tracing::debug!("Continuous alarm detected, skipping duplicate");
             return;
         }
-        
+
         // Set alarm state
         self.last_was_danger.store(true, Ordering::Relaxed);
-        
+
         // Spawn the async save
         let repo = Arc::clone(&self.repository);
         let alarm_max = self.config.alarm_max_records;
         let alarm_purge = self.config.alarm_purge_threshold;
         let sequence_number = data.sequence_number;
-        
+
         tokio::spawn(async move {
             match repo.save_alarm_record(&data).await {
                 Ok(alarm_id) => {
-                    tracing::info!("New alarm saved with id: {} (sequence: {})", alarm_id, sequence_number);
-                    
+                    tracing::info!(
+                        "New alarm saved with id: {} (sequence: {})",
+                        alarm_id,
+                        sequence_number
+                    );
+
                     // Clean up old alarms
                     if alarm_max > 0 {
                         match repo.purge_old_alarms(alarm_max, alarm_purge).await {
@@ -525,75 +538,60 @@ impl Drop for StoragePipeline {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::repositories::mock_storage_repository::MockStorageRepository;
     use crate::pipeline::shared_buffer::ProcessedDataBuffer;
+    use crate::repositories::mock_storage_repository::MockStorageRepository;
     use std::sync::RwLock;
-    
+
     #[tokio::test]
     async fn test_new() {
         let repo = Arc::new(MockStorageRepository::new());
         let buffer = Arc::new(RwLock::new(ProcessedDataBuffer::new(100)));
         let config = StoragePipelineConfig::default();
-        
-        let pipeline = StoragePipeline::new(
-            config,
-            repo as Arc<dyn StorageRepository>,
-            buffer,
-        ).await;
-        
+
+        let pipeline =
+            StoragePipeline::new(config, repo as Arc<dyn StorageRepository>, buffer).await;
+
         assert!(pipeline.is_ok());
     }
-    
+
     #[tokio::test]
     async fn test_with_event_channel() {
         let repo = Arc::new(MockStorageRepository::new());
         let config = StoragePipelineConfig::default();
         let (_tx, rx) = create_storage_channels(100);
-        
-        let pipeline = StoragePipeline::with_event_channel(
-            config,
-            repo,
-            rx,
-        );
-        
+
+        let pipeline = StoragePipeline::with_event_channel(config, repo, rx);
+
         assert_eq!(pipeline.queue_len(), 0);
         assert_eq!(pipeline.last_stored_sequence(), 0);
     }
-    
+
     #[tokio::test]
     async fn test_start_stop() {
         let repo = Arc::new(MockStorageRepository::new());
         let config = StoragePipelineConfig::default();
         let (_tx, rx) = create_storage_channels(100);
-        
-        let mut pipeline = StoragePipeline::with_event_channel(
-            config,
-            repo,
-            rx,
-        );
-        
+
+        let mut pipeline = StoragePipeline::with_event_channel(config, repo, rx);
+
         // Start should succeed
         assert!(pipeline.start().is_ok());
-        
+
         // Starting again should fail
         assert!(pipeline.start().is_err());
-        
+
         // Stop should not panic
         pipeline.stop();
     }
-    
+
     #[tokio::test]
     async fn test_queue_operations() {
         let repo = Arc::new(MockStorageRepository::new());
         let config = StoragePipelineConfig::default();
         let (_tx, rx) = create_storage_channels(100);
-        
-        let pipeline = StoragePipeline::with_event_channel(
-            config,
-            repo,
-            rx,
-        );
-        
+
+        let pipeline = StoragePipeline::with_event_channel(config, repo, rx);
+
         // Initial queue should be empty
         assert_eq!(pipeline.queue_len(), 0);
         assert_eq!(pipeline.last_stored_sequence(), 0);

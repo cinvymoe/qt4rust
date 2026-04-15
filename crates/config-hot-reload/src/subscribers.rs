@@ -1,15 +1,15 @@
+use async_trait::async_trait;
 use std::sync::Arc;
 use std::sync::RwLock;
-use async_trait::async_trait;
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 
-use crate::types::{ConfigChange, ConfigFileType, ConfigSnapshot};
-use crate::subscriber::ConfigSubscriber;
 use crate::parser::ModbusConfig;
+use crate::subscriber::ConfigSubscriber;
+use crate::types::{ConfigChange, ConfigFileType, ConfigSnapshot};
 use qt_rust_demo::config::pipeline_config::PipelineConfig;
 use qt_rust_demo::logging::config::LogConfig;
-use sensor_core::{SensorCalibration, AlarmThresholds};
 use qt_rust_demo::models::rated_load_table::RatedLoadTable;
+use sensor_core::{AlarmThresholds, SensorCalibration};
 
 /// Pipeline 配置订阅者 - 在下一周期应用新的采集/存储/显示配置
 pub struct PipelineConfigSubscriber {
@@ -43,18 +43,34 @@ impl ConfigSubscriber for PipelineConfigSubscriber {
                 let old_display_interval = guard.display.interval_ms;
                 let old_buffer_size = guard.collection.buffer_size;
                 let old_batch_size = guard.storage.batch_size;
-                let old_filter = format!("{}/{}", guard.filter.filter_type, guard.filter.window_size);
+                let old_filter =
+                    format!("{}/{}", guard.filter.filter_type, guard.filter.window_size);
 
                 *guard = snapshot.pipeline_config.clone();
                 let new_config = &*guard;
-                let new_filter = format!("{}/{}", new_config.filter.filter_type, new_config.filter.window_size);
+                let new_filter = format!(
+                    "{}/{}",
+                    new_config.filter.filter_type, new_config.filter.window_size
+                );
 
                 info!(
                     subscriber = "PipelineConfigSubscriber",
-                    collection_interval = format!("{}ms -> {}ms", old_interval, new_config.collection.interval_ms),
-                    storage_interval = format!("{}ms -> {}ms", old_storage_interval, new_config.storage.interval_ms),
-                    display_interval = format!("{}ms -> {}ms", old_display_interval, new_config.display.interval_ms),
-                    buffer_size = format!("{} -> {}", old_buffer_size, new_config.collection.buffer_size),
+                    collection_interval = format!(
+                        "{}ms -> {}ms",
+                        old_interval, new_config.collection.interval_ms
+                    ),
+                    storage_interval = format!(
+                        "{}ms -> {}ms",
+                        old_storage_interval, new_config.storage.interval_ms
+                    ),
+                    display_interval = format!(
+                        "{}ms -> {}ms",
+                        old_display_interval, new_config.display.interval_ms
+                    ),
+                    buffer_size = format!(
+                        "{} -> {}",
+                        old_buffer_size, new_config.collection.buffer_size
+                    ),
                     batch_size = format!("{} -> {}", old_batch_size, new_config.storage.batch_size),
                     filter = format!("{} -> {}", old_filter, new_filter),
                     "管道配置已更新，将在下一周期生效"
@@ -82,7 +98,10 @@ impl DataProcessingSubscriber {
         sensor_calibration: Arc<RwLock<SensorCalibration>>,
         rated_load_table: Arc<RwLock<RatedLoadTable>>,
     ) -> Self {
-        Self { sensor_calibration, rated_load_table }
+        Self {
+            sensor_calibration,
+            rated_load_table,
+        }
     }
 }
 
@@ -110,13 +129,18 @@ impl ConfigSubscriber for DataProcessingSubscriber {
 
                         info!(
                             subscriber = "DataProcessingSubscriber",
-                            weight_scale = format!("{} -> {}", old_weight, new_cal.weight.scale_value),
-                            weight_multiplier = format!("{} -> {}", old_weight_multiplier, new_cal.weight.multiplier),
+                            weight_scale =
+                                format!("{} -> {}", old_weight, new_cal.weight.scale_value),
+                            weight_multiplier = format!(
+                                "{} -> {}",
+                                old_weight_multiplier, new_cal.weight.multiplier
+                            ),
                             angle_scale = format!("{} -> {}", old_angle, new_cal.angle.scale_value),
-                            radius_scale = format!("{} -> {}", old_radius, new_cal.radius.scale_value),
+                            radius_scale =
+                                format!("{} -> {}", old_radius, new_cal.radius.scale_value),
                             "🔄 传感器校准配置已更新，将在下一次数据转换时生效"
                         );
-                        
+
                         info!("📝 [新标定参数] weight: zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}, multiplier={:.2}",
                             new_cal.weight.zero_ad,
                             new_cal.weight.zero_value,
@@ -149,8 +173,12 @@ impl ConfigSubscriber for DataProcessingSubscriber {
                         info!(
                             subscriber = "DataProcessingSubscriber",
                             entries = format!("{} -> {}", old_count, new_table.len()),
-                            warning = format!("{}% -> {}%", old_warning, new_table.moment_warning_threshold),
-                            alarm = format!("{}% -> {}%", old_alarm, new_table.moment_alarm_threshold),
+                            warning = format!(
+                                "{}% -> {}%",
+                                old_warning, new_table.moment_warning_threshold
+                            ),
+                            alarm =
+                                format!("{}% -> {}%", old_alarm, new_table.moment_alarm_threshold),
                             "额定负载表已更新，将在下一次力矩计算时生效"
                         );
                     }
@@ -206,13 +234,19 @@ impl ConfigSubscriber for AlarmDetectionSubscriber {
 
                 info!(
                     subscriber = "AlarmDetectionSubscriber",
-                    warning = format!("{}% -> {}%", old_warning, new_thresh.moment.warning_percentage),
+                    warning = format!(
+                        "{}% -> {}%",
+                        old_warning, new_thresh.moment.warning_percentage
+                    ),
                     alarm = format!("{}% -> {}%", old_alarm, new_thresh.moment.alarm_percentage),
                     "报警阈值已更新，立即生效"
                 );
 
                 if threshold_lowered {
-                    warn!(subscriber = "AlarmDetectionSubscriber", "阈值降低，可能导致新的报警触发");
+                    warn!(
+                        subscriber = "AlarmDetectionSubscriber",
+                        "阈值降低，可能导致新的报警触发"
+                    );
                 }
             }
             Err(e) => {
@@ -292,7 +326,10 @@ impl SensorDataSourceSubscriber {
         modbus_config: Arc<RwLock<ModbusConfig>>,
         reconnect_flag: Arc<RwLock<bool>>,
     ) -> Self {
-        Self { modbus_config, reconnect_flag }
+        Self {
+            modbus_config,
+            reconnect_flag,
+        }
     }
 }
 
@@ -329,7 +366,10 @@ impl ConfigSubscriber for SensorDataSourceSubscriber {
                 match self.reconnect_flag.write() {
                     Ok(mut flag) => {
                         *flag = true;
-                        info!(subscriber = "SensorDataSourceSubscriber", "已设置重连标志，传感器数据源将在下次采集时重连");
+                        info!(
+                            subscriber = "SensorDataSourceSubscriber",
+                            "已设置重连标志，传感器数据源将在下次采集时重连"
+                        );
                     }
                     Err(e) => {
                         error!(subscriber = "SensorDataSourceSubscriber", error = %e, "设置重连标志失败");
@@ -398,17 +438,33 @@ pub async fn register_all_subscribers(
     manager: &mut crate::HotReloadConfigManager,
     shared_refs: &SharedConfigRefs,
 ) {
-    manager.subscribe(Box::new(PipelineConfigSubscriber::new(Arc::clone(&shared_refs.pipeline_config)))).await;
-    manager.subscribe(Box::new(DataProcessingSubscriber::new(
-        Arc::clone(&shared_refs.sensor_calibration),
-        Arc::clone(&shared_refs.rated_load_table),
-    ))).await;
-    manager.subscribe(Box::new(AlarmDetectionSubscriber::new(Arc::clone(&shared_refs.alarm_thresholds)))).await;
-    manager.subscribe(Box::new(LoggingConfigSubscriber::new(Arc::clone(&shared_refs.log_config)))).await;
-    manager.subscribe(Box::new(SensorDataSourceSubscriber::new(
-        Arc::clone(&shared_refs.modbus_config),
-        Arc::clone(&shared_refs.modbus_reconnect_flag),
-    ))).await;
+    manager
+        .subscribe(Box::new(PipelineConfigSubscriber::new(Arc::clone(
+            &shared_refs.pipeline_config,
+        ))))
+        .await;
+    manager
+        .subscribe(Box::new(DataProcessingSubscriber::new(
+            Arc::clone(&shared_refs.sensor_calibration),
+            Arc::clone(&shared_refs.rated_load_table),
+        )))
+        .await;
+    manager
+        .subscribe(Box::new(AlarmDetectionSubscriber::new(Arc::clone(
+            &shared_refs.alarm_thresholds,
+        ))))
+        .await;
+    manager
+        .subscribe(Box::new(LoggingConfigSubscriber::new(Arc::clone(
+            &shared_refs.log_config,
+        ))))
+        .await;
+    manager
+        .subscribe(Box::new(SensorDataSourceSubscriber::new(
+            Arc::clone(&shared_refs.modbus_config),
+            Arc::clone(&shared_refs.modbus_reconnect_flag),
+        )))
+        .await;
 
     info!("所有配置订阅者已注册");
 }

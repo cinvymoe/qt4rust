@@ -34,20 +34,15 @@ impl AggregatedSensorData {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum AggregationStrategy {
+    #[default]
     Immediate,
     WaitAll(std::time::Duration),
     PrimaryBackup {
         primary: DataSourceId,
         backup: Vec<DataSourceId>,
     },
-}
-
-impl Default for AggregationStrategy {
-    fn default() -> Self {
-        AggregationStrategy::Immediate
-    }
 }
 
 /// Pipeline that aggregates sensor data from multiple sources.
@@ -110,10 +105,8 @@ impl AggregatorPipeline {
 
                         match &strategy {
                             AggregationStrategy::Immediate => {
-                                let sources: HashMap<DataSourceId, SensorData> = cache
-                                    .iter()
-                                    .map(|(k, (v, _))| (*k, v.clone()))
-                                    .collect();
+                                let sources: HashMap<DataSourceId, SensorData> =
+                                    cache.iter().map(|(k, (v, _))| (*k, v.clone())).collect();
 
                                 let aggregated = AggregatedSensorData::new(sources);
 
@@ -122,10 +115,8 @@ impl AggregatorPipeline {
                                 }
                             }
                             AggregationStrategy::WaitAll(_duration) => {
-                                let sources: HashMap<DataSourceId, SensorData> = cache
-                                    .iter()
-                                    .map(|(k, (v, _))| (*k, v.clone()))
-                                    .collect();
+                                let sources: HashMap<DataSourceId, SensorData> =
+                                    cache.iter().map(|(k, (v, _))| (*k, v.clone())).collect();
 
                                 let aggregated = AggregatedSensorData::new(sources);
 
@@ -177,7 +168,10 @@ mod tests {
     #[test]
     fn test_aggregated_sensor_data_creation() {
         let mut sources = HashMap::new();
-        sources.insert(DataSourceId::Modbus, SensorData::new(100.0, 50.0, 45.0, false, false));
+        sources.insert(
+            DataSourceId::Modbus,
+            SensorData::new(100.0, 50.0, 45.0, false, false),
+        );
         let aggregated = AggregatedSensorData::new(sources);
         assert_eq!(aggregated.valid_source_count, 1);
     }
@@ -185,8 +179,14 @@ mod tests {
     #[test]
     fn test_aggregated_sensor_data_add_source() {
         let mut aggregated = AggregatedSensorData::new(HashMap::new());
-        aggregated.add_source(DataSourceId::Modbus, SensorData::new(100.0, 50.0, 45.0, false, false));
-        aggregated.add_source(DataSourceId::Simulator, SensorData::new(101.0, 51.0, 46.0, false, false));
+        aggregated.add_source(
+            DataSourceId::Modbus,
+            SensorData::new(100.0, 50.0, 45.0, false, false),
+        );
+        aggregated.add_source(
+            DataSourceId::Simulator,
+            SensorData::new(101.0, 51.0, 46.0, false, false),
+        );
         assert_eq!(aggregated.valid_source_count, 2);
     }
 
@@ -195,11 +195,8 @@ mod tests {
         let (input_tx, input_rx) = mpsc::channel::<SourceSensorData>(10);
         let (output_tx, mut output_rx) = mpsc::channel::<AggregatedSensorData>(10);
 
-        let mut pipeline = AggregatorPipeline::new(
-            AggregationStrategy::Immediate,
-            input_rx,
-            output_tx,
-        );
+        let mut pipeline =
+            AggregatorPipeline::new(AggregationStrategy::Immediate, input_rx, output_tx);
 
         assert!(!pipeline.is_running());
         pipeline.start();
@@ -208,7 +205,10 @@ mod tests {
         let data = SourceSensorData::new(DataSourceId::Modbus, 100, 200, 300, false, false, 1000);
         input_tx.send(data).await.unwrap();
 
-        let aggregated = output_rx.recv().await.expect("Should receive aggregated data");
+        let aggregated = output_rx
+            .recv()
+            .await
+            .expect("Should receive aggregated data");
         assert_eq!(aggregated.valid_source_count, 1);
         assert!(aggregated.sources.contains_key(&DataSourceId::Modbus));
 
@@ -221,11 +221,8 @@ mod tests {
         let (input_tx, input_rx) = mpsc::channel::<SourceSensorData>(10);
         let (output_tx, mut output_rx) = mpsc::channel::<AggregatedSensorData>(10);
 
-        let mut pipeline = AggregatorPipeline::new(
-            AggregationStrategy::Immediate,
-            input_rx,
-            output_tx,
-        );
+        let mut pipeline =
+            AggregatorPipeline::new(AggregationStrategy::Immediate, input_rx, output_tx);
 
         pipeline.start();
 
@@ -233,10 +230,14 @@ mod tests {
         input_tx.send(data1).await.unwrap();
         let _ = output_rx.recv().await;
 
-        let data2 = SourceSensorData::new(DataSourceId::Simulator, 150, 250, 350, false, false, 2000);
+        let data2 =
+            SourceSensorData::new(DataSourceId::Simulator, 150, 250, 350, false, false, 2000);
         input_tx.send(data2).await.unwrap();
 
-        let aggregated = output_rx.recv().await.expect("Should receive aggregated data");
+        let aggregated = output_rx
+            .recv()
+            .await
+            .expect("Should receive aggregated data");
         assert_eq!(aggregated.valid_source_count, 2);
         assert!(aggregated.sources.contains_key(&DataSourceId::Modbus));
         assert!(aggregated.sources.contains_key(&DataSourceId::Simulator));
@@ -257,15 +258,20 @@ mod tests {
         let mut pipeline = AggregatorPipeline::new(strategy, input_rx, output_tx);
         pipeline.start();
 
-        let backup_data = SourceSensorData::new(DataSourceId::Simulator, 150, 250, 350, false, false, 1000);
+        let backup_data =
+            SourceSensorData::new(DataSourceId::Simulator, 150, 250, 350, false, false, 1000);
         input_tx.send(backup_data).await.unwrap();
 
         tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
 
-        let primary_data = SourceSensorData::new(DataSourceId::Modbus, 100, 200, 300, false, false, 2000);
+        let primary_data =
+            SourceSensorData::new(DataSourceId::Modbus, 100, 200, 300, false, false, 2000);
         input_tx.send(primary_data).await.unwrap();
 
-        let aggregated = output_rx.recv().await.expect("Should receive aggregated data");
+        let aggregated = output_rx
+            .recv()
+            .await
+            .expect("Should receive aggregated data");
         assert_eq!(aggregated.valid_source_count, 1);
         assert!(aggregated.sources.contains_key(&DataSourceId::Modbus));
 
