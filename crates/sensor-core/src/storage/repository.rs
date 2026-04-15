@@ -86,11 +86,11 @@ mod tests {
     use crate::pipeline::data_source::DataSourceId;
     use std::collections::HashMap;
 
-    fn create_test_data(weight: f64) -> AggregatedSensorData {
+    fn create_test_data(weight: f64, di0: bool, di1: bool) -> AggregatedSensorData {
         let mut sources = HashMap::new();
         sources.insert(
             DataSourceId::Simulator,
-            crate::data::sensor_data::SensorData::new(weight, 50.0, 45.0, false, false),
+            crate::data::sensor_data::SensorData::new(weight, 50.0, 45.0, di0, di1),
         );
         AggregatedSensorData::new(sources)
     }
@@ -98,7 +98,10 @@ mod tests {
     #[tokio::test]
     async fn test_save_and_query() {
         let repo = MockStorageRepository::new();
-        let data = vec![create_test_data(100.0), create_test_data(200.0)];
+        let data = vec![
+            create_test_data(100.0, false, false),
+            create_test_data(200.0, false, false),
+        ];
 
         repo.save_aggregated_data_batch(data.clone())
             .await
@@ -112,9 +115,9 @@ mod tests {
     async fn test_query_with_limit() {
         let repo = MockStorageRepository::new();
         let data = vec![
-            create_test_data(100.0),
-            create_test_data(200.0),
-            create_test_data(300.0),
+            create_test_data(100.0, false, false),
+            create_test_data(200.0, false, false),
+            create_test_data(300.0, false, false),
         ];
 
         repo.save_aggregated_data_batch(data).await.unwrap();
@@ -135,14 +138,14 @@ mod tests {
 
         assert_eq!(repo.get_last_sequence().await.unwrap(), 0);
 
-        repo.save_aggregated_data_batch(vec![create_test_data(100.0)])
+        repo.save_aggregated_data_batch(vec![create_test_data(100.0, false, false)])
             .await
             .unwrap();
         assert_eq!(repo.get_last_sequence().await.unwrap(), 1);
 
         repo.save_aggregated_data_batch(vec![
-            create_test_data(200.0),
-            create_test_data(300.0),
+            create_test_data(200.0, false, false),
+            create_test_data(300.0, false, false),
         ])
         .await
         .unwrap();
@@ -152,7 +155,10 @@ mod tests {
     #[tokio::test]
     async fn test_get_stored_data() {
         let repo = MockStorageRepository::new();
-        let data = vec![create_test_data(100.0), create_test_data(200.0)];
+        let data = vec![
+            create_test_data(100.0, false, false),
+            create_test_data(200.0, false, false),
+        ];
 
         repo.save_aggregated_data_batch(data.clone())
             .await
