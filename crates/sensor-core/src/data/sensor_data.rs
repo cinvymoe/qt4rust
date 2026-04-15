@@ -1,3 +1,6 @@
+use crate::storage::{ColumnDef, DatabaseSchema};
+use rusqlite::types::ToSql;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct SensorData {
     pub ad1_load: f64,
@@ -35,6 +38,52 @@ impl SensorData {
             return Err("AD3 角度数据异常：超出范围 [0, 90]".to_string());
         }
         Ok(())
+    }
+}
+
+impl DatabaseSchema for SensorData {
+    fn table_name() -> &'static str {
+        "sensor_data"
+    }
+
+    fn columns() -> &'static [ColumnDef] {
+        &[
+            ColumnDef {
+                name: "ad1_load",
+                sql_type: "REAL",
+                nullable: false,
+            },
+            ColumnDef {
+                name: "ad2_radius",
+                sql_type: "REAL",
+                nullable: false,
+            },
+            ColumnDef {
+                name: "ad3_angle",
+                sql_type: "REAL",
+                nullable: false,
+            },
+            ColumnDef {
+                name: "digital_input_0",
+                sql_type: "BOOLEAN",
+                nullable: false,
+            },
+            ColumnDef {
+                name: "digital_input_1",
+                sql_type: "BOOLEAN",
+                nullable: false,
+            },
+        ]
+    }
+
+    fn field_values(&self) -> Vec<&dyn ToSql> {
+        vec![
+            &self.ad1_load,
+            &self.ad2_radius,
+            &self.ad3_angle,
+            &self.digital_input_0,
+            &self.digital_input_1,
+        ]
     }
 }
 
