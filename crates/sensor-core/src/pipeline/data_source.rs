@@ -32,6 +32,10 @@ pub struct SourceSensorData {
     pub angle_ad: u16,
     /// Raw radius sensor AD value
     pub radius_ad: u16,
+    /// Digital input 0 (boolean state)
+    pub digital_input_0: bool,
+    /// Digital input 1 (boolean state)
+    pub digital_input_1: bool,
     /// Timestamp in milliseconds since epoch
     pub timestamp_ms: u64,
 }
@@ -43,6 +47,8 @@ impl SourceSensorData {
         weight_ad: u16,
         angle_ad: u16,
         radius_ad: u16,
+        digital_input_0: bool,
+        digital_input_1: bool,
         timestamp_ms: u64,
     ) -> Self {
         Self {
@@ -50,6 +56,8 @@ impl SourceSensorData {
             weight_ad,
             angle_ad,
             radius_ad,
+            digital_input_0,
+            digital_input_1,
             timestamp_ms,
         }
     }
@@ -74,24 +82,36 @@ mod tests {
 
     #[test]
     fn test_source_sensor_data_new() {
-        let data = SourceSensorData::new(DataSourceId::Simulator, 1000, 2000, 3000, 1234567890);
+        let data = SourceSensorData::new(
+            DataSourceId::Simulator,
+            1000,
+            2000,
+            3000,
+            false,
+            false,
+            1234567890,
+        );
 
         assert_eq!(data.source, DataSourceId::Simulator);
         assert_eq!(data.weight_ad, 1000);
         assert_eq!(data.angle_ad, 2000);
         assert_eq!(data.radius_ad, 3000);
+        assert!(!data.digital_input_0);
+        assert!(!data.digital_input_1);
         assert_eq!(data.timestamp_ms, 1234567890);
     }
 
     #[test]
     fn test_source_sensor_data_clone() {
-        let data = SourceSensorData::new(DataSourceId::Mock, 100, 200, 300, 1000);
+        let data = SourceSensorData::new(DataSourceId::Mock, 100, 200, 300, true, false, 1000);
         let cloned = data.clone();
 
         assert_eq!(data.source, cloned.source);
         assert_eq!(data.weight_ad, cloned.weight_ad);
         assert_eq!(data.angle_ad, cloned.angle_ad);
         assert_eq!(data.radius_ad, cloned.radius_ad);
+        assert_eq!(data.digital_input_0, cloned.digital_input_0);
+        assert_eq!(data.digital_input_1, cloned.digital_input_1);
         assert_eq!(data.timestamp_ms, cloned.timestamp_ms);
     }
 }

@@ -205,7 +205,7 @@ mod tests {
         pipeline.start();
         assert!(pipeline.is_running());
 
-        let data = SourceSensorData::new(DataSourceId::Modbus, 100, 200, 300, 1000);
+        let data = SourceSensorData::new(DataSourceId::Modbus, 100, 200, 300, false, false, 1000);
         input_tx.send(data).await.unwrap();
 
         let aggregated = output_rx.recv().await.expect("Should receive aggregated data");
@@ -229,11 +229,11 @@ mod tests {
 
         pipeline.start();
 
-        let data1 = SourceSensorData::new(DataSourceId::Modbus, 100, 200, 300, 1000);
+        let data1 = SourceSensorData::new(DataSourceId::Modbus, 100, 200, 300, false, false, 1000);
         input_tx.send(data1).await.unwrap();
         let _ = output_rx.recv().await;
 
-        let data2 = SourceSensorData::new(DataSourceId::Simulator, 150, 250, 350, 2000);
+        let data2 = SourceSensorData::new(DataSourceId::Simulator, 150, 250, 350, false, false, 2000);
         input_tx.send(data2).await.unwrap();
 
         let aggregated = output_rx.recv().await.expect("Should receive aggregated data");
@@ -257,12 +257,12 @@ mod tests {
         let mut pipeline = AggregatorPipeline::new(strategy, input_rx, output_tx);
         pipeline.start();
 
-        let backup_data = SourceSensorData::new(DataSourceId::Simulator, 150, 250, 350, 1000);
+        let backup_data = SourceSensorData::new(DataSourceId::Simulator, 150, 250, 350, false, false, 1000);
         input_tx.send(backup_data).await.unwrap();
 
         tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
 
-        let primary_data = SourceSensorData::new(DataSourceId::Modbus, 100, 200, 300, 2000);
+        let primary_data = SourceSensorData::new(DataSourceId::Modbus, 100, 200, 300, false, false, 2000);
         input_tx.send(primary_data).await.unwrap();
 
         let aggregated = output_rx.recv().await.expect("Should receive aggregated data");

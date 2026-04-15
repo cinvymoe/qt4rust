@@ -93,6 +93,8 @@ impl<S: SensorSource + Send + Sync + 'static> SensorPipeline<S> {
                             weight as u16,
                             angle as u16,
                             radius as u16,
+                            false,
+                            false,
                             std::time::SystemTime::now()
                                 .duration_since(std::time::UNIX_EPOCH)
                                 .unwrap()
