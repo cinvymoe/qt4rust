@@ -13,9 +13,7 @@ use super::storage_pipeline::{StoragePipeline, StoragePipelineConfig};
 use super::storage_service::StorageService;
 use crate::models::crane_config::CraneConfig;
 use crate::models::rated_load_table::RatedLoadTable;
-use crate::repositories::sensor_data_repository::SensorDataRepository;
-use crate::repositories::sqlite_storage_repository::SqliteStorageRepository;
-use crate::repositories::storage_repository::StorageRepository;
+use crate::repositories::storage_factory::StorageFactory;
 use crate::repositories::CraneDataRepository;
 use sensor_core::{AlarmThresholds, SensorCalibration};
 use std::sync::Arc;
@@ -75,8 +73,7 @@ impl PipelineManager {
     ) -> Result<Self, String> {
         let shared_buffer = Arc::new(std::sync::RwLock::new(ProcessedDataBuffer::new(1000)));
 
-        let storage_repo = SqliteStorageRepository::new(db_path).await?;
-        let storage_repo_arc = Arc::new(storage_repo) as Arc<dyn StorageRepository>;
+        let storage_context = StorageFactory::create_sqlite(db_path).await?;
 
         let pipeline_config = crate::config::pipeline_config::PipelineConfig::load();
         let (storage_pipeline_config, service_config) =
@@ -91,7 +88,10 @@ impl PipelineManager {
         let (storage_sender, storage_receiver) =
             create_storage_channels(storage_pipeline_config.max_queue_size);
 
-        let service = Arc::new(StorageService::new(storage_repo_arc, service_config));
+        let service = Arc::new(StorageService::new(
+            storage_context.runtime_repo(),
+            service_config,
+        ));
 
         let mut storage_pipeline = StoragePipeline::with_event_channel(
             storage_pipeline_config,
@@ -141,8 +141,7 @@ impl PipelineManager {
         // Check if sensor storage is enabled
         let (collection_pipeline, sensor_storage_pipeline, shared_sensor_buffer) =
             if pipeline_config.sensor_storage.enabled {
-                let sensor_repo = Arc::new(SqliteStorageRepository::new(db_path).await?)
-                    as Arc<dyn SensorDataRepository>;
+                let sensor_repo = storage_context.sensor_repo();
                 let (sensor_tx, sensor_rx) = create_sensor_data_channels(1000);
 
                 let sensor_pipeline = SensorStoragePipeline::with_event_channel(
