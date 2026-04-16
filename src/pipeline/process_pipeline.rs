@@ -1,6 +1,7 @@
 // 计算管道 - 多速率数据流架构
 // 从滤波层获取数据 -> 计算处理 -> 发送给显示/存储层
 
+use super::calibration_service::CalibrationService;
 use crate::alarm::alarm_type::AlarmSource;
 use crate::alarm::{AlarmConfig, AlarmManager};
 use crate::models::crane_config::CraneConfig;
@@ -44,6 +45,8 @@ pub struct ProcessPipeline {
     sequence_number: Arc<AtomicU64>,
     handle: Option<JoinHandle<()>>,
     alarm_manager: Option<Arc<RwLock<AlarmManager>>>,
+    /// AD conversion service (replaces manual calibration handling)
+    calibration_service: Option<Arc<CalibrationService>>,
 }
 
 impl ProcessPipeline {
@@ -66,6 +69,7 @@ impl ProcessPipeline {
             sequence_number: Arc::new(AtomicU64::new(0)),
             handle: None,
             alarm_manager: None,
+            calibration_service: None,
         }
     }
 
@@ -89,6 +93,33 @@ impl ProcessPipeline {
             sequence_number: Arc::new(AtomicU64::new(0)),
             handle: None,
             alarm_manager: None,
+            calibration_service: None,
+        }
+    }
+
+    pub fn with_calibration_service(
+        config: ProcessPipelineConfig,
+        filter_buffer: Arc<Mutex<FilterBuffer>>,
+        display_buffer: SharedBuffer,
+        crane_config: Arc<CraneConfig>,
+        calibration_service: Arc<CalibrationService>,
+        rated_load_table: Arc<RwLock<RatedLoadTable>>,
+        alarm_thresholds: Arc<RwLock<AlarmThresholds>>,
+    ) -> Self {
+        Self {
+            config,
+            filter_buffer,
+            display_buffer,
+            crane_config,
+            sensor_calibration: None,
+            rated_load_table: Some(rated_load_table),
+            alarm_thresholds: Some(alarm_thresholds),
+            storage_event_sender: None,
+            running: Arc::new(AtomicBool::new(false)),
+            sequence_number: Arc::new(AtomicU64::new(0)),
+            handle: None,
+            alarm_manager: None,
+            calibration_service: Some(calibration_service),
         }
     }
 
@@ -168,6 +199,7 @@ impl ProcessPipeline {
         let sequence_number = Arc::clone(&self.sequence_number);
         let running = Arc::clone(&self.running);
         let interval = self.config.interval;
+        let calibration_service = self.calibration_service.clone();
 
         self.handle = Some(qt_threading_utils::runtime::global_runtime().spawn(async move {
             let mut tick_interval = tokio::time::interval(interval);
@@ -192,57 +224,17 @@ impl ProcessPipeline {
                 if let Some(raw_data) = sensor_data {
                     let seq = sequence_number.fetch_add(1, Ordering::Relaxed);
 
-                    // 如果有热重载配置，使用热重载配置；否则使用静态配置
-                    let processed = if let (Some(cal), Some(table), Some(thresholds)) = (&sensor_calibration, &rated_load_table, &alarm_thresholds) {
-                        // 使用热重载配置
-                        let cal_guard = cal.read().unwrap();
-                        let table_guard = table.read().unwrap();
-                        let thresholds_guard = thresholds.read().unwrap();
-
-                        tracing::info!("🔥 [ProcessPipeline] 使用热重载配置进行AD转换");
-                        tracing::info!("📊 [标定参数] weight.zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}, multiplier={:.2}",
-                            cal_guard.weight.zero_ad,
-                            cal_guard.weight.zero_value,
-                            cal_guard.weight.scale_ad,
-                            cal_guard.weight.scale_value,
-                            cal_guard.weight.multiplier);
-                        tracing::info!("📊 [标定参数] angle.zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}",
-                            cal_guard.angle.zero_ad,
-                            cal_guard.angle.zero_value,
-                            cal_guard.angle.scale_ad,
-                            cal_guard.angle.scale_value);
-                        tracing::info!("📊 [标定参数] radius.zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}",
-                            cal_guard.radius.zero_ad,
-                            cal_guard.radius.zero_value,
-                            cal_guard.radius.scale_ad,
-                            cal_guard.radius.scale_value);
-                        tracing::info!("⚠️  [预警阈值] warning={}%, alarm={}%",
-                            thresholds_guard.moment.warning_percentage,
-                            thresholds_guard.moment.alarm_percentage);
-
-                        // 创建临时CraneConfig
-                        let hot_config = CraneConfig {
-                            sensor_calibration: cal_guard.clone(),
-                            rated_load_table: table_guard.clone(),
-                            alarm_thresholds: thresholds_guard.clone(),
-                        };
-
-                        ProcessedData::from_sensor_data_with_config(
-                            raw_data.clone(),
-                            &hot_config,
-                            seq,
-                        )
+                    // Priority: CalibrationService > hot-reload config > static config
+                    let processed = if let (Some(service), Some(table), Some(thresholds)) =
+                        (&calibration_service, &rated_load_table, &alarm_thresholds)
+                    {
+                        Self::process_with_calibration_service(&raw_data, service, table, thresholds, seq)
+                    } else if let (Some(cal), Some(table), Some(thresholds)) =
+                        (&sensor_calibration, &rated_load_table, &alarm_thresholds)
+                    {
+                        Self::process_with_hot_reload(&raw_data, cal, table, thresholds, seq)
                     } else {
-                        // 使用静态配置（向后兼容）
-                        tracing::warn!("⚠️  [ProcessPipeline] 热重载配置未设置，使用静态配置");
-                        tracing::info!("📊 [静态配置] weight.scale_value={:.2}",
-                            crane_config.sensor_calibration.weight.scale_value);
-
-                        ProcessedData::from_sensor_data_with_config(
-                            raw_data.clone(),
-                            &crane_config,
-                            seq,
-                        )
+                        Self::process_with_static_config(&raw_data, &crane_config, seq)
                     };
 
                     tracing::info!("✅ [ProcessPipeline] AD转换完成: ad1={:.2} -> load={:.2}吨, ad2={:.2} -> radius={:.2}米, ad3={:.2} -> angle={:.2}度",
@@ -283,6 +275,117 @@ impl ProcessPipeline {
                 }
             }
         }));
+    }
+
+    fn process_with_calibration_service(
+        raw_data: &crate::models::SensorData,
+        calibration_service: &Arc<CalibrationService>,
+        rated_load_table: &Arc<RwLock<RatedLoadTable>>,
+        alarm_thresholds: &Arc<RwLock<AlarmThresholds>>,
+        seq: u64,
+    ) -> ProcessedData {
+        let (current_load, boom_angle, boom_length) = calibration_service.convert_sensor_data(
+            raw_data.ad1_load,
+            raw_data.ad3_angle,
+            raw_data.ad2_radius,
+        );
+
+        let table_guard = rated_load_table.read().unwrap();
+        let thresholds_guard = alarm_thresholds.read().unwrap();
+
+        let working_radius = ProcessedData::calculate_working_radius(boom_length, boom_angle);
+        let rated_load = table_guard.get_rated_load(boom_length, working_radius);
+        let moment_percentage = ProcessedData::calculate_moment_percentage_with_load(
+            current_load,
+            working_radius,
+            rated_load,
+        );
+
+        let is_warning = thresholds_guard.is_moment_warning(moment_percentage);
+        let is_danger = thresholds_guard.is_moment_alarm(moment_percentage);
+
+        let validation_error = if is_danger {
+            Some(format!(
+                "力矩报警: {:.1}% >= {:.1}%",
+                moment_percentage, thresholds_guard.moment.alarm_percentage
+            ))
+        } else if is_warning {
+            Some(format!(
+                "力矩预警: {:.1}% >= {:.1}%",
+                moment_percentage, thresholds_guard.moment.warning_percentage
+            ))
+        } else {
+            None
+        };
+
+        ProcessedData {
+            current_load,
+            rated_load,
+            working_radius,
+            boom_angle,
+            boom_length,
+            moment_percentage,
+            is_warning,
+            is_danger,
+            validation_error,
+            timestamp: std::time::SystemTime::now(),
+            sequence_number: seq,
+            alarm_sources: Vec::new(),
+            alarm_messages: Vec::new(),
+        }
+    }
+
+    fn process_with_hot_reload(
+        raw_data: &crate::models::SensorData,
+        sensor_calibration: &Arc<RwLock<SensorCalibration>>,
+        rated_load_table: &Arc<RwLock<RatedLoadTable>>,
+        alarm_thresholds: &Arc<RwLock<AlarmThresholds>>,
+        seq: u64,
+    ) -> ProcessedData {
+        let cal_guard = sensor_calibration.read().unwrap();
+        let table_guard = rated_load_table.read().unwrap();
+        let thresholds_guard = alarm_thresholds.read().unwrap();
+
+        tracing::info!("🔥 [ProcessPipeline] 使用热重载配置进行AD转换");
+        tracing::info!("📊 [标定参数] weight: zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}, multiplier={:.2}",
+            cal_guard.weight.zero_ad,
+            cal_guard.weight.zero_value,
+            cal_guard.weight.scale_ad,
+            cal_guard.weight.scale_value,
+            cal_guard.weight.multiplier);
+        tracing::info!("📊 [标定参数] angle.zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}",
+            cal_guard.angle.zero_ad,
+            cal_guard.angle.zero_value,
+            cal_guard.angle.scale_ad,
+            cal_guard.angle.scale_value);
+        tracing::info!("📊 [标定参数] radius.zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}",
+            cal_guard.radius.zero_ad,
+            cal_guard.radius.zero_value,
+            cal_guard.radius.scale_ad,
+            cal_guard.radius.scale_value);
+        tracing::info!("⚠️  [预警阈值] warning={}%, alarm={}%",
+            thresholds_guard.moment.warning_percentage,
+            thresholds_guard.moment.alarm_percentage);
+
+        let hot_config = CraneConfig {
+            sensor_calibration: cal_guard.clone(),
+            rated_load_table: table_guard.clone(),
+            alarm_thresholds: thresholds_guard.clone(),
+        };
+
+        ProcessedData::from_sensor_data_with_config(raw_data.clone(), &hot_config, seq)
+    }
+
+    fn process_with_static_config(
+        raw_data: &crate::models::SensorData,
+        crane_config: &Arc<CraneConfig>,
+        seq: u64,
+    ) -> ProcessedData {
+        tracing::warn!("⚠️  [ProcessPipeline] 热重载配置未设置，使用静态配置");
+        tracing::info!("📊 [静态配置] weight.scale_value={:.2}",
+            crane_config.sensor_calibration.weight.scale_value);
+
+        ProcessedData::from_sensor_data_with_config(raw_data.clone(), crane_config, seq)
     }
 
     pub fn stop(&mut self) {
