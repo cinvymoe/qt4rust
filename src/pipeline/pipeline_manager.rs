@@ -1,7 +1,10 @@
 // 管道管理器 - 统一管理多个管道
 
+use super::calibration_service::CalibrationService;
 use super::collection_pipeline::{CollectionPipeline, CollectionPipelineConfig};
+use super::config_provider::ConfigProvider;
 use super::display_pipeline::{DisplayPipeline, DisplayPipelineConfig};
+use super::event_bus::EventBus;
 use super::event_channel::{create_storage_channels, StorageEventSender};
 use super::filter_buffer::{FilterBuffer, FilterBufferConfig};
 use super::process_pipeline::{ProcessPipeline, ProcessPipelineConfig};
@@ -38,6 +41,12 @@ pub struct PipelineManager {
     // 热重载配置引用
     sensor_calibration: Option<Arc<RwLock<SensorCalibration>>>,
     rated_load_table: Option<Arc<RwLock<RatedLoadTable>>>,
+    // NEW: Unified configuration provider
+    config_provider: Option<Arc<ConfigProvider>>,
+    // NEW: Calibration service for AD conversion
+    calibration_service: Option<CalibrationService>,
+    // NEW: Event bus for unified event dispatch
+    event_bus: Option<EventBus>,
 }
 
 impl PipelineManager {
@@ -45,6 +54,15 @@ impl PipelineManager {
         info!("创建管道管理器");
         let shared_buffer = Arc::new(std::sync::RwLock::new(ProcessedDataBuffer::new(1000)));
         debug!("共享缓冲区已创建，容量: 1000");
+
+        // Create ConfigProvider
+        let config_provider = Some(Arc::new(ConfigProvider::new()));
+
+        // Create CalibrationService from ConfigProvider
+        let calibration_service = config_provider.as_ref().map(|cp| {
+            CalibrationService::from_provider(cp.as_ref())
+        });
+
         Self {
             collection_pipeline: None,
             process_pipeline: None,
@@ -59,6 +77,10 @@ impl PipelineManager {
             shared_sensor_buffer: None,
             sensor_calibration: None,
             rated_load_table: None,
+            // New fields
+            config_provider,
+            calibration_service,
+            event_bus: None,
         }
     }
 
@@ -72,6 +94,10 @@ impl PipelineManager {
         db_path: &str,
     ) -> Result<Self, String> {
         let shared_buffer = Arc::new(std::sync::RwLock::new(ProcessedDataBuffer::new(1000)));
+
+        // Create ConfigProvider and CalibrationService
+        let config_provider = Arc::new(ConfigProvider::new());
+        let calibration_service = CalibrationService::from_provider(&config_provider);
 
         let storage_context = StorageFactory::create_sqlite(db_path).await?;
 
@@ -87,6 +113,9 @@ impl PipelineManager {
 
         let (storage_sender, storage_receiver) =
             create_storage_channels(storage_pipeline_config.max_queue_size);
+
+        // Create EventBus from existing channels
+        let event_bus = Some(EventBus::storage_only(storage_sender.clone()));
 
         let service = Arc::new(StorageService::new(
             storage_context.runtime_repo(),
@@ -201,6 +230,9 @@ impl PipelineManager {
             shared_sensor_buffer,
             sensor_calibration: None,
             rated_load_table: None,
+            config_provider: Some(config_provider),
+            calibration_service: Some(calibration_service),
+            event_bus,
         })
     }
 
@@ -211,6 +243,15 @@ impl PipelineManager {
         rated_load_table: Arc<RwLock<RatedLoadTable>>,
         alarm_thresholds: Arc<RwLock<AlarmThresholds>>,
     ) {
+        if let Some(ref provider) = self.config_provider {
+            provider.update_all(
+                sensor_calibration.read().unwrap().clone(),
+                rated_load_table.read().unwrap().clone(),
+                alarm_thresholds.read().unwrap().clone(),
+            );
+            info!("Hot reload config updated via ConfigProvider");
+        }
+
         self.sensor_calibration = Some(sensor_calibration.clone());
         self.rated_load_table = Some(rated_load_table.clone());
 
@@ -493,6 +534,18 @@ impl PipelineManager {
             trace!("最后存储的序列号: {}", s);
         }
         seq
+    }
+
+    pub fn get_config_provider(&self) -> Option<Arc<ConfigProvider>> {
+        self.config_provider.clone()
+    }
+
+    pub fn get_calibration_service(&self) -> Option<&CalibrationService> {
+        self.calibration_service.as_ref()
+    }
+
+    pub fn get_event_bus(&self) -> Option<&EventBus> {
+        self.event_bus.as_ref()
     }
 }
 
