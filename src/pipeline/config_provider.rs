@@ -2,7 +2,7 @@
 
 use crate::models::rated_load_table::RatedLoadTable;
 use sensor_core::{AlarmThresholds, SensorCalibration};
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 use tracing::{info, warn};
 
 /// Unified configuration provider for all pipelines.
@@ -15,18 +15,21 @@ use tracing::{info, warn};
 /// All pipelines get configuration via Arc<ConfigProvider>,
 /// configuration changes only need to update one place,
 /// all consumers automatically take effect.
+///
+/// Internal storage uses `Arc<RwLock<T>>` so that `get_*_arc()` methods
+/// return shared references that see updates.
 pub struct ConfigProvider {
-    sensor_calibration: RwLock<SensorCalibration>,
-    rated_load_table: RwLock<RatedLoadTable>,
-    alarm_thresholds: RwLock<AlarmThresholds>,
+    sensor_calibration: Arc<RwLock<SensorCalibration>>,
+    rated_load_table: Arc<RwLock<RatedLoadTable>>,
+    alarm_thresholds: Arc<RwLock<AlarmThresholds>>,
 }
 
 impl ConfigProvider {
     pub fn new() -> Self {
         Self {
-            sensor_calibration: RwLock::new(SensorCalibration::default()),
-            rated_load_table: RwLock::new(RatedLoadTable::default()),
-            alarm_thresholds: RwLock::new(AlarmThresholds::default()),
+            sensor_calibration: Arc::new(RwLock::new(SensorCalibration::default())),
+            rated_load_table: Arc::new(RwLock::new(RatedLoadTable::default())),
+            alarm_thresholds: Arc::new(RwLock::new(AlarmThresholds::default())),
         }
     }
 
@@ -36,9 +39,9 @@ impl ConfigProvider {
         alarm_thresholds: AlarmThresholds,
     ) -> Self {
         Self {
-            sensor_calibration: RwLock::new(sensor_calibration),
-            rated_load_table: RwLock::new(rated_load_table),
-            alarm_thresholds: RwLock::new(alarm_thresholds),
+            sensor_calibration: Arc::new(RwLock::new(sensor_calibration)),
+            rated_load_table: Arc::new(RwLock::new(rated_load_table)),
+            alarm_thresholds: Arc::new(RwLock::new(alarm_thresholds)),
         }
     }
 
@@ -49,8 +52,8 @@ impl ConfigProvider {
             .map_err(|e| format!("Failed to read sensor_calibration: {}", e))
     }
 
-    pub fn get_sensor_calibration_arc(&self) -> std::sync::Arc<RwLock<SensorCalibration>> {
-        std::sync::Arc::new(RwLock::new(self.sensor_calibration.read().unwrap().clone()))
+    pub fn get_sensor_calibration_arc(&self) -> Arc<RwLock<SensorCalibration>> {
+        Arc::clone(&self.sensor_calibration)
     }
 
     pub fn update_sensor_calibration(&self, calibration: SensorCalibration) {
@@ -72,8 +75,8 @@ impl ConfigProvider {
             .map_err(|e| format!("Failed to read rated_load_table: {}", e))
     }
 
-    pub fn get_rated_load_table_arc(&self) -> std::sync::Arc<RwLock<RatedLoadTable>> {
-        std::sync::Arc::new(RwLock::new(self.rated_load_table.read().unwrap().clone()))
+    pub fn get_rated_load_table_arc(&self) -> Arc<RwLock<RatedLoadTable>> {
+        Arc::clone(&self.rated_load_table)
     }
 
     pub fn update_rated_load_table(&self, table: RatedLoadTable) {
@@ -95,8 +98,8 @@ impl ConfigProvider {
             .map_err(|e| format!("Failed to read alarm_thresholds: {}", e))
     }
 
-    pub fn get_alarm_thresholds_arc(&self) -> std::sync::Arc<RwLock<AlarmThresholds>> {
-        std::sync::Arc::new(RwLock::new(self.alarm_thresholds.read().unwrap().clone()))
+    pub fn get_alarm_thresholds_arc(&self) -> Arc<RwLock<AlarmThresholds>> {
+        Arc::clone(&self.alarm_thresholds)
     }
 
     pub fn update_alarm_thresholds(&self, thresholds: AlarmThresholds) {
@@ -166,5 +169,19 @@ mod tests {
 
         handle.join().unwrap();
         assert!(provider.get_sensor_calibration().is_ok());
+    }
+
+    #[test]
+    fn test_arc_shares_state() {
+        let provider = Arc::new(ConfigProvider::new());
+        let arc1 = provider.get_sensor_calibration_arc();
+        let arc2 = provider.get_sensor_calibration_arc();
+
+        let mut cal = provider.get_sensor_calibration().unwrap();
+        cal.weight.zero_ad = 100.0;
+        provider.update_sensor_calibration(cal);
+
+        assert!((arc1.read().unwrap().weight.zero_ad - 100.0).abs() < f64::EPSILON);
+        assert!((arc2.read().unwrap().weight.zero_ad - 100.0).abs() < f64::EPSILON);
     }
 }
