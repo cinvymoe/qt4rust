@@ -3,10 +3,12 @@
 use crate::models::ProcessedData;
 
 pub mod alarm_debouncer;
+pub mod calibration_service;
 pub mod config_provider;
 pub mod collection_pipeline;
 pub mod storage_service;
 pub mod display_pipeline;
+pub mod event_bus;
 pub mod event_channel;
 pub mod filter_buffer;
 pub mod pipeline_manager;
@@ -51,8 +53,10 @@ pub enum StorageError {
 }
 
 pub use collection_pipeline::{CollectionPipeline, CollectionPipelineConfig};
+pub use calibration_service::CalibrationService;
 pub use config_provider::ConfigProvider;
 pub use display_pipeline::{DisplayPipeline, DisplayPipelineConfig};
+pub use event_bus::{EventBus, EventBusChannels, PipelineEvent};
 pub use event_channel::{create_storage_channels, StorageEventReceiver, StorageEventSender};
 pub use filter_buffer::{FilterBuffer, FilterBufferConfig, FilterType};
 pub use pipeline_manager::PipelineManager;
