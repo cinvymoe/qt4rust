@@ -164,7 +164,7 @@ impl ProcessedData {
     /// - 0° = 吊臂水平（最大幅度）
     /// - 90° = 吊臂垂直（幅度为0）
     /// - >90° = 吊臂后仰，钳位到0
-    fn calculate_working_radius(boom_length: f64, boom_angle_degrees: f64) -> f64 {
+    pub fn calculate_working_radius(boom_length: f64, boom_angle_degrees: f64) -> f64 {
         let angle_rad = boom_angle_degrees.to_radians();
         let cos_angle = angle_rad.cos();
         // 钳位到0（吊臂后仰时幅度为0）
@@ -196,7 +196,7 @@ impl ProcessedData {
     ///
     /// # 返回
     /// 力矩百分比（%）
-    fn calculate_moment_percentage_with_load(
+    pub fn calculate_moment_percentage_with_load(
         current_load: f64,
         working_radius: f64,
         rated_load: f64,

@@ -1,5 +1,6 @@
 // 采集管道（异步版本）
 
+use super::calibration_service::CalibrationService;
 use super::event_channel::StorageEventSender;
 use super::filter_buffer::FilterBuffer;
 use super::sensor_data_event_channel::SensorDataEventSender;
@@ -44,6 +45,8 @@ struct PipelineContext {
     sensor_calibration: Option<Arc<RwLock<SensorCalibration>>>,
     rated_load_table: Option<Arc<RwLock<RatedLoadTable>>>,
     alarm_thresholds: Option<Arc<RwLock<AlarmThresholds>>>,
+    /// AD conversion service (replaces manual calibration handling)
+    calibration_service: Option<Arc<CalibrationService>>,
 }
 
 /// 采集循环状态
@@ -112,10 +115,10 @@ pub struct CollectionPipeline {
     storage_event_sender: Option<StorageEventSender>,
     sensor_storage_sender: Option<SensorDataEventSender>,
     shared_sensor_buffer: Option<SharedSensorBuffer>,
-    // 热重载配置引用
     sensor_calibration: Option<Arc<RwLock<SensorCalibration>>>,
     rated_load_table: Option<Arc<RwLock<RatedLoadTable>>>,
     alarm_thresholds: Option<Arc<RwLock<AlarmThresholds>>>,
+    calibration_service: Option<Arc<CalibrationService>>,
 }
 
 impl CollectionPipeline {
@@ -141,6 +144,7 @@ impl CollectionPipeline {
             sensor_calibration: None,
             rated_load_table: None,
             alarm_thresholds: None,
+            calibration_service: None,
         }
     }
 
@@ -167,6 +171,7 @@ impl CollectionPipeline {
             sensor_calibration: None,
             rated_load_table: None,
             alarm_thresholds: None,
+            calibration_service: None,
         }
     }
 
@@ -195,6 +200,7 @@ impl CollectionPipeline {
             sensor_calibration: None,
             rated_load_table: None,
             alarm_thresholds: None,
+            calibration_service: None,
         }
     }
 
@@ -222,6 +228,36 @@ impl CollectionPipeline {
             sensor_calibration: None,
             rated_load_table: None,
             alarm_thresholds: None,
+            calibration_service: None,
+        }
+    }
+
+    /// 创建采集管道并附带 CalibrationService
+    pub fn with_calibration_service(
+        config: CollectionPipelineConfig,
+        repository: Arc<CraneDataRepository>,
+        display_buffer: SharedBuffer,
+        calibration_service: Arc<CalibrationService>,
+        rated_load_table: Arc<RwLock<RatedLoadTable>>,
+        alarm_thresholds: Arc<RwLock<AlarmThresholds>>,
+    ) -> Self {
+        Self {
+            config,
+            repository,
+            display_buffer,
+            filter_buffer: None,
+            running: Arc::new(AtomicBool::new(false)),
+            sequence_number: Arc::new(AtomicU64::new(0)),
+            handle: None,
+            alarm_callback: None,
+            danger_cleared_callback: None,
+            storage_event_sender: None,
+            sensor_storage_sender: None,
+            shared_sensor_buffer: None,
+            sensor_calibration: None,
+            rated_load_table: Some(rated_load_table),
+            alarm_thresholds: Some(alarm_thresholds),
+            calibration_service: Some(calibration_service),
         }
     }
 
@@ -316,6 +352,7 @@ impl CollectionPipeline {
             sensor_calibration: self.sensor_calibration.clone(),
             rated_load_table: self.rated_load_table.clone(),
             alarm_thresholds: self.alarm_thresholds.clone(),
+            calibration_service: self.calibration_service.clone(),
         }
     }
 
@@ -429,6 +466,7 @@ impl CollectionPipeline {
             &ctx.sensor_calibration,
             &ctx.rated_load_table,
             &ctx.alarm_thresholds,
+            &ctx.calibration_service,
             seq,
         );
 
@@ -457,14 +495,79 @@ impl CollectionPipeline {
         sensor_calibration: &Option<Arc<RwLock<SensorCalibration>>>,
         rated_load_table: &Option<Arc<RwLock<RatedLoadTable>>>,
         alarm_thresholds: &Option<Arc<RwLock<AlarmThresholds>>>,
+        calibration_service: &Option<Arc<CalibrationService>>,
         seq: u64,
     ) -> ProcessedData {
-        if let (Some(cal), Some(table), Some(thresholds)) =
+        // Priority: CalibrationService > hot-reload config > static config
+        if let (Some(service), Some(table), Some(thresholds)) =
+            (calibration_service, rated_load_table, alarm_thresholds)
+        {
+            Self::process_with_calibration_service(sensor_data, service, table, thresholds, seq)
+        } else if let (Some(cal), Some(table), Some(thresholds)) =
             (sensor_calibration, rated_load_table, alarm_thresholds)
         {
             Self::process_with_hot_reload(sensor_data, repository, cal, table, thresholds, seq)
         } else {
             Self::process_with_static_config(sensor_data, repository, seq)
+        }
+    }
+
+    /// 使用 CalibrationService 处理数据
+    fn process_with_calibration_service(
+        sensor_data: &SensorData,
+        calibration_service: &Arc<CalibrationService>,
+        rated_load_table: &Arc<RwLock<RatedLoadTable>>,
+        alarm_thresholds: &Arc<RwLock<AlarmThresholds>>,
+        seq: u64,
+    ) -> ProcessedData {
+        let (current_load, boom_angle, boom_length) = calibration_service.convert_sensor_data(
+            sensor_data.ad1_load,
+            sensor_data.ad3_angle,
+            sensor_data.ad2_radius,
+        );
+
+        let table_guard = rated_load_table.read().unwrap();
+        let thresholds_guard = alarm_thresholds.read().unwrap();
+
+        let working_radius = ProcessedData::calculate_working_radius(boom_length, boom_angle);
+        let rated_load = table_guard.get_rated_load(boom_length, working_radius);
+        let moment_percentage = ProcessedData::calculate_moment_percentage_with_load(
+            current_load,
+            working_radius,
+            rated_load,
+        );
+
+        let is_warning = thresholds_guard.is_moment_warning(moment_percentage);
+        let is_danger = thresholds_guard.is_moment_alarm(moment_percentage);
+
+        let validation_error = if is_danger {
+            Some(format!(
+                "力矩报警: {:.1}% >= {:.1}%",
+                moment_percentage, thresholds_guard.moment.alarm_percentage
+            ))
+        } else if is_warning {
+            Some(format!(
+                "力矩预警: {:.1}% >= {:.1}%",
+                moment_percentage, thresholds_guard.moment.warning_percentage
+            ))
+        } else {
+            None
+        };
+
+        ProcessedData {
+            current_load,
+            rated_load,
+            working_radius,
+            boom_angle,
+            boom_length,
+            moment_percentage,
+            is_warning,
+            is_danger,
+            validation_error,
+            timestamp: std::time::SystemTime::now(),
+            sequence_number: seq,
+            alarm_sources: Vec::new(),
+            alarm_messages: Vec::new(),
         }
     }
 
