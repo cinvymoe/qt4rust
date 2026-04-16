@@ -1,9 +1,7 @@
 // ViewModel 管理器 - 管理全局 ViewModel 实例和数据采集
 
 use config_hot_reload::{register_all_subscribers, HotReloadConfigManager, SharedConfigRefs};
-use qt_rust_demo::pipeline::shared_buffer::SharedBuffer;
-use qt_rust_demo::pipeline::shared_sensor_buffer::SharedSensorBuffer;
-use qt_rust_demo::pipeline::PipelineManager;
+use qt_rust_demo::pipeline::{SharedBuffer, SharedSensorBuffer, PipelineManager};
 use qt_rust_demo::repositories::CraneDataRepository;
 use sensor_core::{
     init_builtin_sources, DataSourceId, PipelineConfig, SensorPipelineManager, SensorSourceFactory,

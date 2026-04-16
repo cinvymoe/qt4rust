@@ -12,8 +12,8 @@ use tokio::time::sleep;
 
 // 引入必要的模块
 use qt_rust_demo::models::{ProcessedData, SensorData};
-use qt_rust_demo::pipeline::shared_buffer::ProcessedDataBuffer;
-use qt_rust_demo::pipeline::storage_pipeline::{StoragePipeline, StoragePipelineConfig};
+use qt_rust_demo::pipeline::ProcessedDataBuffer;
+use qt_rust_demo::pipeline::{StoragePipeline, StoragePipelineConfig};
 use qt_rust_demo::repositories::mock_storage_repository::MockStorageRepository;
 use qt_rust_demo::repositories::storage_repository::StorageRepository;
 use std::sync::RwLock;
@@ -29,7 +29,8 @@ async fn main() {
 
     // 创建 Mock 存储仓库
     let repo = Arc::new(MockStorageRepository::new());
-    let buffer = Arc::new(RwLock::new(ProcessedDataBuffer::new(100)));
+    let buffer: qt_rust_demo::pipeline::SharedBuffer =
+        Arc::new(RwLock::new(ProcessedDataBuffer::new(100)));
 
     // 创建存储管道
     let config = StoragePipelineConfig::default();

@@ -1,9 +1,10 @@
-use super::event_channel::{create_storage_channels, StorageEventReceiver, StorageEventSender};
-use super::sensor_data_event_channel::{
-    create_sensor_data_channels, SensorDataEventReceiver, SensorDataEventSender,
+use super::channel::{
+    create_sensor_data_channels, create_storage_channels,
+    SensorDataEventReceiver, SensorDataEventSender,
+    StorageEventReceiver, StorageEventSender,
 };
 use crate::models::ProcessedData;
-use crate::pipeline::StorageError;
+use crate::pipeline::core::StorageError;
 use sensor_core::SensorData;
 
 /// 管道事件类型

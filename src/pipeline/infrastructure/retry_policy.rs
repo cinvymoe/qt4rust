@@ -1,4 +1,4 @@
-use super::StorageError;
+use crate::pipeline::core::StorageError;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use std::time::Duration;

@@ -1,5 +1,5 @@
 use crate::models::SensorData;
-use crate::pipeline::StorageError;
+use crate::pipeline::core::StorageError;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::sync::{mpsc, watch};
@@ -7,8 +7,8 @@ use tokio::sync::{mpsc, watch};
 /// Receiver side for SensorData storage events
 #[derive(Clone)]
 pub struct SensorDataEventReceiver {
-    pub(super) data_rx: Arc<Mutex<mpsc::Receiver<Vec<SensorData>>>>,
-    pub(super) shutdown_rx: watch::Receiver<bool>,
+    pub(crate) data_rx: Arc<Mutex<mpsc::Receiver<Vec<SensorData>>>>,
+    pub(crate) shutdown_rx: watch::Receiver<bool>,
 }
 
 /// Sender side for SensorData storage events

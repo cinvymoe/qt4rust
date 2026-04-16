@@ -1,7 +1,7 @@
 // 显示管道（主线程版本）
 
-use super::shared_buffer::SharedBuffer;
 use crate::models::ProcessedData;
+use crate::pipeline::infrastructure::SharedBuffer;
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 
@@ -175,7 +175,7 @@ mod tests {
     #[test]
     fn test_display_pipeline_start_stop() {
         let buffer = Arc::new(RwLock::new(
-            super::super::shared_buffer::ProcessedDataBuffer::new(100),
+            crate::pipeline::infrastructure::ProcessedDataBuffer::new(100),
         ));
         let config = DisplayPipelineConfig::default();
         let mut pipeline = DisplayPipeline::new(config, buffer);
@@ -192,7 +192,7 @@ mod tests {
     #[test]
     fn test_display_pipeline_tick() {
         let buffer = Arc::new(RwLock::new(
-            super::super::shared_buffer::ProcessedDataBuffer::new(100),
+            crate::pipeline::infrastructure::ProcessedDataBuffer::new(100),
         ));
 
         // 添加测试数据到缓冲区
@@ -223,7 +223,7 @@ mod tests {
     #[test]
     fn test_display_pipeline_buffer_overflow() {
         let buffer = Arc::new(RwLock::new(
-            super::super::shared_buffer::ProcessedDataBuffer::new(100),
+            crate::pipeline::infrastructure::ProcessedDataBuffer::new(100),
         ));
 
         // 添加超过管道大小的数据

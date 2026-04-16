@@ -77,7 +77,7 @@ async fn main() -> Result<(), String> {
     println!("[INFO] 数据库初始化完成");
 
     // 5. 创建共享缓冲区（使用配置的缓冲区大小）
-    use qt_rust_demo::pipeline::shared_buffer::{ProcessedDataBuffer, SharedBuffer};
+    use qt_rust_demo::pipeline::{ProcessedDataBuffer, SharedBuffer};
     use std::sync::RwLock;
 
     let shared_buffer: SharedBuffer = Arc::new(RwLock::new(ProcessedDataBuffer::new(
@@ -85,7 +85,7 @@ async fn main() -> Result<(), String> {
     )));
 
     // 6. 创建存储管道（使用配置）
-    use qt_rust_demo::pipeline::storage_pipeline::{StoragePipeline, StoragePipelineConfig};
+    use qt_rust_demo::pipeline::{StoragePipeline, StoragePipelineConfig};
 
     let (storage_config, _service_config) =
         StoragePipelineConfig::from_pipeline_config(&config.storage);
@@ -131,7 +131,7 @@ async fn main() -> Result<(), String> {
         }
 
         // 显示统计信息
-        let buffer = Arc::clone(&shared_buffer);
+        let buffer: SharedBuffer = Arc::clone(&shared_buffer);
         let stats = buffer.read().unwrap().get_stats().clone();
         let queue_len = storage_pipeline.queue_len();
         let last_seq = storage_pipeline.last_stored_sequence();
@@ -156,7 +156,7 @@ async fn main() -> Result<(), String> {
     storage_pipeline.stop();
 
     // 11. 显示最终统计
-    let buffer = Arc::clone(&shared_buffer);
+    let buffer: SharedBuffer = Arc::clone(&shared_buffer);
     let stats = buffer.read().unwrap().get_stats().clone();
 
     println!("\n=== 最终统计 ===");

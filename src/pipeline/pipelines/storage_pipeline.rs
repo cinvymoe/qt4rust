@@ -3,9 +3,8 @@
 // 职责: 只处理数据流（接收、缓冲、定时刷盘）。
 // 业务逻辑（报警防抖、批量写入、数据清理）由 StorageService 处理。
 
-use super::alarm_debouncer::AlarmAction;
-use super::event_channel::{create_storage_channels, StorageEventReceiver};
-use super::storage_service::StorageService;
+use crate::pipeline::services::{AlarmAction, StorageService};
+use crate::pipeline::infrastructure::{create_storage_channels, StorageEventReceiver};
 use crate::models::ProcessedData;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
@@ -42,9 +41,8 @@ impl StoragePipelineConfig {
     /// 从全局配置拆分为管道配置和服务配置
     pub fn from_pipeline_config(
         config: &crate::config::pipeline_config::StorageConfig,
-    ) -> (Self, super::storage_service::StorageServiceConfig) {
-        use super::alarm_debouncer::AlarmDebounceConfig;
-        use super::storage_service::StorageServiceConfig;
+    ) -> (Self, crate::pipeline::services::StorageServiceConfig) {
+        use crate::pipeline::services::{AlarmDebounceConfig, StorageServiceConfig};
 
         let pipeline_config = Self {
             interval: Duration::from_millis(config.interval_ms),
@@ -106,10 +104,10 @@ impl StoragePipeline {
     pub async fn new(
         config: StoragePipelineConfig,
         repository: std::sync::Arc<dyn crate::repositories::storage_repository::StorageRepository>,
-        _buffer: super::shared_buffer::SharedBuffer,
+        _buffer: crate::pipeline::infrastructure::SharedBuffer,
     ) -> Result<Self, String> {
         let (_tx, rx) = create_storage_channels(config.max_queue_size);
-        let service_config = super::storage_service::StorageServiceConfig::default();
+        let service_config = crate::pipeline::services::StorageServiceConfig::default();
         let service = Arc::new(StorageService::new(repository, service_config));
         let mut pipeline = Self::with_event_channel(config, service, rx);
 
@@ -340,8 +338,8 @@ impl Drop for StoragePipeline {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pipeline::shared_buffer::ProcessedDataBuffer;
-    use crate::pipeline::storage_service::StorageServiceConfig;
+    use crate::pipeline::infrastructure::ProcessedDataBuffer;
+    use crate::pipeline::services::StorageServiceConfig;
     use crate::repositories::mock_storage_repository::MockStorageRepository;
     use std::sync::RwLock;
 

@@ -2,7 +2,7 @@
 
 use crate::config::pipeline_config::SensorDataStorageConfig;
 use crate::models::SensorData;
-use crate::pipeline::sensor_data_event_channel::SensorDataEventReceiver;
+use crate::pipeline::infrastructure::SensorDataEventReceiver;
 use crate::repositories::sensor_data_repository::SensorDataRepository;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -222,7 +222,7 @@ impl Drop for SensorStoragePipeline {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pipeline::sensor_data_event_channel::create_sensor_data_channels;
+    use crate::pipeline::infrastructure::create_sensor_data_channels;
 
     // Mock repository for testing
     struct MockSensorDataRepository;

@@ -1,19 +1,17 @@
 // 管道管理器 - 统一管理多个管道
 
-use super::calibration_service::CalibrationService;
-use super::collection_pipeline::{CollectionPipeline, CollectionPipelineConfig};
-use super::config_provider::ConfigProvider;
-use super::display_pipeline::{DisplayPipeline, DisplayPipelineConfig};
-use super::event_bus::EventBus;
-use super::event_channel::{create_storage_channels, StorageEventSender};
-use super::filter_buffer::{FilterBuffer, FilterBufferConfig};
-use super::process_pipeline::{ProcessPipeline, ProcessPipelineConfig};
-use super::sensor_data_event_channel::create_sensor_data_channels;
-use super::sensor_storage_pipeline::SensorStoragePipeline;
-use super::shared_buffer::{ProcessedDataBuffer, SharedBuffer};
-use super::shared_sensor_buffer::SharedSensorBuffer;
-use super::storage_pipeline::{StoragePipeline, StoragePipelineConfig};
-use super::storage_service::StorageService;
+use crate::pipeline::infrastructure::{
+    create_sensor_data_channels, create_storage_channels,
+    EventBus, ProcessedDataBuffer, SharedBuffer, SharedSensorBuffer, StorageEventSender,
+};
+use crate::pipeline::pipelines::{
+    CollectionPipeline, CollectionPipelineConfig, DisplayPipeline, DisplayPipelineConfig,
+    ProcessPipeline, ProcessPipelineConfig, SensorStoragePipeline, StoragePipeline,
+    StoragePipelineConfig,
+};
+use crate::pipeline::services::{
+    CalibrationService, ConfigProvider, FilterBuffer, FilterBufferConfig, StorageService,
+};
 use crate::models::crane_config::CraneConfig;
 use crate::models::rated_load_table::RatedLoadTable;
 use crate::repositories::storage_factory::StorageFactory;
@@ -181,7 +179,7 @@ impl PipelineManager {
                 // 不在这里启动，让 start_all() 统一启动所有管道
 
                 let sensor_buffer = Arc::new(std::sync::RwLock::new(
-                    super::shared_sensor_buffer::SensorDataBuffer::new(100),
+                    crate::pipeline::infrastructure::SensorDataBuffer::new(100),
                 ));
 
                 // Use with_storage_sender when sensor storage is enabled

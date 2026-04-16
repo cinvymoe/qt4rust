@@ -1,4 +1,5 @@
-use super::{ProcessedData, StorageError};
+use crate::models::ProcessedData;
+use crate::pipeline::core::StorageError;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::sync::{mpsc, watch};
@@ -6,8 +7,8 @@ use tokio::sync::{mpsc, watch};
 /// Receiver side for storage events (created by the new StoragePipeline)
 #[derive(Clone)]
 pub struct StorageEventReceiver {
-    pub(super) data_rx: Arc<Mutex<mpsc::Receiver<Vec<ProcessedData>>>>,
-    pub(super) shutdown_rx: watch::Receiver<bool>,
+    pub(crate) data_rx: Arc<Mutex<mpsc::Receiver<Vec<ProcessedData>>>>,
+    pub(crate) shutdown_rx: watch::Receiver<bool>,
 }
 
 /// Sender side for storage events (used by CollectionPipeline)

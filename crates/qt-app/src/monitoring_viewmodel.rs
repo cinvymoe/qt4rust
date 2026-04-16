@@ -59,8 +59,7 @@ pub mod monitoring_viewmodel_bridge {
 use core::pin::Pin;
 use cxx_qt_lib::QString;
 use qt_rust_demo::intents::monitoring_intent::MonitoringIntent;
-use qt_rust_demo::pipeline::shared_buffer::SharedBuffer;
-use qt_rust_demo::pipeline::DisplayPipeline;
+use qt_rust_demo::pipeline::{DisplayPipeline, SharedBuffer};
 use qt_rust_demo::reducers::monitoring_reducer::MonitoringReducer;
 use qt_rust_demo::states::monitoring_state::MonitoringState;
 

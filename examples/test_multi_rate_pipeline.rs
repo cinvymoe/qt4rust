@@ -55,7 +55,7 @@ async fn main() -> Result<(), String> {
 
 fn test_filter_buffer_basic() -> Result<(), String> {
     use qt_rust_demo::models::SensorData;
-    use qt_rust_demo::pipeline::filter_buffer::{FilterBuffer, FilterBufferConfig, FilterType};
+    use qt_rust_demo::pipeline::{FilterBuffer, FilterBufferConfig, FilterType};
 
     println!("  - 测试无滤波 (None)");
     {
@@ -156,9 +156,9 @@ fn test_filter_buffer_basic() -> Result<(), String> {
 async fn test_multi_rate_flow() -> Result<(), String> {
     use qt_rust_demo::config::config_manager::ConfigManager;
     use qt_rust_demo::models::crane_config::CraneConfig;
-    use qt_rust_demo::pipeline::filter_buffer::{FilterBuffer, FilterBufferConfig, FilterType};
-    use qt_rust_demo::pipeline::process_pipeline::{ProcessPipeline, ProcessPipelineConfig};
-    use qt_rust_demo::pipeline::shared_buffer::{ProcessedDataBuffer, SharedBuffer};
+    use qt_rust_demo::pipeline::{FilterBuffer, FilterBufferConfig, FilterType};
+    use qt_rust_demo::pipeline::{ProcessPipeline, ProcessPipelineConfig};
+    use qt_rust_demo::pipeline::{ProcessedDataBuffer, SharedBuffer};
     use qt_rust_demo::repositories::CraneDataRepository;
     use std::sync::RwLock;
 

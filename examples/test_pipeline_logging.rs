@@ -1,5 +1,5 @@
 use qt_rust_demo::logging::init_logging_from_file;
-use qt_rust_demo::pipeline::pipeline_manager::PipelineManager;
+use qt_rust_demo::pipeline::PipelineManager;
 use qt_rust_demo::repositories::CraneDataRepository;
 /// 测试 PipelineManager 日志输出
 ///
@@ -14,7 +14,7 @@ fn main() {
     match init_logging_from_file("config/logging.toml") {
         Ok(_) => {
             println!("✅ 日志系统初始化成功");
-            println!("📋 配置: 只显示 qt_rust_demo::pipeline::pipeline_manager 模块的日志\n");
+            println!("📋 配置: 只显示 qt_rust_demo::pipeline 模块的日志\n");
         }
         Err(e) => {
             // 日志系统未初始化，使用 eprintln 是合理的

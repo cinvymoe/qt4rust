@@ -1,11 +1,9 @@
 // 采集管道（异步版本）
 
-use super::calibration_service::CalibrationService;
-use super::event_channel::StorageEventSender;
-use super::filter_buffer::FilterBuffer;
-use super::sensor_data_event_channel::SensorDataEventSender;
-use super::shared_buffer::SharedBuffer;
-use super::shared_sensor_buffer::SharedSensorBuffer;
+use crate::pipeline::services::{CalibrationService, FilterBuffer};
+use crate::pipeline::infrastructure::{
+    SensorDataEventSender, SharedBuffer, SharedSensorBuffer, StorageEventSender,
+};
 use crate::alarm::{AlarmChecker, AngleAlarmChecker};
 use crate::models::crane_config::CraneConfig;
 use crate::models::rated_load_table::RatedLoadTable;
@@ -214,7 +212,7 @@ impl CollectionPipeline {
             config,
             repository,
             display_buffer: Arc::new(std::sync::RwLock::new(
-                super::shared_buffer::ProcessedDataBuffer::new(100),
+                crate::pipeline::infrastructure::ProcessedDataBuffer::new(100),
             )),
             filter_buffer: Some(filter_buffer),
             running: Arc::new(AtomicBool::new(false)),
@@ -820,7 +818,7 @@ mod tests {
         let config_manager = Arc::new(ConfigManager::default());
         let repository = Arc::new(CraneDataRepository::new(config_manager));
         let buffer = Arc::new(RwLock::new(
-            super::super::shared_buffer::ProcessedDataBuffer::new(100),
+            crate::pipeline::infrastructure::ProcessedDataBuffer::new(100),
         ));
 
         let pipeline = CollectionPipeline::new(config, repository, buffer);

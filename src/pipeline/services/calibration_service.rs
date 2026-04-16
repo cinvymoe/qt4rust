@@ -21,7 +21,7 @@ impl CalibrationService {
     }
 
     /// 从 ConfigProvider 创建
-    pub fn from_provider(provider: &super::ConfigProvider) -> Self {
+    pub fn from_provider(provider: &super::config_provider::ConfigProvider) -> Self {
         Self {
             calibration: provider.get_sensor_calibration_arc(),
         }
@@ -189,7 +189,7 @@ mod tests {
 
     #[test]
     fn test_from_provider() {
-        let provider = super::super::ConfigProvider::new();
+        let provider = crate::pipeline::services::ConfigProvider::new();
         let service = CalibrationService::from_provider(&provider);
 
         // 使用默认标定参数转换
