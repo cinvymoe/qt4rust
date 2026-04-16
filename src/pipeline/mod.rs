@@ -4,6 +4,7 @@ use crate::models::ProcessedData;
 
 pub mod alarm_debouncer;
 pub mod collection_pipeline;
+pub mod storage_service;
 pub mod display_pipeline;
 pub mod event_channel;
 pub mod filter_buffer;
