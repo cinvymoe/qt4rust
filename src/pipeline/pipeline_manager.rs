@@ -10,6 +10,7 @@ use super::sensor_storage_pipeline::SensorStoragePipeline;
 use super::shared_buffer::{ProcessedDataBuffer, SharedBuffer};
 use super::shared_sensor_buffer::SharedSensorBuffer;
 use super::storage_pipeline::{StoragePipeline, StoragePipelineConfig};
+use super::storage_service::StorageService;
 use crate::models::crane_config::CraneConfig;
 use crate::models::rated_load_table::RatedLoadTable;
 use crate::repositories::sensor_data_repository::SensorDataRepository;
@@ -78,20 +79,23 @@ impl PipelineManager {
         let storage_repo_arc = Arc::new(storage_repo) as Arc<dyn StorageRepository>;
 
         let pipeline_config = crate::config::pipeline_config::PipelineConfig::load();
-        let storage_config = StoragePipelineConfig::from_pipeline_config(&pipeline_config.storage);
+        let (storage_pipeline_config, service_config) =
+            StoragePipelineConfig::from_pipeline_config(&pipeline_config.storage);
 
         info!(
             "Storage pipeline: interval={}ms, batch_size={}",
-            storage_config.interval.as_millis(),
-            storage_config.batch_size
+            storage_pipeline_config.interval.as_millis(),
+            storage_pipeline_config.batch_size
         );
 
         let (storage_sender, storage_receiver) =
-            create_storage_channels(storage_config.max_queue_size);
+            create_storage_channels(storage_pipeline_config.max_queue_size);
+
+        let service = Arc::new(StorageService::new(storage_repo_arc, service_config));
 
         let mut storage_pipeline = StoragePipeline::with_event_channel(
-            storage_config,
-            Arc::clone(&storage_repo_arc),
+            storage_pipeline_config,
+            Arc::clone(&service),
             storage_receiver,
         );
 
