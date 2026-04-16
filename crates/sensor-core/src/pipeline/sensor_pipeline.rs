@@ -1,7 +1,7 @@
 use crate::error::{PipelineError, SensorError};
 use crate::pipeline::{DataSourceId, PipelineConfig, SourceSensorData};
-use sensor_traits::SensorSource;
 use qt_threading_utils::runtime::spawn;
+use sensor_traits::SensorSource;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -65,7 +65,9 @@ impl<S: SensorSource + Send + Sync + 'static> SensorPipeline<S> {
     /// Returns an error if the pipeline is already running.
     pub fn start(&mut self) -> Result<(), SensorError> {
         if self.running.load(Ordering::SeqCst) {
-            return Err(SensorError::Pipeline(PipelineError::AlreadyRunning.to_string()));
+            return Err(SensorError::Pipeline(
+                PipelineError::AlreadyRunning.to_string(),
+            ));
         }
 
         self.running.store(true, Ordering::SeqCst);

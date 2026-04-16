@@ -87,7 +87,8 @@ async fn main() -> Result<(), String> {
     // 6. 创建存储管道（使用配置）
     use qt_rust_demo::pipeline::storage_pipeline::{StoragePipeline, StoragePipelineConfig};
 
-    let storage_config = StoragePipelineConfig::from_pipeline_config(&config.storage);
+    let (storage_config, _service_config) =
+        StoragePipelineConfig::from_pipeline_config(&config.storage);
     let mut storage_pipeline =
         StoragePipeline::new(storage_config, storage_repo, Arc::clone(&shared_buffer)).await?;
 

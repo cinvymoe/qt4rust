@@ -55,7 +55,7 @@ impl MonitoringReducer {
     /// - 数据验证结果
     fn update_from_processed_data(
         &self,
-        state: MonitoringState,
+        _state: MonitoringState,
         processed: ProcessedData,
     ) -> MonitoringState {
         tracing::info!("[MonitoringReducer] 更新状态: load={:.2}吨, rated={:.2}吨, radius={:.2}米, angle={:.2}度, moment={:.1}%",

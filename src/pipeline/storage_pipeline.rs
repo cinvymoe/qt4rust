@@ -141,10 +141,8 @@ impl StoragePipeline {
     /// Initialize last_stored_sequence from database (call before start)
     pub async fn initialize_sequence(&mut self) -> Result<(), String> {
         self.service.initialize_sequence().await?;
-        self.last_stored_sequence.store(
-            self.service.last_stored_sequence(),
-            Ordering::Relaxed,
-        );
+        self.last_stored_sequence
+            .store(self.service.last_stored_sequence(), Ordering::Relaxed);
         tracing::info!(
             "Storage last_seq initialized to {}",
             self.last_stored_sequence.load(Ordering::Relaxed)

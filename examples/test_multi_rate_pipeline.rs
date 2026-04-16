@@ -79,7 +79,13 @@ fn test_filter_buffer_basic() -> Result<(), String> {
         };
         let mut buffer = FilterBuffer::new(config);
         for i in 0..5 {
-            buffer.push(SensorData::new((i + 1) as f64 * 10.0, 5.0, 30.0, false, false));
+            buffer.push(SensorData::new(
+                (i + 1) as f64 * 10.0,
+                5.0,
+                30.0,
+                false,
+                false,
+            ));
         }
         let result = buffer.get_filtered().unwrap();
         assert_eq!(result.ad1_load, 30.0);
@@ -111,7 +117,13 @@ fn test_filter_buffer_basic() -> Result<(), String> {
         };
         let mut buffer = FilterBuffer::new(config);
         for i in 0..5 {
-            buffer.push(SensorData::new((i + 1) as f64 * 10.0, 5.0, 30.0, false, false));
+            buffer.push(SensorData::new(
+                (i + 1) as f64 * 10.0,
+                5.0,
+                30.0,
+                false,
+                false,
+            ));
         }
         let result = buffer.get_filtered().unwrap();
         assert_eq!(result.ad1_load, 40.0);

@@ -15,10 +15,7 @@ pub enum SchemaMismatchError {
 pub async fn verify_schema<T: DatabaseSchema>(
     repo: &SqliteStorageRepository,
 ) -> Result<(), SchemaMismatchError> {
-    let trait_fields: HashSet<String> = T::columns()
-        .iter()
-        .map(|c| c.name.to_string())
-        .collect();
+    let trait_fields: HashSet<String> = T::columns().iter().map(|c| c.name.to_string()).collect();
 
     let db_columns = repo
         .get_table_columns(T::table_name())

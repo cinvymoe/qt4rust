@@ -22,8 +22,10 @@ impl StorageFactory {
         let sqlite_arc: Arc<SqliteStorageRepository> = Arc::new(sqlite_repo);
 
         // 同一个 SQLite 实例同时实现两个 trait
-        let runtime_repo: Arc<dyn StorageRepository> = Arc::clone(&sqlite_arc) as Arc<dyn StorageRepository>;
-        let sensor_repo: Arc<dyn SensorDataRepository> = Arc::clone(&sqlite_arc) as Arc<dyn SensorDataRepository>;
+        let runtime_repo: Arc<dyn StorageRepository> =
+            Arc::clone(&sqlite_arc) as Arc<dyn StorageRepository>;
+        let sensor_repo: Arc<dyn SensorDataRepository> =
+            Arc::clone(&sqlite_arc) as Arc<dyn SensorDataRepository>;
 
         tracing::info!("📦 SQLite storage context created: {}", db_path);
 
@@ -35,8 +37,10 @@ impl StorageFactory {
         let mock_repo = Arc::new(MockStorageRepository::new());
 
         // 同一个 Mock 实例同时实现两个 trait
-        let runtime_repo: Arc<dyn StorageRepository> = Arc::clone(&mock_repo) as Arc<dyn StorageRepository>;
-        let sensor_repo: Arc<dyn SensorDataRepository> = Arc::clone(&mock_repo) as Arc<dyn SensorDataRepository>;
+        let runtime_repo: Arc<dyn StorageRepository> =
+            Arc::clone(&mock_repo) as Arc<dyn StorageRepository>;
+        let sensor_repo: Arc<dyn SensorDataRepository> =
+            Arc::clone(&mock_repo) as Arc<dyn SensorDataRepository>;
 
         StorageContext::new(runtime_repo, sensor_repo)
     }

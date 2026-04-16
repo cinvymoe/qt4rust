@@ -59,9 +59,9 @@ impl PipelineManager {
         let config_provider = Some(Arc::new(ConfigProvider::new()));
 
         // Create CalibrationService from ConfigProvider
-        let calibration_service = config_provider.as_ref().map(|cp| {
-            CalibrationService::from_provider(cp.as_ref())
-        });
+        let calibration_service = config_provider
+            .as_ref()
+            .map(|cp| CalibrationService::from_provider(cp.as_ref()));
 
         Self {
             collection_pipeline: None,

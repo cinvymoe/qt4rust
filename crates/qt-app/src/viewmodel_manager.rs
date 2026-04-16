@@ -5,7 +5,9 @@ use qt_rust_demo::pipeline::shared_buffer::SharedBuffer;
 use qt_rust_demo::pipeline::shared_sensor_buffer::SharedSensorBuffer;
 use qt_rust_demo::pipeline::PipelineManager;
 use qt_rust_demo::repositories::CraneDataRepository;
-use sensor_core::{init_builtin_sources, DataSourceId, PipelineConfig, SensorPipelineManager, SensorSourceFactory};
+use sensor_core::{
+    init_builtin_sources, DataSourceId, PipelineConfig, SensorPipelineManager, SensorSourceFactory,
+};
 use std::sync::{Arc, Mutex};
 
 /// ViewModel 管理器

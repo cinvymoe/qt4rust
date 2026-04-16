@@ -19,7 +19,7 @@ pub use pipeline::{
     SensorPipelineManager, SourceSensorData, StoragePipelineConfig,
 };
 pub use sensors::{AngleSensor, CalibratedSensor, LoadSensor, RadiusSensor};
-pub use storage::{ColumnDef, DatabaseSchema, MockStorageRepository, StorageRepository};
 pub use source::{init_builtin_sources, SensorSourceFactory};
+pub use storage::{ColumnDef, DatabaseSchema, MockStorageRepository, StorageRepository};
 
 pub use sensor_traits::{AnalogSource, DigitalInputSource, SensorProvider, SensorSource};

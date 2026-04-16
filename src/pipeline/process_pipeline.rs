@@ -363,9 +363,11 @@ impl ProcessPipeline {
             cal_guard.radius.zero_value,
             cal_guard.radius.scale_ad,
             cal_guard.radius.scale_value);
-        tracing::info!("⚠️  [预警阈值] warning={}%, alarm={}%",
+        tracing::info!(
+            "⚠️  [预警阈值] warning={}%, alarm={}%",
             thresholds_guard.moment.warning_percentage,
-            thresholds_guard.moment.alarm_percentage);
+            thresholds_guard.moment.alarm_percentage
+        );
 
         let hot_config = CraneConfig {
             sensor_calibration: cal_guard.clone(),
@@ -382,8 +384,10 @@ impl ProcessPipeline {
         seq: u64,
     ) -> ProcessedData {
         tracing::warn!("⚠️  [ProcessPipeline] 热重载配置未设置，使用静态配置");
-        tracing::info!("📊 [静态配置] weight.scale_value={:.2}",
-            crane_config.sensor_calibration.weight.scale_value);
+        tracing::info!(
+            "📊 [静态配置] weight.scale_value={:.2}",
+            crane_config.sensor_calibration.weight.scale_value
+        );
 
         ProcessedData::from_sensor_data_with_config(raw_data.clone(), crane_config, seq)
     }

@@ -4,7 +4,7 @@
 // StoragePipeline 只负责数据流（接收、缓冲、定时刷盘），
 // 具体的存储决策由 StorageService 处理。
 
-use super::alarm_debouncer::{AlarmAction, AlarmDebouncer, AlarmDebounceConfig};
+use super::alarm_debouncer::{AlarmAction, AlarmDebounceConfig, AlarmDebouncer};
 use crate::models::ProcessedData;
 use crate::pipeline::retry_policy::{with_retry, RetryConfig};
 use crate::pipeline::StorageError;
@@ -174,7 +174,11 @@ mod tests {
             validation_error: None,
             timestamp: SystemTime::now(),
             sequence_number: seq,
-            alarm_sources: if is_danger { vec![AlarmSource::Moment] } else { vec![] },
+            alarm_sources: if is_danger {
+                vec![AlarmSource::Moment]
+            } else {
+                vec![]
+            },
             alarm_messages: Vec::new(),
         }
     }

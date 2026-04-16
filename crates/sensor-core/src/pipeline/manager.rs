@@ -117,7 +117,13 @@ impl SensorPipelineManager {
         source: Box<dyn SensorSource + Send + Sync>,
         config: PipelineConfig,
     ) {
-        let pipeline = SensorPipeline::<crate::pipeline::sensor_pipeline::BoxedSensorSource>::new_boxed(id, source, config, self.sensor_tx.clone());
+        let pipeline =
+            SensorPipeline::<crate::pipeline::sensor_pipeline::BoxedSensorSource>::new_boxed(
+                id,
+                source,
+                config,
+                self.sensor_tx.clone(),
+            );
         self.sensor_pipelines.insert(id, Box::new(pipeline));
     }
 

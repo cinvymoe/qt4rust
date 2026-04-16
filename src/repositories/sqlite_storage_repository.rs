@@ -6,10 +6,10 @@ use crate::repositories::storage_repository::StorageRepository;
 use async_trait::async_trait;
 use rusqlite::{params, Connection};
 use sensor_core::error::StorageError;
-use sensor_core::DatabaseSchema;
 use sensor_core::pipeline::aggregator::AggregatedSensorData;
 use sensor_core::pipeline::data_source::DataSourceId;
 use sensor_core::storage::repository::StorageRepository as SensorCoreStorageRepository;
+use sensor_core::DatabaseSchema;
 use std::sync::Arc;
 use std::time::SystemTime;
 use tokio::sync::Mutex;
@@ -110,11 +110,8 @@ impl SqliteStorageRepository {
         .map_err(|e| format!("Failed to create index: {}", e))?;
 
         // 创建传感器数据表
-        conn.execute(
-            &SensorData::create_table_sql(),
-            [],
-        )
-        .map_err(|e| format!("Failed to create sensor_data table: {}", e))?;
+        conn.execute(&SensorData::create_table_sql(), [])
+            .map_err(|e| format!("Failed to create sensor_data table: {}", e))?;
 
         tracing::info!("Database tables initialized");
         Ok(())

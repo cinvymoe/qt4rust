@@ -261,9 +261,13 @@ mod tests {
     async fn test_emit_returns_queue_full_error() {
         let channels = EventBusChannels::new(1);
 
-        let _ = channels.bus.emit(PipelineEvent::Storage(vec![create_test_data()]));
+        let _ = channels
+            .bus
+            .emit(PipelineEvent::Storage(vec![create_test_data()]));
 
-        let result = channels.bus.emit(PipelineEvent::Storage(vec![create_test_data()]));
+        let result = channels
+            .bus
+            .emit(PipelineEvent::Storage(vec![create_test_data()]));
         assert!(matches!(result, Err(StorageError::QueueFull)));
     }
 }

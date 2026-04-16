@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::{DigitalInputSource, SensorError, SensorResult};
+use crate::{DigitalInputSource, SensorResult};
 
 /// 数字输入源工厂 trait
 /// 每种实现提供自己的工厂

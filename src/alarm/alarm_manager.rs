@@ -4,7 +4,7 @@ use super::alarm_checker::{
     AlarmCheckResult, AlarmChecker, AngleAlarmChecker, LoadOverloadChecker, MomentAlarmChecker,
 };
 use super::alarm_config::AlarmConfig;
-use super::alarm_type::{AlarmSource, AlarmType};
+use super::alarm_type::AlarmSource;
 use crate::models::ProcessedData;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};

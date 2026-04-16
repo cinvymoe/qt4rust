@@ -2,16 +2,15 @@
 
 use crate::models::ProcessedData;
 
-pub mod orchestrator;
 pub mod alarm_debouncer;
 pub mod calibration_service;
-pub mod config_provider;
 pub mod collection_pipeline;
-pub mod storage_service;
+pub mod config_provider;
 pub mod display_pipeline;
 pub mod event_bus;
 pub mod event_channel;
 pub mod filter_buffer;
+pub mod orchestrator;
 pub mod pipeline_manager;
 pub mod process_pipeline;
 pub mod retry_policy;
@@ -21,6 +20,7 @@ pub mod shared_buffer;
 pub mod shared_sensor_buffer;
 pub mod storage_pipeline;
 pub mod storage_queue;
+pub mod storage_service;
 
 /// Unified storage events for event-driven architecture
 #[derive(Debug, Clone)]
@@ -53,8 +53,8 @@ pub enum StorageError {
     MaxRetriesExceeded,
 }
 
-pub use collection_pipeline::{CollectionPipeline, CollectionPipelineConfig};
 pub use calibration_service::CalibrationService;
+pub use collection_pipeline::{CollectionPipeline, CollectionPipelineConfig};
 pub use config_provider::ConfigProvider;
 pub use display_pipeline::{DisplayPipeline, DisplayPipelineConfig};
 pub use event_bus::{EventBus, EventBusChannels, PipelineEvent};
