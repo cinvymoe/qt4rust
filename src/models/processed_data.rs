@@ -6,7 +6,7 @@ use sensor_core::SensorData;
 use std::time::SystemTime;
 
 /// 处理后的数据（计算后的结果）
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ProcessedData {
     /// 当前载荷（吨）
     pub current_load: f64,
