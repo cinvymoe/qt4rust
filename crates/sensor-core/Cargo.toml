@@ -26,3 +26,7 @@ chrono = "0.4"
 [[example]]
 name = "test_sensor_collection"
 path = "examples/test_sensor_collection.rs"
+
+[[example]]
+name = "test_sensor_storage"
+path = "examples/test_sensor_storage.rs"
