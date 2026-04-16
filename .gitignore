@@ -75,3 +75,4 @@ crane_data_device.db
 # Superpowers
 docs/superpowers/
 .worktrees/
+Cargo.lock
