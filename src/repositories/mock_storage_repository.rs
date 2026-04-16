@@ -1,8 +1,10 @@
 // Mock 存储仓库（用于测试）
 
 use crate::models::{AlarmRecord, ProcessedData};
+use crate::repositories::sensor_data_repository::SensorDataRepository;
 use crate::repositories::storage_repository::StorageRepository;
 use async_trait::async_trait;
+use sensor_core::SensorData;
 use std::sync::Mutex;
 
 /// Mock 存储仓库
@@ -10,6 +12,7 @@ use std::sync::Mutex;
 /// 用于单元测试，不依赖真实数据库
 pub struct MockStorageRepository {
     runtime_data: Mutex<Vec<ProcessedData>>,
+    sensor_data: Mutex<Vec<SensorData>>,
     alarm_records: Mutex<Vec<AlarmRecord>>,
     should_fail: Mutex<bool>,
 }
@@ -19,6 +22,7 @@ impl MockStorageRepository {
     pub fn new() -> Self {
         Self {
             runtime_data: Mutex::new(Vec::new()),
+            sensor_data: Mutex::new(Vec::new()),
             alarm_records: Mutex::new(Vec::new()),
             should_fail: Mutex::new(false),
         }
@@ -166,6 +170,57 @@ impl StorageRepository for MockStorageRepository {
         }
 
         Ok(storage[start..end].to_vec())
+    }
+}
+
+#[async_trait]
+impl SensorDataRepository for MockStorageRepository {
+    async fn save_sensor_data_batch(&self, data: &[SensorData]) -> Result<usize, String> {
+        if *self.should_fail.lock().unwrap() {
+            return Err("Mock failure".to_string());
+        }
+
+        let mut storage = self.sensor_data.lock().unwrap();
+        storage.extend_from_slice(data);
+        Ok(data.len())
+    }
+
+    async fn query_recent_sensor_data(&self, limit: usize) -> Result<Vec<SensorData>, String> {
+        let storage = self.sensor_data.lock().unwrap();
+        Ok(storage.iter().rev().take(limit).cloned().collect())
+    }
+
+    async fn get_latest_sensor_data(&self) -> Result<Option<SensorData>, String> {
+        let storage = self.sensor_data.lock().unwrap();
+        Ok(storage.last().cloned())
+    }
+
+    async fn get_sensor_data_count(&self) -> Result<i64, String> {
+        let storage = self.sensor_data.lock().unwrap();
+        Ok(storage.len() as i64)
+    }
+
+    async fn purge_old_sensor_data(&self, max_records: usize) -> Result<usize, String> {
+        if max_records == 0 {
+            return Ok(0);
+        }
+
+        let mut storage = self.sensor_data.lock().unwrap();
+        if storage.len() <= max_records {
+            return Ok(0);
+        }
+
+        let removed = storage.len() - max_records;
+        storage.drain(0..removed);
+        Ok(removed)
+    }
+
+    async fn health_check(&self) -> Result<(), String> {
+        if *self.should_fail.lock().unwrap() {
+            Err("Mock health check failed".to_string())
+        } else {
+            Ok(())
+        }
     }
 }
 
