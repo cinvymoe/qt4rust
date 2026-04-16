@@ -2,6 +2,7 @@
 
 use crate::models::ProcessedData;
 
+pub mod orchestrator;
 pub mod alarm_debouncer;
 pub mod calibration_service;
 pub mod config_provider;
@@ -59,6 +60,7 @@ pub use display_pipeline::{DisplayPipeline, DisplayPipelineConfig};
 pub use event_bus::{EventBus, EventBusChannels, PipelineEvent};
 pub use event_channel::{create_storage_channels, StorageEventReceiver, StorageEventSender};
 pub use filter_buffer::{FilterBuffer, FilterBufferConfig, FilterType};
+pub use orchestrator::{PipelineError, PipelineLifecycle, PipelineOrchestrator};
 pub use pipeline_manager::PipelineManager;
 pub use process_pipeline::{ProcessPipeline, ProcessPipelineConfig};
 pub use retry_policy::{with_retry, RetryConfig};
