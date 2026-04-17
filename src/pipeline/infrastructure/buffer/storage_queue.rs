@@ -154,7 +154,7 @@ mod tests {
     #[test]
     fn test_push() {
         let queue = StorageQueue::new(10);
-        let sensor_data = SensorData::new(20.0, 10.0, 60.0, false, false);
+        let sensor_data = SensorData::from_tuple(20.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
 
         assert!(queue.push(processed).is_ok());
@@ -164,7 +164,7 @@ mod tests {
     #[test]
     fn test_push_duplicate() {
         let queue = StorageQueue::new(10);
-        let sensor_data = SensorData::new(20.0, 10.0, 60.0, false, false);
+        let sensor_data = SensorData::from_tuple(20.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
 
         // 第一次添加
@@ -187,7 +187,7 @@ mod tests {
 
         // 添加 5 条数据
         for i in 1..=5 {
-            let sensor_data = SensorData::new(20.0, 10.0, 60.0, false, false);
+            let sensor_data = SensorData::from_tuple(20.0, 10.0, 60.0, false, false);
             let processed = ProcessedData::from_sensor_data(sensor_data, i);
             queue.push(processed).unwrap();
         }
@@ -209,7 +209,7 @@ mod tests {
 
         // 添加 5 条数据
         for i in 1..=5 {
-            let sensor_data = SensorData::new(20.0, 10.0, 60.0, false, false);
+            let sensor_data = SensorData::from_tuple(20.0, 10.0, 60.0, false, false);
             let processed = ProcessedData::from_sensor_data(sensor_data, i);
             queue.push(processed).unwrap();
         }
@@ -232,7 +232,7 @@ mod tests {
 
         // 添加 5 条数据（超过容量）
         for i in 1..=5 {
-            let sensor_data = SensorData::new(20.0, 10.0, 60.0, false, false);
+            let sensor_data = SensorData::from_tuple(20.0, 10.0, 60.0, false, false);
             let processed = ProcessedData::from_sensor_data(sensor_data, i);
             queue.push(processed).unwrap();
         }

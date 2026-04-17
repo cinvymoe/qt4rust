@@ -1,12 +1,12 @@
 use rusqlite::types::ToSql;
 
 /// Database column definition
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ColumnDef {
     /// Field name (snake_case, matches SQL)
-    pub name: &'static str,
+    pub name: String,
     /// SQL type (e.g., "REAL", "BOOLEAN", "INTEGER")
-    pub sql_type: &'static str,
+    pub sql_type: String,
     /// Whether NULL is allowed
     pub nullable: bool,
 }
@@ -43,7 +43,7 @@ pub trait DatabaseSchema {
     /// Generates INSERT statement template
     fn insert_sql() -> String {
         let columns = Self::columns();
-        let column_names: Vec<_> = columns.iter().map(|c| c.name).collect();
+        let column_names: Vec<_> = columns.iter().map(|c| c.name.clone()).collect();
         let placeholders: Vec<_> = (1..=columns.len()).map(|i| format!("?{}", i)).collect();
 
         format!(

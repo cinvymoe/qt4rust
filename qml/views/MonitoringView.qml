@@ -201,6 +201,7 @@ Item {
                 alertActive: viewModel.is_warning || viewModel.is_danger
                 isWarning: viewModel.is_warning && !viewModel.is_danger
                 isDanger: viewModel.is_danger
+                isAngleAlarm: viewModel.is_angle_alarm
                 clip: true
                 
                 Behavior on height {
@@ -236,11 +237,18 @@ Item {
                     visible: viewModel.is_warning || viewModel.is_danger
                     // 预警状态为黄色，报警状态为红色
                     isWarning: viewModel.is_warning && !viewModel.is_danger
-                    // 根据状态显示不同的消息：预警(90-100%) vs 报警(>=100%)
-                    title: viewModel.is_danger ? "危险报警" : "力矩预警"
-                    message: viewModel.is_danger ?
-                        "力矩严重超限！立即停止作业" :
-                        "力矩接近上限，请注意控制载荷"
+                    isAngleAlarm: viewModel.is_angle_alarm
+                    // 根据状态显示不同的消息：角度报警、危险报警或力矩预警
+                    title: {
+                        if (viewModel.is_angle_alarm) return "角度报警"
+                        return viewModel.is_danger ? "危险报警" : "力矩预警"
+                    }
+                    message: {
+                        if (viewModel.is_angle_alarm) return "吊臂角度超限！请立即调整角度"
+                        return viewModel.is_danger ?
+                            "力矩严重超限！立即停止作业" :
+                            "力矩接近上限，请注意控制载荷"
+                    }
 
                     Behavior on visible {
                         NumberAnimation {

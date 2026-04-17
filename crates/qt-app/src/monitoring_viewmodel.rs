@@ -18,6 +18,7 @@ pub mod monitoring_viewmodel_bridge {
         #[qproperty(f64, moment_percentage)]
         #[qproperty(bool, is_warning)]
         #[qproperty(bool, is_danger)]
+        #[qproperty(bool, is_angle_alarm)]
         #[qproperty(bool, sensor_connected)]
         #[qproperty(QString, error_message)]
         #[qproperty(f64, raw_ad1_load)]
@@ -74,6 +75,7 @@ pub struct MonitoringViewModelRust {
     moment_percentage: f64,
     is_warning: bool,
     is_danger: bool,
+    is_angle_alarm: bool,
     sensor_connected: bool,
     error_message: QString,
 
@@ -98,6 +100,7 @@ impl Default for MonitoringViewModelRust {
             moment_percentage: state.moment_percentage,
             is_warning: state.is_warning,
             is_danger: state.is_danger,
+            is_angle_alarm: state.is_angle_alarm,
             sensor_connected: state.sensor_connected,
             error_message: QString::from(""),
             reducer: MonitoringReducer::new(),
@@ -125,6 +128,7 @@ impl monitoring_viewmodel_bridge::MonitoringViewModel {
             moment_percentage: *self.as_ref().moment_percentage(),
             is_warning: *self.as_ref().is_warning(),
             is_danger: *self.as_ref().is_danger(),
+            is_angle_alarm: *self.as_ref().is_angle_alarm(),
             sensor_connected: *self.as_ref().sensor_connected(),
             error_message: {
                 let msg = self.as_ref().error_message().to_string();
@@ -210,6 +214,14 @@ impl monitoring_viewmodel_bridge::MonitoringViewModel {
             );
             self.as_mut().set_is_danger(new_state.is_danger);
         }
+        if *self.as_ref().is_angle_alarm() != new_state.is_angle_alarm {
+            tracing::info!(
+                "[MonitoringViewModel] Angle alarm state changed: {} -> {}",
+                *self.as_ref().is_angle_alarm(),
+                new_state.is_angle_alarm
+            );
+            self.as_mut().set_is_angle_alarm(new_state.is_angle_alarm);
+        }
         if *self.as_ref().sensor_connected() != new_state.sensor_connected {
             tracing::info!(
                 "[MonitoringViewModel] Sensor connection changed: {} -> {}",
@@ -251,7 +263,8 @@ impl monitoring_viewmodel_bridge::MonitoringViewModel {
     /// 测试方法：更新模拟数据（仅用于开发测试）
     pub fn update_test_data(mut self: Pin<&mut Self>, load: f64, radius: f64, angle: f64) {
         // 创建模拟的传感器数据
-        let sensor_data = qt_rust_demo::models::SensorData::new(load, radius, angle, false, false);
+        let sensor_data =
+            qt_rust_demo::models::SensorData::from_tuple(load, radius, angle, false, false);
 
         // 使用简单转换（不依赖配置）
         let processed_data = qt_rust_demo::models::ProcessedData::from_sensor_data(sensor_data, 0);

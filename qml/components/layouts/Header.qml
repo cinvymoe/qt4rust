@@ -13,6 +13,7 @@ Rectangle {
     property bool alertActive: false
     property bool isWarning: false  // 预警状态
     property bool isDanger: false   // 报警状态
+    property bool isAngleAlarm: false
     
     // 根据状态动态计算颜色
     // 正常状态：使用表面色背景
@@ -23,7 +24,12 @@ Rectangle {
     border.width: isDanger || isWarning ? Theme.borderNormal : Theme.borderThin
     
     // 报警文本根据状态动态变化
-    readonly property string alertText: isDanger ? "危险报警" : (isWarning ? "力矩预警" : "")
+    readonly property string alertText: {
+        if (isDanger && isAngleAlarm) return "角度报警"
+        if (isDanger) return "危险报警"
+        if (isWarning) return "力矩预警"
+        return ""
+    }
     
     Row {
         anchors.fill: parent

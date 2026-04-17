@@ -109,7 +109,7 @@ mod tests {
     use crate::models::SensorData;
 
     fn create_test_data(seq: u64) -> ProcessedData {
-        let sensor_data = SensorData::new(10.0 + seq as f64, 8.0, 60.0, false, false);
+        let sensor_data = SensorData::from_tuple(10.0 + seq as f64, 8.0, 60.0, false, false);
         ProcessedData::from_sensor_data(sensor_data, seq)
     }
 

@@ -93,7 +93,7 @@ impl AggregatorPipeline {
             while running.load(Ordering::SeqCst) {
                 match rx.recv().await {
                     Some(data) => {
-                        let sensor_data = SensorData::new(
+                        let sensor_data = SensorData::from_tuple(
                             data.weight_ad as f64,
                             data.radius_ad as f64,
                             data.angle_ad as f64,
@@ -170,7 +170,7 @@ mod tests {
         let mut sources = HashMap::new();
         sources.insert(
             DataSourceId::Modbus,
-            SensorData::new(100.0, 50.0, 45.0, false, false),
+            SensorData::from_tuple(100.0, 50.0, 45.0, false, false),
         );
         let aggregated = AggregatedSensorData::new(sources);
         assert_eq!(aggregated.valid_source_count, 1);
@@ -181,11 +181,11 @@ mod tests {
         let mut aggregated = AggregatedSensorData::new(HashMap::new());
         aggregated.add_source(
             DataSourceId::Modbus,
-            SensorData::new(100.0, 50.0, 45.0, false, false),
+            SensorData::from_tuple(100.0, 50.0, 45.0, false, false),
         );
         aggregated.add_source(
             DataSourceId::Simulator,
-            SensorData::new(101.0, 51.0, 46.0, false, false),
+            SensorData::from_tuple(101.0, 51.0, 46.0, false, false),
         );
         assert_eq!(aggregated.valid_source_count, 2);
     }

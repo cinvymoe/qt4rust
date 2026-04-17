@@ -4,7 +4,7 @@ use crate::pipeline::services::{CalibrationService, FilterBuffer};
 use crate::pipeline::infrastructure::{
     SensorDataEventSender, SharedBuffer, SharedSensorBuffer, StorageEventSender,
 };
-use crate::alarm::{AlarmChecker, AngleAlarmChecker};
+use crate::alarm::{AlarmChecker, AngleAlarmChecker, AlarmSource};
 use crate::models::crane_config::CraneConfig;
 use crate::models::rated_load_table::RatedLoadTable;
 use crate::models::{ProcessedData, SensorData};
@@ -441,9 +441,9 @@ impl CollectionPipeline {
         if let Ok(mut fb_guard) = filter_buffer.lock() {
             tracing::debug!(
                 "[CollectionPipeline] 写入FilterBuffer: ad1={:.2}, ad2={:.2}, ad3={:.2}",
-                sensor_data.ad1_load,
-                sensor_data.ad2_radius,
-                sensor_data.ad3_angle
+                sensor_data.ad1_load(),
+                sensor_data.ad2_radius(),
+                sensor_data.ad3_angle()
             );
             fb_guard.push(sensor_data);
         }
@@ -519,9 +519,9 @@ impl CollectionPipeline {
         seq: u64,
     ) -> ProcessedData {
         let (current_load, boom_angle, boom_length) = calibration_service.convert_sensor_data(
-            sensor_data.ad1_load,
-            sensor_data.ad3_angle,
-            sensor_data.ad2_radius,
+            sensor_data.ad1_load(),
+            sensor_data.ad3_angle(),
+            sensor_data.ad2_radius(),
         );
 
         let table_guard = rated_load_table.read().unwrap();
@@ -606,7 +606,7 @@ impl CollectionPipeline {
             ProcessedData::from_sensor_data_with_config(sensor_data.clone(), &hot_config, seq);
         tracing::info!(
             "✅ [CollectionPipeline] AD转换完成: ad1={:.2} -> load={:.2}吨",
-            sensor_data.ad1_load,
+            sensor_data.ad1_load(),
             processed.current_load
         );
 
@@ -627,7 +627,7 @@ impl CollectionPipeline {
                     ProcessedData::from_sensor_data_with_config(sensor_data.clone(), &config, seq);
                 tracing::debug!(
                     "[CollectionPipeline] 静态配置AD转换: ad1={:.2} -> load={:.2}吨",
-                    sensor_data.ad1_load,
+                    sensor_data.ad1_load(),
                     processed.current_load
                 );
                 processed
@@ -670,6 +670,7 @@ impl CollectionPipeline {
 
                 if result.triggered {
                     processed.is_danger = true;
+                    processed.alarm_sources.push(AlarmSource::Angle);
                     processed.alarm_messages.push(result.message.clone());
                     tracing::info!("🚨 [CollectionPipeline] 角度报警触发: {}", result.message);
                 }

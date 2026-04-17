@@ -1,5 +1,6 @@
 // 监控状态转换器
 
+use crate::alarm::alarm_type::AlarmSource;
 use crate::intents::MonitoringIntent;
 use crate::models::ProcessedData;
 use crate::states::monitoring_state::MonitoringState;
@@ -25,6 +26,7 @@ impl MonitoringReducer {
 
             MonitoringIntent::ResetAlarm => MonitoringState {
                 is_danger: false,
+                is_angle_alarm: false,
                 ..state
             },
 
@@ -70,6 +72,7 @@ impl MonitoringReducer {
             moment_percentage: processed.moment_percentage, // 计算后的力矩百分比
             is_warning: processed.is_warning,         // 预警状态判断
             is_danger: processed.is_danger,           // 危险状态判断
+            is_angle_alarm: processed.alarm_sources.contains(&AlarmSource::Angle),
             sensor_connected: true,
             error_message: processed.validation_error, // 验证错误信息
             last_update_time: processed.timestamp,
@@ -106,7 +109,7 @@ mod tests {
         let state = MonitoringState::default();
 
         // 创建已处理的数据
-        let sensor_data = SensorData::new(2047.5, 2047.5, 2047.5, false, false);
+        let sensor_data = SensorData::from_tuple(2047.5, 2047.5, 2047.5, false, false);
         let processed_data = ProcessedData::from_sensor_data(sensor_data, 1);
 
         let new_state = reducer.reduce(
@@ -130,5 +133,52 @@ mod tests {
 
         let new_state = reducer.reduce(state, MonitoringIntent::ResetAlarm);
         assert!(!new_state.is_danger);
+    }
+
+    #[test]
+    fn test_angle_alarm_from_processed_data() {
+        let reducer = MonitoringReducer::new();
+        let state = MonitoringState::default();
+
+        let sensor_data = SensorData::from_tuple(20.0, 10.0, 60.0, false, false);
+        let mut processed_data = ProcessedData::from_sensor_data(sensor_data, 1);
+        processed_data.alarm_sources.push(AlarmSource::Angle);
+        processed_data.is_danger = true;
+
+        let new_state = reducer.reduce(
+            state,
+            MonitoringIntent::ProcessedDataUpdated(processed_data),
+        );
+
+        assert!(new_state.is_angle_alarm);
+        assert!(new_state.is_danger);
+    }
+
+    #[test]
+    fn test_no_angle_alarm_when_sources_empty() {
+        let reducer = MonitoringReducer::new();
+        let state = MonitoringState::default();
+
+        let sensor_data = SensorData::from_tuple(20.0, 10.0, 60.0, false, false);
+        let processed_data = ProcessedData::from_sensor_data(sensor_data, 1);
+
+        let new_state = reducer.reduce(
+            state,
+            MonitoringIntent::ProcessedDataUpdated(processed_data),
+        );
+
+        assert!(!new_state.is_angle_alarm);
+    }
+
+    #[test]
+    fn test_reset_alarm_clears_angle_alarm() {
+        let reducer = MonitoringReducer::new();
+        let state = MonitoringState {
+            is_angle_alarm: true,
+            ..Default::default()
+        };
+
+        let new_state = reducer.reduce(state, MonitoringIntent::ResetAlarm);
+        assert!(!new_state.is_angle_alarm);
     }
 }

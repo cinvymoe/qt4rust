@@ -22,6 +22,9 @@ pub struct MonitoringState {
     /// 是否处于危险状态（>=100%）
     pub is_danger: bool,
 
+    /// 是否处于角度报警状态
+    pub is_angle_alarm: bool,
+
     /// 传感器连接状态
     pub sensor_connected: bool,
     /// 错误信息
@@ -41,6 +44,7 @@ impl Default for MonitoringState {
             moment_percentage: 0.0,
             is_warning: false,
             is_danger: false,
+            is_angle_alarm: false,
             sensor_connected: false,
             error_message: None,
             last_update_time: std::time::SystemTime::now(),

@@ -631,13 +631,10 @@ impl SensorDataRepository for SqliteStorageRepository {
 
         let rows = stmt
             .query_map([limit], |row| {
-                Ok(SensorData {
-                    ad1_load: row.get(0)?,
-                    ad2_radius: row.get(1)?,
-                    ad3_angle: row.get(2)?,
-                    digital_input_0: false,
-                    digital_input_1: false,
-                })
+                let ad1: f64 = row.get(0)?;
+                let ad2: f64 = row.get(1)?;
+                let ad3: f64 = row.get(2)?;
+                Ok(SensorData::from_tuple(ad1, ad2, ad3, false, false))
             })
             .map_err(|e| format!("Failed to query: {}", e))?;
 
@@ -659,13 +656,10 @@ impl SensorDataRepository for SqliteStorageRepository {
              LIMIT 1",
             [],
             |row| {
-                Ok(SensorData {
-                    ad1_load: row.get(0)?,
-                    ad2_radius: row.get(1)?,
-                    ad3_angle: row.get(2)?,
-                    digital_input_0: false,
-                    digital_input_1: false,
-                })
+                let ad1: f64 = row.get(0)?;
+                let ad2: f64 = row.get(1)?;
+                let ad3: f64 = row.get(2)?;
+                Ok(SensorData::from_tuple(ad1, ad2, ad3, false, false))
             },
         );
 
@@ -791,7 +785,7 @@ impl SqliteStorageRepository {
             .get_source(DataSourceId::Modbus)
             .or_else(|| aggregated.sources.values().next())
             .cloned()
-            .unwrap_or_else(|| SensorData::new(0.0, 0.0, 0.0, false, false));
+            .unwrap_or_else(|| SensorData::from_tuple(0.0, 0.0, 0.0, false, false));
 
         ProcessedData::from_sensor_data(sensor_data, sequence_number)
     }
@@ -834,7 +828,7 @@ mod tests {
         let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
 
         // 创建测试数据
-        let sensor_data = SensorData::new(20.0, 10.0, 60.0, false, false);
+        let sensor_data = SensorData::from_tuple(20.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
 
         // 保存数据
@@ -853,7 +847,7 @@ mod tests {
         let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
 
         // 创建报警数据
-        let sensor_data = SensorData::new(23.0, 10.0, 60.0, false, false);
+        let sensor_data = SensorData::from_tuple(23.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
 
         // 保存报警
@@ -873,7 +867,7 @@ mod tests {
         let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
 
         // 创建角度报警数据
-        let sensor_data = SensorData::new(15.0, 10.0, 95.0, false, false); // 角度超限
+        let sensor_data = SensorData::from_tuple(15.0, 10.0, 95.0, false, false); // 角度超限
         let mut processed = ProcessedData::from_sensor_data(sensor_data, 1);
 
         // 模拟角度报警
@@ -902,7 +896,7 @@ mod tests {
         let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
 
         // 创建并保存报警
-        let sensor_data = SensorData::new(23.0, 10.0, 60.0, false, false);
+        let sensor_data = SensorData::from_tuple(23.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
         let alarm_id = repo.save_alarm_record(&processed).await.unwrap();
 
@@ -923,7 +917,7 @@ mod tests {
         assert_eq!(seq, 0);
 
         // 保存数据
-        let sensor_data = SensorData::new(20.0, 10.0, 60.0, false, false);
+        let sensor_data = SensorData::from_tuple(20.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 5);
         repo.save_runtime_data_batch(&[processed]).await.unwrap();
 
@@ -952,9 +946,9 @@ mod tests {
 
         // Create sensor data (AD1=load, AD2=radius, AD3=angle)
         let sensor_data = vec![
-            SensorData::new(20.0, 10.0, 60.0, false, false),
-            SensorData::new(21.0, 11.0, 61.0, false, false),
-            SensorData::new(22.0, 12.0, 62.0, false, false),
+            SensorData::from_tuple(20.0, 10.0, 60.0, false, false),
+            SensorData::from_tuple(21.0, 11.0, 61.0, false, false),
+            SensorData::from_tuple(22.0, 12.0, 62.0, false, false),
         ];
 
         // Save batch to database
@@ -981,8 +975,8 @@ mod tests {
 
         // Save some data
         let sensor_data = vec![
-            SensorData::new(10.0, 5.0, 45.0, false, false),
-            SensorData::new(20.0, 10.0, 60.0, false, false),
+            SensorData::from_tuple(10.0, 5.0, 45.0, false, false),
+            SensorData::from_tuple(20.0, 10.0, 60.0, false, false),
         ];
         repo.save_sensor_data_batch(&sensor_data).await.unwrap();
 
@@ -1005,11 +999,11 @@ mod tests {
 
         // Save 5 records
         let sensor_data = vec![
-            SensorData::new(10.0, 5.0, 45.0, false, false),
-            SensorData::new(11.0, 5.5, 46.0, false, false),
-            SensorData::new(12.0, 6.0, 47.0, false, false),
-            SensorData::new(13.0, 6.5, 48.0, false, false),
-            SensorData::new(14.0, 7.0, 49.0, false, false),
+            SensorData::from_tuple(10.0, 5.0, 45.0, false, false),
+            SensorData::from_tuple(11.0, 5.5, 46.0, false, false),
+            SensorData::from_tuple(12.0, 6.0, 47.0, false, false),
+            SensorData::from_tuple(13.0, 6.5, 48.0, false, false),
+            SensorData::from_tuple(14.0, 7.0, 49.0, false, false),
         ];
         repo.save_sensor_data_batch(&sensor_data).await.unwrap();
 

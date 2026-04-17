@@ -1,6 +1,7 @@
 use byteorder::BigEndian;
 use byteorder::ByteOrder;
 use std::net::SocketAddr;
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::Mutex;
 
 use tokio_modbus::client::Context;
@@ -14,51 +15,32 @@ pub trait ModbusProvider {
     fn is_connected(&self) -> bool;
 }
 
+const MAX_RECONNECT_ATTEMPTS: u32 = 3;
+
 pub struct ModbusTcpClient {
     config: ModbusTcpConfig,
-    connected: bool,
+    connected: AtomicBool,
     client: Mutex<Option<Context>>,
     runtime: Mutex<Option<tokio::runtime::Runtime>>,
     #[allow(dead_code)]
     name: String,
+    reconnect_attempts: AtomicU32,
 }
 
 impl ModbusTcpClient {
     pub fn new(config: ModbusTcpConfig, name: impl Into<String>) -> Self {
         Self {
             config,
-            connected: false,
+            connected: AtomicBool::new(false),
             client: Mutex::new(None),
             runtime: Mutex::new(None),
             name: name.into(),
+            reconnect_attempts: AtomicU32::new(0),
         }
     }
 
     pub fn connect(&mut self) -> ModbusResult<()> {
-        let runtime = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .map_err(|e| ModbusError::InitError(format!("Failed to create runtime: {}", e)))?;
-
-        let addr: SocketAddr = format!("{}:{}", self.config.host, self.config.port)
-            .parse()
-            .map_err(|e| ModbusError::ConfigError(format!("Invalid address: {}", e)))?;
-
-        use tokio_modbus::slave::Slave;
-        let slave = Slave::from(self.config.slave_id);
-        let client = runtime
-            .block_on(tcp::connect_slave(addr, slave))
-            .map_err(|e| {
-                ModbusError::IoError(std::io::Error::new(
-                    std::io::ErrorKind::ConnectionRefused,
-                    e.to_string(),
-                ))
-            })?;
-
-        *self.client.lock().unwrap() = Some(client);
-        *self.runtime.lock().unwrap() = Some(runtime);
-        self.connected = true;
-        Ok(())
+        self.connect_internal()
     }
 
     fn read_holding_registers_sync(&self) -> ModbusResult<f64> {
@@ -128,20 +110,92 @@ impl ModbusTcpClient {
         if let (Some(mut client), Some(runtime)) = (client, runtime.as_ref()) {
             let _ = runtime.block_on(client.disconnect());
         }
-        self.connected = false;
+        self.connected.store(false, Ordering::Relaxed);
+    }
+
+    fn is_broken_pipe_error(error: &ModbusError) -> bool {
+        matches!(error, ModbusError::ReadError(msg) if msg.contains("Broken pipe"))
+    }
+
+    fn mark_disconnected(&self) {
+        self.connected.store(false, Ordering::Relaxed);
+        let _ = self.client.lock().unwrap().take();
+        let _ = self.runtime.lock().unwrap().take();
+    }
+
+    fn try_reconnect(&self) -> ModbusResult<()> {
+        let attempts = self.reconnect_attempts.fetch_add(1, Ordering::Relaxed);
+        if attempts >= MAX_RECONNECT_ATTEMPTS {
+            self.reconnect_attempts.store(0, Ordering::Relaxed);
+            return Err(ModbusError::ReadError(format!(
+                "Max reconnection attempts ({}) exceeded",
+                MAX_RECONNECT_ATTEMPTS
+            )));
+        }
+
+        tracing::warn!(
+            "[Modbus] Attempting reconnection ({}/{}) for {}",
+            attempts + 1,
+            MAX_RECONNECT_ATTEMPTS,
+            self.name
+        );
+
+        self.mark_disconnected();
+        self.connect_internal()
+    }
+
+    fn connect_internal(&self) -> ModbusResult<()> {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .map_err(|e| ModbusError::InitError(format!("Failed to create runtime: {}", e)))?;
+
+        let addr: SocketAddr = format!("{}:{}", self.config.host, self.config.port)
+            .parse()
+            .map_err(|e| ModbusError::ConfigError(format!("Invalid address: {}", e)))?;
+
+        use tokio_modbus::slave::Slave;
+        let slave = Slave::from(self.config.slave_id);
+        let client = runtime
+            .block_on(tcp::connect_slave(addr, slave))
+            .map_err(|e| {
+                ModbusError::IoError(std::io::Error::new(
+                    std::io::ErrorKind::ConnectionRefused,
+                    e.to_string(),
+                ))
+            })?;
+
+        *self.client.lock().unwrap() = Some(client);
+        *self.runtime.lock().unwrap() = Some(runtime);
+        self.connected.store(true, Ordering::Relaxed);
+        self.reconnect_attempts.store(0, Ordering::Relaxed);
+        tracing::info!("[Modbus] Reconnected successfully to {}", self.name);
+        Ok(())
     }
 }
 
 impl ModbusProvider for ModbusTcpClient {
     fn read(&self) -> ModbusResult<f64> {
-        if !self.connected {
+        if !self.connected.load(Ordering::Relaxed) {
             return Err(ModbusError::NotConnected);
         }
-        self.read_holding_registers_sync()
+
+        match self.read_holding_registers_sync() {
+            Ok(value) => Ok(value),
+            Err(e) => {
+                if Self::is_broken_pipe_error(&e) {
+                    tracing::warn!("[Modbus] Broken pipe detected, attempting reconnection");
+                    self.try_reconnect()?;
+                    self.read_holding_registers_sync()
+                } else {
+                    Err(e)
+                }
+            }
+        }
     }
 
     fn is_connected(&self) -> bool {
-        self.connected
+        self.connected.load(Ordering::Relaxed)
     }
 }
 

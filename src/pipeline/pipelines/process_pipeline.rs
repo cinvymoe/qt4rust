@@ -214,7 +214,7 @@ impl ProcessPipeline {
                     let filtered = fb.get_filtered().clone();
                     if let Some(ref data) = filtered {
                         tracing::debug!("[ProcessPipeline] 从FilterBuffer读取: ad1={:.2}, ad2={:.2}, ad3={:.2}",
-                            data.ad1_load, data.ad2_radius, data.ad3_angle);
+                            data.ad1_load(), data.ad2_radius(), data.ad3_angle());
                     }
                     filtered
                 };
@@ -236,9 +236,9 @@ impl ProcessPipeline {
                     };
 
                     tracing::info!("✅ [ProcessPipeline] AD转换完成: ad1={:.2} -> load={:.2}吨, ad2={:.2} -> radius={:.2}米, ad3={:.2} -> angle={:.2}度",
-                        raw_data.ad1_load, processed.current_load,
-                        raw_data.ad2_radius, processed.working_radius,
-                        raw_data.ad3_angle, processed.boom_angle);
+                        raw_data.ad1_load(), processed.current_load,
+                        raw_data.ad2_radius(), processed.working_radius,
+                        raw_data.ad3_angle(), processed.boom_angle);
 
                     // 检查报警
                     let mut processed = processed;
@@ -283,9 +283,9 @@ impl ProcessPipeline {
         seq: u64,
     ) -> ProcessedData {
         let (current_load, boom_angle, boom_length) = calibration_service.convert_sensor_data(
-            raw_data.ad1_load,
-            raw_data.ad3_angle,
-            raw_data.ad2_radius,
+            raw_data.ad1_load(),
+            raw_data.ad3_angle(),
+            raw_data.ad2_radius(),
         );
 
         let table_guard = rated_load_table.read().unwrap();

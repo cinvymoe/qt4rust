@@ -239,7 +239,7 @@ mod tests {
     #[tokio::test]
     async fn test_save_runtime_data() {
         let repo = MockStorageRepository::new();
-        let sensor_data = SensorData::new(20.0, 10.0, 60.0, false, false);
+        let sensor_data = SensorData::from_tuple(20.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
 
         let result = repo.save_runtime_data_batch(&[processed]).await;
@@ -251,7 +251,7 @@ mod tests {
     #[tokio::test]
     async fn test_save_alarm_record() {
         let repo = MockStorageRepository::new();
-        let sensor_data = SensorData::new(23.0, 10.0, 60.0, false, false);
+        let sensor_data = SensorData::from_tuple(23.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
 
         let result = repo.save_alarm_record(&processed).await;
@@ -264,7 +264,7 @@ mod tests {
         let repo = MockStorageRepository::new();
         repo.set_should_fail(true);
 
-        let sensor_data = SensorData::new(20.0, 10.0, 60.0, false, false);
+        let sensor_data = SensorData::from_tuple(20.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
 
         let result = repo.save_runtime_data_batch(&[processed]).await;
@@ -277,7 +277,7 @@ mod tests {
 
         // 添加 5 条数据
         for i in 1..=5 {
-            let sensor_data = SensorData::new(20.0, 10.0, 60.0, false, false);
+            let sensor_data = SensorData::from_tuple(20.0, 10.0, 60.0, false, false);
             let processed = ProcessedData::from_sensor_data(sensor_data, i);
             repo.save_runtime_data_batch(&[processed]).await.unwrap();
         }
@@ -295,7 +295,7 @@ mod tests {
         let repo = MockStorageRepository::new();
 
         // 添加报警
-        let sensor_data = SensorData::new(23.0, 10.0, 60.0, false, false);
+        let sensor_data = SensorData::from_tuple(23.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
         let alarm_id = repo.save_alarm_record(&processed).await.unwrap();
 
@@ -316,7 +316,7 @@ mod tests {
         assert_eq!(seq, 0);
 
         // 添加数据
-        let sensor_data = SensorData::new(20.0, 10.0, 60.0, false, false);
+        let sensor_data = SensorData::from_tuple(20.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 5);
         repo.save_runtime_data_batch(&[processed]).await.unwrap();
 
@@ -330,7 +330,7 @@ mod tests {
         let repo = MockStorageRepository::new();
 
         // 添加数据
-        let sensor_data = SensorData::new(20.0, 10.0, 60.0, false, false);
+        let sensor_data = SensorData::from_tuple(20.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
         repo.save_runtime_data_batch(&[processed.clone()])
             .await

@@ -113,7 +113,7 @@ async fn main() -> Result<(), String> {
 
         // 模拟采集数据
         let (load, radius, angle) = repository.get_data();
-        let sensor_data = SensorData::new(load, radius, angle, false, false);
+        let sensor_data = SensorData::from_tuple(load, radius, angle, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, i);
 
         // 写入共享缓冲区

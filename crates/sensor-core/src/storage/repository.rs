@@ -90,7 +90,7 @@ mod tests {
         let mut sources = HashMap::new();
         sources.insert(
             DataSourceId::Simulator,
-            crate::data::sensor_data::SensorData::new(weight, 50.0, 45.0, di0, di1),
+            crate::data::sensor_data::SensorData::from_tuple(weight, 50.0, 45.0, di0, di1),
         );
         AggregatedSensorData::new(sources)
     }

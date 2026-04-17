@@ -36,7 +36,7 @@ impl CraneDataRepository {
 
         let (ad1, ad2, ad3, di0, di1) = sensor_source.read_all().map_err(|e| e.to_string())?;
 
-        let data = SensorData::new(ad1, ad2, ad3, di0, di1);
+        let data = SensorData::from_tuple(ad1, ad2, ad3, di0, di1);
 
         if let Ok(mut cache) = self.cache.lock() {
             *cache = Some(data.clone());

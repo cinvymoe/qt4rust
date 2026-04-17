@@ -241,7 +241,7 @@ mod tests {
         config.debounce.enabled = false;
         let manager = AlarmManager::new(config);
 
-        let sensor_data = SensorData::new(23.0, 10.0, 60.0, false, false);
+        let sensor_data = SensorData::from_tuple(23.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
 
         let results = manager.check_alarms(&processed);
@@ -254,7 +254,7 @@ mod tests {
         config.debounce.trigger_count = 3;
         let manager = AlarmManager::new(config);
 
-        let sensor_data = SensorData::new(23.0, 10.0, 60.0, false, false);
+        let sensor_data = SensorData::from_tuple(23.0, 10.0, 60.0, false, false);
         let processed = ProcessedData::from_sensor_data(sensor_data, 1);
 
         // 第一次检查，未达到阈值
