@@ -171,7 +171,13 @@ impl FilterBuffer {
         let mid = data.len() / 2;
         // 对于数字输入，使用中间值的数字输入
         let mid_data = &data[mid];
-        SensorData::from_tuple(ad1[mid], ad2[mid], ad3[mid], mid_data.digital_input_0(), mid_data.digital_input_1())
+        SensorData::from_tuple(
+            ad1[mid],
+            ad2[mid],
+            ad3[mid],
+            mid_data.digital_input_0(),
+            mid_data.digital_input_1(),
+        )
     }
 }
 
@@ -199,7 +205,7 @@ mod tests {
         buffer.push(sd(20.0, 6.0, 31.0));
         buffer.push(sd(30.0, 7.0, 32.0));
         let r = buffer.get_filtered().unwrap();
-        assert_eq!(r.ad1_load, 30.0);
+        assert_eq!(r.ad1_load(), 30.0);
     }
 
     #[test]
@@ -214,8 +220,8 @@ mod tests {
         buffer.push(sd(40.0, 8.0, 33.0));
         buffer.push(sd(50.0, 9.0, 34.0));
         let r = buffer.get_filtered().unwrap();
-        assert_eq!(r.ad1_load, 30.0);
-        assert_eq!(r.ad2_radius, 7.0);
+        assert_eq!(r.ad1_load(), 30.0);
+        assert_eq!(r.ad2_radius(), 7.0);
     }
 
     #[test]
@@ -230,7 +236,7 @@ mod tests {
         buffer.push(sd(50.0, 9.0, 34.0));
         buffer.push(sd(40.0, 8.0, 33.0));
         let r = buffer.get_filtered().unwrap();
-        assert_eq!(r.ad1_load, 30.0);
+        assert_eq!(r.ad1_load(), 30.0);
     }
 
     #[test]
@@ -243,7 +249,7 @@ mod tests {
             buffer.push(sd((i + 1) as f64 * 10.0, 5.0, 30.0));
         }
         let r = buffer.get_filtered().unwrap();
-        assert_eq!(r.ad1_load, 40.0);
+        assert_eq!(r.ad1_load(), 40.0);
     }
 
     #[test]

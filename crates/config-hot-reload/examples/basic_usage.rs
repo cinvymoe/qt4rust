@@ -58,9 +58,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("7. 通过共享引用读取配置...");
     {
         let cal = shared_refs.sensor_calibration.read().unwrap();
-        println!("   重量传感器: scale_value = {} 吨", cal.weight.scale_value);
-        println!("   角度传感器: scale_value = {} 度", cal.angle.scale_value);
-        println!("   半径传感器: scale_value = {} 米", cal.radius.scale_value);
+        println!("   重量传感器: scale_value = {} 吨", cal.weight().scale_value);
+        println!("   角度传感器: scale_value = {} 度", cal.angle().scale_value);
+        println!("   半径传感器: scale_value = {} 米", cal.radius().scale_value);
     }
     {
         let thresholds = shared_refs.alarm_thresholds.read().unwrap();

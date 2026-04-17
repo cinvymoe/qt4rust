@@ -15,15 +15,21 @@ fn main() {
             println!("   ✓ 成功解析传感器校准配置");
             println!(
                 "     - 重量传感器: zero_ad={}, scale_ad={}, scale_value={}",
-                config.weight.zero_ad, config.weight.scale_ad, config.weight.scale_value
+                config.weight().zero_ad,
+                config.weight().scale_ad,
+                config.weight().scale_value
             );
             println!(
                 "     - 角度传感器: zero_ad={}, scale_ad={}, scale_value={}",
-                config.angle.zero_ad, config.angle.scale_ad, config.angle.scale_value
+                config.angle().zero_ad,
+                config.angle().scale_ad,
+                config.angle().scale_value
             );
             println!(
                 "     - 半径传感器: zero_ad={}, scale_ad={}, scale_value={}",
-                config.radius.zero_ad, config.radius.scale_ad, config.radius.scale_value
+                config.radius().zero_ad,
+                config.radius().scale_ad,
+                config.radius().scale_value
             );
         }
         Err(e) => {

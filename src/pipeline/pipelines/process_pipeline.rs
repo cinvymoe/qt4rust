@@ -136,11 +136,11 @@ impl ProcessPipeline {
         if let Ok(cal) = sensor_calibration.read() {
             tracing::info!("🔧 [ProcessPipeline] 热重载配置已设置");
             tracing::info!("📋 [初始标定参数] weight: zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}, multiplier={:.2}",
-                cal.weight.zero_ad,
-                cal.weight.zero_value,
-                cal.weight.scale_ad,
-                cal.weight.scale_value,
-                cal.weight.multiplier);
+                cal.weight().zero_ad,
+                cal.weight().zero_value,
+                cal.weight().scale_ad,
+                cal.weight().scale_value,
+                cal.weight().multiplier);
         }
 
         if let Ok(thresholds) = alarm_thresholds.read() {
@@ -319,6 +319,8 @@ impl ProcessPipeline {
         ProcessedData {
             current_load,
             rated_load,
+            aux_current_load: 0.0,
+            aux_moment_percentage: 0.0,
             working_radius,
             boom_angle,
             boom_length,
@@ -346,21 +348,21 @@ impl ProcessPipeline {
 
         tracing::info!("🔥 [ProcessPipeline] 使用热重载配置进行AD转换");
         tracing::info!("📊 [标定参数] weight: zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}, multiplier={:.2}",
-            cal_guard.weight.zero_ad,
-            cal_guard.weight.zero_value,
-            cal_guard.weight.scale_ad,
-            cal_guard.weight.scale_value,
-            cal_guard.weight.multiplier);
+            cal_guard.weight().zero_ad,
+            cal_guard.weight().zero_value,
+            cal_guard.weight().scale_ad,
+            cal_guard.weight().scale_value,
+            cal_guard.weight().multiplier);
         tracing::info!("📊 [标定参数] angle.zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}",
-            cal_guard.angle.zero_ad,
-            cal_guard.angle.zero_value,
-            cal_guard.angle.scale_ad,
-            cal_guard.angle.scale_value);
+            cal_guard.angle().zero_ad,
+            cal_guard.angle().zero_value,
+            cal_guard.angle().scale_ad,
+            cal_guard.angle().scale_value);
         tracing::info!("📊 [标定参数] radius.zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}",
-            cal_guard.radius.zero_ad,
-            cal_guard.radius.zero_value,
-            cal_guard.radius.scale_ad,
-            cal_guard.radius.scale_value);
+            cal_guard.radius().zero_ad,
+            cal_guard.radius().zero_value,
+            cal_guard.radius().scale_ad,
+            cal_guard.radius().scale_value);
         tracing::info!(
             "⚠️  [预警阈值] warning={}%, alarm={}%",
             thresholds_guard.moment.warning_percentage,
@@ -384,7 +386,7 @@ impl ProcessPipeline {
         tracing::warn!("⚠️  [ProcessPipeline] 热重载配置未设置，使用静态配置");
         tracing::info!(
             "📊 [静态配置] weight.scale_value={:.2}",
-            crane_config.sensor_calibration.weight.scale_value
+            crane_config.sensor_calibration.weight().scale_value
         );
 
         ProcessedData::from_sensor_data_with_config(raw_data.clone(), crane_config, seq)

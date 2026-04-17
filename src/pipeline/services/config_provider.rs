@@ -1,7 +1,7 @@
 // src/pipeline/config_provider.rs
 
 use crate::models::rated_load_table::RatedLoadTable;
-use sensor_core::{AlarmThresholds, SensorCalibration};
+use sensor_core::{AlarmThresholds, SensorCalibration, SensorCalibrationParams};
 use std::sync::{Arc, RwLock};
 use tracing::{info, warn};
 
@@ -149,12 +149,19 @@ mod tests {
         let provider = ConfigProvider::new();
 
         let mut calibration = provider.get_sensor_calibration().unwrap();
-        calibration.weight.zero_ad = 100.0;
+        let weight_params = calibration.weight();
+        calibration.set_calibration(
+            "main_hook_weight",
+            SensorCalibrationParams {
+                zero_ad: 100.0,
+                ..weight_params
+            },
+        );
 
         // 更新后应该能获取新值
         provider.update_sensor_calibration(calibration.clone());
         let updated = provider.get_sensor_calibration().unwrap();
-        assert!((updated.weight.zero_ad - 100.0).abs() < f64::EPSILON);
+        assert!((updated.weight().zero_ad - 100.0).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -178,10 +185,17 @@ mod tests {
         let arc2 = provider.get_sensor_calibration_arc();
 
         let mut cal = provider.get_sensor_calibration().unwrap();
-        cal.weight.zero_ad = 100.0;
+        let weight_params = cal.weight();
+        cal.set_calibration(
+            "main_hook_weight",
+            SensorCalibrationParams {
+                zero_ad: 100.0,
+                ..weight_params
+            },
+        );
         provider.update_sensor_calibration(cal);
 
-        assert!((arc1.read().unwrap().weight.zero_ad - 100.0).abs() < f64::EPSILON);
-        assert!((arc2.read().unwrap().weight.zero_ad - 100.0).abs() < f64::EPSILON);
+        assert!((arc1.read().unwrap().weight().zero_ad - 100.0).abs() < f64::EPSILON);
+        assert!((arc2.read().unwrap().weight().zero_ad - 100.0).abs() < f64::EPSILON);
     }
 }

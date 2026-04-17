@@ -303,11 +303,11 @@ mod tests {
 
         // Fill the batch
         pipeline.pending_batch = vec![
-            SensorData::new(1.0, 2.0, 3.0, false, false),
-            SensorData::new(4.0, 5.0, 6.0, false, false),
-            SensorData::new(7.0, 8.0, 9.0, false, false),
-            SensorData::new(10.0, 11.0, 12.0, false, false),
-            SensorData::new(13.0, 14.0, 15.0, false, false),
+            SensorData::from_tuple(1.0, 2.0, 3.0, false, false),
+            SensorData::from_tuple(4.0, 5.0, 6.0, false, false),
+            SensorData::from_tuple(7.0, 8.0, 9.0, false, false),
+            SensorData::from_tuple(10.0, 11.0, 12.0, false, false),
+            SensorData::from_tuple(13.0, 14.0, 15.0, false, false),
         ];
 
         // Now should flush (batch full)
@@ -319,8 +319,8 @@ mod tests {
         let repo: Arc<dyn SensorDataRepository> = Arc::new(MockSensorDataRepository);
         let config = SensorDataStorageConfig::default();
         let pending_batch = Mutex::new(vec![
-            SensorData::new(1.0, 2.0, 3.0, false, false),
-            SensorData::new(4.0, 5.0, 6.0, false, false),
+            SensorData::from_tuple(1.0, 2.0, 3.0, false, false),
+            SensorData::from_tuple(4.0, 5.0, 6.0, false, false),
         ]);
         let last_flush = Mutex::new(Instant::now());
 

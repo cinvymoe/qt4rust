@@ -150,6 +150,8 @@ mod tests {
         ProcessedData {
             current_load: 10.0,
             rated_load: 25.0,
+            aux_current_load: 0.0,
+            aux_moment_percentage: 0.0,
             working_radius: 5.0,
             boom_angle: 45.0,
             boom_length: 10.0,
@@ -165,13 +167,7 @@ mod tests {
     }
 
     fn create_test_sensor_data() -> SensorData {
-        SensorData {
-            ad1_load: 10.0,
-            ad2_radius: 5.0,
-            ad3_angle: 45.0,
-            digital_input_0: false,
-            digital_input_1: false,
-        }
+        SensorData::from_tuple(10.0, 5.0, 45.0, false, false)
     }
 
     #[test]

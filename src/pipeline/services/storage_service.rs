@@ -165,6 +165,8 @@ mod tests {
         ProcessedData {
             current_load: 10.0,
             rated_load: 25.0,
+            aux_current_load: 0.0,
+            aux_moment_percentage: 0.0,
             working_radius: 5.0,
             boom_angle: 45.0,
             boom_length: 10.0,

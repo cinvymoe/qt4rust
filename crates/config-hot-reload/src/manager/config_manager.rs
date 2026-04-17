@@ -348,12 +348,12 @@ impl HotReloadConfigManager {
                 // 记录配置变更前后的关键参数差异
                 info!(
                     config_type = "SensorCalibration",
-                    old_weight_scale = cache.sensor_calibration.weight.scale_value,
-                    new_weight_scale = config.weight.scale_value,
-                    old_angle_scale = cache.sensor_calibration.angle.scale_value,
-                    new_angle_scale = config.angle.scale_value,
-                    old_radius_scale = cache.sensor_calibration.radius.scale_value,
-                    new_radius_scale = config.radius.scale_value,
+                    old_weight_scale = cache.sensor_calibration.weight().scale_value,
+                    new_weight_scale = config.weight().scale_value,
+                    old_angle_scale = cache.sensor_calibration.angle().scale_value,
+                    new_angle_scale = config.angle().scale_value,
+                    old_radius_scale = cache.sensor_calibration.radius().scale_value,
+                    new_radius_scale = config.radius().scale_value,
                     "传感器校准配置参数变更"
                 );
 

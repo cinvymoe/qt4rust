@@ -273,11 +273,11 @@ impl CollectionPipeline {
         if let Ok(cal) = sensor_calibration.read() {
             tracing::info!("🔧 [CollectionPipeline] 热重载配置已设置");
             tracing::info!("📋 [初始标定参数] weight: zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}, multiplier={:.2}",
-                cal.weight.zero_ad,
-                cal.weight.zero_value,
-                cal.weight.scale_ad,
-                cal.weight.scale_value,
-                cal.weight.multiplier);
+                cal.weight().zero_ad,
+                cal.weight().zero_value,
+                cal.weight().scale_ad,
+                cal.weight().scale_value,
+                cal.weight().multiplier);
         }
 
         if let Ok(thresholds) = alarm_thresholds.read() {
@@ -552,9 +552,19 @@ impl CollectionPipeline {
             None
         };
 
+        // 副钩载荷
+        let aux_current_load = sensor_data.get_analog_or("aux_hook_weight", 0.0);
+        let aux_moment_percentage = if rated_load > 0.0 {
+            (aux_current_load * working_radius) / (rated_load * working_radius) * 100.0
+        } else {
+            0.0
+        };
+
         ProcessedData {
             current_load,
             rated_load,
+            aux_current_load,
+            aux_moment_percentage,
             working_radius,
             boom_angle,
             boom_length,
@@ -584,11 +594,11 @@ impl CollectionPipeline {
 
         tracing::info!("🔥 [CollectionPipeline] 使用热重载配置进行AD转换");
         tracing::info!("📊 [标定参数] weight: zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}, multiplier={:.2}",
-            cal_guard.weight.zero_ad,
-            cal_guard.weight.zero_value,
-            cal_guard.weight.scale_ad,
-            cal_guard.weight.scale_value,
-            cal_guard.weight.multiplier);
+            cal_guard.weight().zero_ad,
+            cal_guard.weight().zero_value,
+            cal_guard.weight().scale_ad,
+            cal_guard.weight().scale_value,
+            cal_guard.weight().multiplier);
 
         tracing::info!(
             "⚠️  [预警阈值] warning={}%, alarm={}%",

@@ -48,11 +48,17 @@ impl SensorCalibrationParams {
 }
 
 /// 传感器标定配置 - 使用 HashMap 存储
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SensorCalibration {
     /// 标定参数集合 (key = 传感器ID)
     #[serde(flatten)]
     pub params: HashMap<String, SensorCalibrationParams>,
+}
+
+impl Default for SensorCalibration {
+    fn default() -> Self {
+        Self::with_defaults()
+    }
 }
 
 impl SensorCalibration {

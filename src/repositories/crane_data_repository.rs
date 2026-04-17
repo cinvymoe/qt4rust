@@ -34,7 +34,8 @@ impl CraneDataRepository {
             .lock()
             .map_err(|e| format!("Failed to lock sensor source: {}", e))?;
 
-        let (ad1, ad2, ad3, di0, di1) = sensor_source.read_all().map_err(|e| e.to_string())?;
+        let reading = sensor_source.read_all().map_err(|e| e.to_string())?;
+        let (ad1, ad2, ad3, di0, di1) = reading.to_tuple();
 
         let data = SensorData::from_tuple(ad1, ad2, ad3, di0, di1);
 
@@ -105,7 +106,7 @@ mod tests {
         assert!(result.is_ok(), "应该能获取配置");
 
         let config = result.unwrap();
-        assert!(config.sensor_calibration.weight.scale_ad > 0.0);
+        assert!(config.sensor_calibration.weight().scale_ad > 0.0);
         assert!(config.rated_load_table.len() > 0);
     }
 

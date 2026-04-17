@@ -1,5 +1,6 @@
 use crate::simulated::{SimulatedSensor, SimulatorType};
 use sensor_core::{SensorProvider, SensorResult, SensorSource};
+use sensor_traits::SensorReading;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
@@ -63,7 +64,21 @@ impl SimulatedDataSource {
         }
     }
 
-    pub fn read_all(&self) -> SensorResult<(f64, f64, f64, bool, bool)> {
+    pub fn ad1(&self) -> &SimulatedSensor {
+        &self.ad1
+    }
+
+    pub fn ad2(&self) -> &SimulatedSensor {
+        &self.ad2
+    }
+
+    pub fn ad3(&self) -> &SimulatedSensor {
+        &self.ad3
+    }
+}
+
+impl SensorSource for SimulatedDataSource {
+    fn read_all(&self) -> SensorResult<SensorReading> {
         let ad1 = self.ad1.read()?;
         let ad2 = self.ad2.read()?;
         let ad3 = self.ad3.read()?;
@@ -92,25 +107,7 @@ impl SimulatedDataSource {
         let di0 = self.di0.load(Ordering::SeqCst);
         let di1 = self.di1.load(Ordering::SeqCst);
 
-        Ok((ad1, ad2, ad3, di0, di1))
-    }
-
-    pub fn ad1(&self) -> &SimulatedSensor {
-        &self.ad1
-    }
-
-    pub fn ad2(&self) -> &SimulatedSensor {
-        &self.ad2
-    }
-
-    pub fn ad3(&self) -> &SimulatedSensor {
-        &self.ad3
-    }
-}
-
-impl SensorSource for SimulatedDataSource {
-    fn read_all(&self) -> SensorResult<(f64, f64, f64, bool, bool)> {
-        SimulatedDataSource::read_all(self)
+        Ok(SensorReading::from_tuple(ad1, ad2, ad3, di0, di1))
     }
 
     fn is_connected(&self) -> bool {

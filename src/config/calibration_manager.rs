@@ -133,8 +133,8 @@ mod tests {
         assert!(result.is_ok());
 
         let config = result.unwrap();
-        assert_eq!(config.weight.zero_ad, 0.0);
-        assert_eq!(config.weight.scale_ad, 4095.0);
+        assert_eq!(config.weight().zero_ad, 0.0);
+        assert_eq!(config.weight().scale_ad, 4095.0);
 
         assert!(Path::new(&config_path).exists());
     }
@@ -144,10 +144,29 @@ mod tests {
         let (_temp_dir, config_path) = setup_test_dir();
         let manager = CalibrationManager::new(&config_path);
 
-        let mut config = SensorCalibration::default();
-        config.weight.zero_ad = 100.0;
-        config.weight.scale_ad = 4000.0;
-        config.angle.zero_value = 10.0;
+        let mut config = SensorCalibration::with_defaults();
+        config.set_calibration(
+            "main_hook_weight",
+            sensor_core::SensorCalibrationParams {
+                zero_ad: 100.0,
+                zero_value: 0.0,
+                scale_ad: 4000.0,
+                scale_value: 50.0,
+                multiplier: 1.0,
+                actual_multiplier: 1.0,
+            },
+        );
+        config.set_calibration(
+            "angle",
+            sensor_core::SensorCalibrationParams {
+                zero_ad: 0.0,
+                zero_value: 10.0,
+                scale_ad: 4095.0,
+                scale_value: 90.0,
+                multiplier: 1.0,
+                actual_multiplier: 1.0,
+            },
+        );
 
         let save_result = manager.save(&config);
         assert!(save_result.is_ok());
@@ -156,9 +175,9 @@ mod tests {
         assert!(load_result.is_ok());
 
         let loaded_config = load_result.unwrap();
-        assert_eq!(loaded_config.weight.zero_ad, 100.0);
-        assert_eq!(loaded_config.weight.scale_ad, 4000.0);
-        assert_eq!(loaded_config.angle.zero_value, 10.0);
+        assert_eq!(loaded_config.weight().zero_ad, 100.0);
+        assert_eq!(loaded_config.weight().scale_ad, 4000.0);
+        assert_eq!(loaded_config.angle().zero_value, 10.0);
     }
 
     #[test]
@@ -166,14 +185,25 @@ mod tests {
         let (_temp_dir, config_path) = setup_test_dir();
         let manager = CalibrationManager::new(&config_path);
 
-        let mut config = SensorCalibration::default();
-        config.weight.scale_ad = config.weight.zero_ad;
+        let mut config = SensorCalibration::with_defaults();
+        // Set invalid calibration where scale_ad equals zero_ad (will cause division by zero)
+        config.set_calibration(
+            "main_hook_weight",
+            sensor_core::SensorCalibrationParams {
+                zero_ad: 100.0,
+                zero_value: 0.0,
+                scale_ad: 100.0, // Same as zero_ad - invalid!
+                scale_value: 50.0,
+                multiplier: 1.0,
+                actual_multiplier: 1.0,
+            },
+        );
 
         let result = manager.save(&config);
         assert!(result.is_err());
 
         if let Err(DataError::ValidationError(msg)) = result {
-            assert!(msg.contains("重量传感器"));
+            assert!(msg.contains("main_hook_weight") || msg.contains("重量"));
         } else {
             panic!("Expected ValidationError");
         }
@@ -184,8 +214,10 @@ mod tests {
         let (_temp_dir, config_path) = setup_test_dir();
         let manager = CalibrationManager::new(&config_path);
 
-        let original_config = SensorCalibration {
-            weight: sensor_core::SensorCalibrationParams {
+        let mut original_config = SensorCalibration::new();
+        original_config.set_calibration(
+            "main_hook_weight",
+            sensor_core::SensorCalibrationParams {
                 zero_ad: 100.0,
                 zero_value: 5.0,
                 scale_ad: 4000.0,
@@ -193,7 +225,10 @@ mod tests {
                 multiplier: 1.0,
                 actual_multiplier: 1.0,
             },
-            angle: sensor_core::SensorCalibrationParams {
+        );
+        original_config.set_calibration(
+            "angle",
+            sensor_core::SensorCalibrationParams {
                 zero_ad: 200.0,
                 zero_value: 10.0,
                 scale_ad: 3800.0,
@@ -201,7 +236,10 @@ mod tests {
                 multiplier: 1.0,
                 actual_multiplier: 1.0,
             },
-            radius: sensor_core::SensorCalibrationParams {
+        );
+        original_config.set_calibration(
+            "radius",
+            sensor_core::SensorCalibrationParams {
                 zero_ad: 150.0,
                 zero_value: 2.0,
                 scale_ad: 3900.0,
@@ -209,21 +247,27 @@ mod tests {
                 multiplier: 1.0,
                 actual_multiplier: 1.0,
             },
-        };
+        );
 
         manager.save(&original_config).unwrap();
 
         let loaded_config = manager.load().unwrap();
 
-        assert_eq!(loaded_config.weight.zero_ad, original_config.weight.zero_ad);
         assert_eq!(
-            loaded_config.weight.zero_value,
-            original_config.weight.zero_value
+            loaded_config.weight().zero_ad,
+            original_config.weight().zero_ad
         );
-        assert_eq!(loaded_config.angle.zero_ad, original_config.angle.zero_ad);
         assert_eq!(
-            loaded_config.radius.scale_value,
-            original_config.radius.scale_value
+            loaded_config.weight().zero_value,
+            original_config.weight().zero_value
+        );
+        assert_eq!(
+            loaded_config.angle().zero_ad,
+            original_config.angle().zero_ad
+        );
+        assert_eq!(
+            loaded_config.radius().scale_value,
+            original_config.radius().scale_value
         );
     }
 }

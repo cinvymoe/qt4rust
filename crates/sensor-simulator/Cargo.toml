@@ -8,3 +8,4 @@ license = "MIT"
 
 [dependencies]
 sensor-core = { path = "../sensor-core" }
+sensor-traits = { path = "../sensor-traits" }

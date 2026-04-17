@@ -12,6 +12,8 @@ pub mod monitoring_viewmodel_bridge {
         #[qml_element]
         #[qproperty(f64, current_load)]
         #[qproperty(f64, rated_load)]
+        #[qproperty(f64, aux_current_load)]
+        #[qproperty(f64, aux_moment_percentage)]
         #[qproperty(f64, working_radius)]
         #[qproperty(f64, boom_angle)]
         #[qproperty(f64, boom_length)]
@@ -69,6 +71,8 @@ pub struct MonitoringViewModelRust {
     // Qt 属性字段
     current_load: f64,
     rated_load: f64,
+    aux_current_load: f64,
+    aux_moment_percentage: f64,
     working_radius: f64,
     boom_angle: f64,
     boom_length: f64,
@@ -94,6 +98,8 @@ impl Default for MonitoringViewModelRust {
         Self {
             current_load: state.current_load,
             rated_load: state.rated_load,
+            aux_current_load: 0.0,
+            aux_moment_percentage: 0.0,
             working_radius: state.working_radius,
             boom_angle: state.boom_angle,
             boom_length: state.boom_length,

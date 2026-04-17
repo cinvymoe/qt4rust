@@ -63,9 +63,9 @@ mod tests {
         assert!(config.validate().is_ok());
 
         // 验证传感器标定配置存在
-        assert_eq!(config.sensor_calibration.weight.scale_value, 50.0);
-        assert_eq!(config.sensor_calibration.angle.scale_value, 90.0);
-        assert_eq!(config.sensor_calibration.radius.scale_value, 20.0);
+        assert_eq!(config.sensor_calibration.weight().scale_value, 50.0);
+        assert_eq!(config.sensor_calibration.angle().scale_value, 90.0);
+        assert_eq!(config.sensor_calibration.radius().scale_value, 20.0);
 
         // 验证额定载荷表存在
         assert!(!config.rated_load_table.is_empty());
@@ -83,11 +83,22 @@ mod tests {
         let mut config = CraneConfig::default();
 
         // 设置无效的传感器标定参数（除零错误）
-        config.sensor_calibration.weight.scale_ad = config.sensor_calibration.weight.zero_ad;
+        config.sensor_calibration.set_calibration(
+            "main_hook_weight",
+            sensor_core::SensorCalibrationParams {
+                zero_ad: 100.0,
+                zero_value: 0.0,
+                scale_ad: 100.0, // Same as zero_ad - invalid!
+                scale_value: 50.0,
+                multiplier: 1.0,
+                actual_multiplier: 1.0,
+            },
+        );
 
         let result = config.validate();
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("重量传感器"));
+        let err_msg = result.unwrap_err();
+        assert!(err_msg.contains("main_hook_weight") || err_msg.contains("重量"));
     }
 
     #[test]
@@ -120,13 +131,24 @@ mod tests {
         let mut config = CraneConfig::default();
 
         // 设置多个无效参数，验证会在第一个错误处停止
-        config.sensor_calibration.weight.scale_ad = config.sensor_calibration.weight.zero_ad;
+        config.sensor_calibration.set_calibration(
+            "main_hook_weight",
+            sensor_core::SensorCalibrationParams {
+                zero_ad: 100.0,
+                zero_value: 0.0,
+                scale_ad: 100.0,
+                scale_value: 50.0,
+                multiplier: 1.0,
+                actual_multiplier: 1.0,
+            },
+        );
         config.rated_load_table.clear();
 
         let result = config.validate();
         assert!(result.is_err());
         // 应该先检测到传感器标定错误
-        assert!(result.unwrap_err().contains("重量传感器"));
+        let err_msg = result.unwrap_err();
+        assert!(err_msg.contains("main_hook_weight") || err_msg.contains("重量"));
     }
 
     #[test]
@@ -181,8 +203,8 @@ mod tests {
 
         // 验证克隆的值相同
         assert_eq!(
-            config.sensor_calibration.weight.scale_value,
-            cloned.sensor_calibration.weight.scale_value
+            config.sensor_calibration.weight().scale_value,
+            cloned.sensor_calibration.weight().scale_value
         );
         assert_eq!(config.rated_load_table.len(), cloned.rated_load_table.len());
     }

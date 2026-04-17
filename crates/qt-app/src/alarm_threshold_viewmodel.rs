@@ -80,7 +80,7 @@ impl Default for AlarmThresholdViewModelRust {
         Self {
             moment_warning_threshold: alarm_thresholds.moment.warning_percentage,
             moment_danger_threshold: alarm_thresholds.moment.alarm_percentage,
-            max_load: calibration.weight.scale_value,
+            max_load: calibration.weight().scale_value,
             min_angle: alarm_thresholds.angle.min_angle,
             max_angle: alarm_thresholds.angle.max_angle,
             main_hook_mode: mode_to_i32(&alarm_thresholds.main_hook_switch.mode),
@@ -140,7 +140,7 @@ impl alarm_threshold_bridge::AlarmThresholdViewModel {
             .set_moment_warning_threshold(alarm_thresholds.moment.warning_percentage);
         self.as_mut()
             .set_moment_danger_threshold(alarm_thresholds.moment.alarm_percentage);
-        self.as_mut().set_max_load(calibration.weight.scale_value);
+        self.as_mut().set_max_load(calibration.weight().scale_value);
         self.as_mut()
             .set_min_angle(alarm_thresholds.angle.min_angle);
         self.as_mut()

@@ -20,7 +20,7 @@ impl ConfigValidator {
     /// # 需求: 3.1, 3.2
     pub fn validate_sensor_calibration(config: &SensorCalibration) -> Result<(), ValidationError> {
         // 验证重量传感器
-        let weight_denominator = config.weight.scale_ad - config.weight.zero_ad;
+        let weight_denominator = config.weight().scale_ad - config.weight().zero_ad;
         if weight_denominator.abs() < f64::EPSILON {
             let error = ValidationError::FieldValidation {
                 field: "weight.scale_ad - weight.zero_ad".to_string(),
@@ -28,15 +28,15 @@ impl ConfigValidator {
             };
             warn!(
                 field = "weight.scale_ad - weight.zero_ad",
-                scale_ad = config.weight.scale_ad,
-                zero_ad = config.weight.zero_ad,
+                scale_ad = config.weight().scale_ad,
+                zero_ad = config.weight().zero_ad,
                 "传感器校准配置验证失败: 分母不能为零"
             );
             return Err(error);
         }
 
         // 验证角度传感器
-        let angle_denominator = config.angle.scale_ad - config.angle.zero_ad;
+        let angle_denominator = config.angle().scale_ad - config.angle().zero_ad;
         if angle_denominator.abs() < f64::EPSILON {
             let error = ValidationError::FieldValidation {
                 field: "angle.scale_ad - angle.zero_ad".to_string(),
@@ -44,15 +44,15 @@ impl ConfigValidator {
             };
             warn!(
                 field = "angle.scale_ad - angle.zero_ad",
-                scale_ad = config.angle.scale_ad,
-                zero_ad = config.angle.zero_ad,
+                scale_ad = config.angle().scale_ad,
+                zero_ad = config.angle().zero_ad,
                 "传感器校准配置验证失败: 分母不能为零"
             );
             return Err(error);
         }
 
         // 验证半径传感器
-        let radius_denominator = config.radius.scale_ad - config.radius.zero_ad;
+        let radius_denominator = config.radius().scale_ad - config.radius().zero_ad;
         if radius_denominator.abs() < f64::EPSILON {
             let error = ValidationError::FieldValidation {
                 field: "radius.scale_ad - radius.zero_ad".to_string(),
@@ -60,8 +60,8 @@ impl ConfigValidator {
             };
             warn!(
                 field = "radius.scale_ad - radius.zero_ad",
-                scale_ad = config.radius.scale_ad,
-                zero_ad = config.radius.zero_ad,
+                scale_ad = config.radius().scale_ad,
+                zero_ad = config.radius().zero_ad,
                 "传感器校准配置验证失败: 分母不能为零"
             );
             return Err(error);
@@ -325,32 +325,7 @@ mod tests {
 
     #[test]
     fn test_validate_sensor_calibration_success() {
-        let config = SensorCalibration {
-            weight: SensorCalibrationParams {
-                zero_ad: 0.0,
-                zero_value: 0.0,
-                scale_ad: 4095.0,
-                scale_value: 50.0,
-                multiplier: 1.0,
-                actual_multiplier: 1.0,
-            },
-            angle: SensorCalibrationParams {
-                zero_ad: 0.0,
-                zero_value: 0.0,
-                scale_ad: 4095.0,
-                scale_value: 90.0,
-                multiplier: 1.0,
-                actual_multiplier: 1.0,
-            },
-            radius: SensorCalibrationParams {
-                zero_ad: 0.0,
-                zero_value: 0.0,
-                scale_ad: 4095.0,
-                scale_value: 20.0,
-                multiplier: 1.0,
-                actual_multiplier: 1.0,
-            },
-        };
+        let config = SensorCalibration::with_defaults();
 
         let result = ConfigValidator::validate_sensor_calibration(&config);
         assert!(result.is_ok());
@@ -358,8 +333,10 @@ mod tests {
 
     #[test]
     fn test_validate_sensor_calibration_zero_denominator() {
-        let config = SensorCalibration {
-            weight: SensorCalibrationParams {
+        let mut config = SensorCalibration::new();
+        config.set_calibration(
+            "main_hook_weight",
+            SensorCalibrationParams {
                 zero_ad: 100.0,
                 zero_value: 0.0,
                 scale_ad: 100.0,
@@ -367,9 +344,9 @@ mod tests {
                 multiplier: 1.0,
                 actual_multiplier: 1.0,
             },
-            angle: SensorCalibrationParams::default(),
-            radius: SensorCalibrationParams::default(),
-        };
+        );
+        config.set_calibration("angle", SensorCalibrationParams::default());
+        config.set_calibration("radius", SensorCalibrationParams::default());
 
         let result = ConfigValidator::validate_sensor_calibration(&config);
         assert!(result.is_err());

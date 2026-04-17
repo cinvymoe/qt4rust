@@ -64,12 +64,12 @@ impl Default for AngleCalibrationViewModelRust {
         let calibration = manager.load().unwrap_or_default();
 
         Self {
-            min_angle: calibration.angle.zero_value,
-            max_angle: calibration.angle.scale_value,
-            point1_ad: calibration.angle.zero_ad,
-            point1_angle: calibration.angle.zero_value,
-            point2_ad: calibration.angle.scale_ad,
-            point2_angle: calibration.angle.scale_value,
+            min_angle: calibration.angle().zero_value,
+            max_angle: calibration.angle().scale_value,
+            point1_ad: calibration.angle().zero_ad,
+            point1_angle: calibration.angle().zero_value,
+            point2_ad: calibration.angle().scale_ad,
+            point2_angle: calibration.angle().scale_value,
             current_angle: 0.0,
             current_ad: 0.0,
             config_path,
@@ -94,10 +94,17 @@ impl angle_calibration_bridge::AngleCalibrationViewModel {
             }
         };
 
-        calibration.angle.zero_ad = p1_ad;
-        calibration.angle.zero_value = p1_ang;
-        calibration.angle.scale_ad = p2_ad;
-        calibration.angle.scale_value = p2_ang;
+        calibration.set_calibration(
+            "angle",
+            sensor_core::SensorCalibrationParams {
+                zero_ad: p1_ad,
+                zero_value: p1_ang,
+                scale_ad: p2_ad,
+                scale_value: p2_ang,
+                multiplier: 1.0,
+                actual_multiplier: 1.0,
+            },
+        );
 
         match manager.save(&calibration) {
             Ok(_) => {
@@ -113,13 +120,14 @@ impl angle_calibration_bridge::AngleCalibrationViewModel {
 
     pub fn reset_to_default(mut self: Pin<&mut Self>) {
         let calibration = sensor_core::SensorCalibration::default();
-        self.as_mut().set_point1_ad(calibration.angle.zero_ad);
-        self.as_mut().set_point1_angle(calibration.angle.zero_value);
-        self.as_mut().set_point2_ad(calibration.angle.scale_ad);
+        self.as_mut().set_point1_ad(calibration.angle().zero_ad);
         self.as_mut()
-            .set_point2_angle(calibration.angle.scale_value);
-        self.as_mut().set_min_angle(calibration.angle.zero_value);
-        self.as_mut().set_max_angle(calibration.angle.scale_value);
+            .set_point1_angle(calibration.angle().zero_value);
+        self.as_mut().set_point2_ad(calibration.angle().scale_ad);
+        self.as_mut()
+            .set_point2_angle(calibration.angle().scale_value);
+        self.as_mut().set_min_angle(calibration.angle().zero_value);
+        self.as_mut().set_max_angle(calibration.angle().scale_value);
     }
 
     pub fn update_current_reading(mut self: Pin<&mut Self>, angle: f64, ad: f64) {

@@ -7,6 +7,7 @@ use sensor_core::{
     DataSourceId, MockStorageRepository, PipelineConfig, SensorPipelineManager, SensorResult,
     SensorSource, StoragePipelineConfig,
 };
+use sensor_traits::SensorReading;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -29,12 +30,13 @@ impl TestMockSensorSource {
 }
 
 impl SensorSource for TestMockSensorSource {
-    fn read_all(&self) -> SensorResult<(f64, f64, f64, bool, bool)> {
+    fn read_all(&self) -> SensorResult<SensorReading> {
         let index = self.current_index.fetch_add(1, Ordering::SeqCst);
         if index < self.data.len() {
-            Ok(self.data[index])
+            Ok(SensorReading::from_tuple(self.data[index].0, self.data[index].1, self.data[index].2, self.data[index].3, self.data[index].4))
         } else {
-            Ok(*self.data.last().unwrap_or(&(0.0, 0.0, 0.0, false, false)))
+            let last = self.data.last().unwrap_or(&(0.0, 0.0, 0.0, false, false));
+            Ok(SensorReading::from_tuple(last.0, last.1, last.2, last.3, last.4))
         }
     }
 

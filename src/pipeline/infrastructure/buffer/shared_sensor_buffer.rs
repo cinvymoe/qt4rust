@@ -76,9 +76,9 @@ mod tests {
         let latest = buffer.get_latest();
         assert!(latest.is_some());
         let latest = latest.unwrap();
-        assert_eq!(latest.ad1_load, 100.0);
-        assert_eq!(latest.ad2_radius, 50.0);
-        assert_eq!(latest.ad3_angle, 45.0);
+        assert_eq!(latest.ad1_load(), 100.0);
+        assert_eq!(latest.ad2_radius(), 50.0);
+        assert_eq!(latest.ad3_angle(), 45.0);
     }
 
     #[test]
@@ -102,14 +102,20 @@ mod tests {
 
         // Add 10 items
         for i in 0..10 {
-            buffer.push(SensorData::from_tuple(i as f64, (i * 2) as f64, (i * 3) as f64, false, false));
+            buffer.push(SensorData::from_tuple(
+                i as f64,
+                (i * 2) as f64,
+                (i * 3) as f64,
+                false,
+                false,
+            ));
         }
 
         // Should only keep last 5
         let history = buffer.get_history(10);
         assert_eq!(history.len(), 5);
-        assert_eq!(history[0].ad1_load, 9.0); // newest
-        assert_eq!(history[4].ad1_load, 5.0); // oldest retained
+        assert_eq!(history[0].ad1_load(), 9.0); // newest
+        assert_eq!(history[4].ad1_load(), 5.0); // oldest retained
     }
 
     #[test]
@@ -123,9 +129,9 @@ mod tests {
         // Get history returns newest first
         let history = buffer.get_history(3);
         assert_eq!(history.len(), 3);
-        assert_eq!(history[0].ad1_load, 4.0); // newest
-        assert_eq!(history[1].ad1_load, 3.0);
-        assert_eq!(history[2].ad1_load, 2.0);
+        assert_eq!(history[0].ad1_load(), 4.0); // newest
+        assert_eq!(history[1].ad1_load(), 3.0);
+        assert_eq!(history[2].ad1_load(), 2.0);
     }
 
     #[test]

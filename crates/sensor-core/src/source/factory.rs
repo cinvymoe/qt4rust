@@ -7,7 +7,8 @@ use super::digital_simulator::SimulatedDigitalInput;
 use super::digital_simulator::SimulatedDigitalInputFactory;
 use super::registry::DigitalInputRegistry;
 use crate::{AnalogSource, DigitalInputSource, SensorResult, SensorSource};
-use modbus_tcp::ModbusDataSource;
+use modbus_tcp::config::{ModbusByteOrder, ModbusDataType};
+use modbus_tcp::{ModbusDataSource, SensorKind, SensorModbusConfig};
 
 struct ModbusAnalogSource {
     inner: ModbusDataSource,
@@ -18,8 +19,84 @@ impl ModbusAnalogSource {
         let config_content = std::fs::read_to_string(config_path)
             .map_err(|e| crate::SensorError::ConfigError(format!("读取配置失败: {}", e)))?;
 
-        let mut source = ModbusDataSource::from_config(&config_content)
-            .map_err(|e| crate::SensorError::ConfigError(format!("Modbus 配置错误: {:?}", e)))?;
+        // 解析配置
+        let config: toml::Value = toml::from_str(&config_content)
+            .map_err(|e| crate::SensorError::ConfigError(format!("解析配置失败: {}", e)))?;
+
+        let server = config.get("server").ok_or_else(|| {
+            crate::SensorError::ConfigError("Missing [server] section".to_string())
+        })?;
+
+        let host = server
+            .get("host")
+            .and_then(|v| v.as_str())
+            .unwrap_or("127.0.0.1");
+        let port = server
+            .get("port")
+            .and_then(|v| v.as_integer())
+            .map(|v| v as u16)
+            .unwrap_or(502);
+        let timeout_ms = server
+            .get("timeout_ms")
+            .and_then(|v| v.as_integer())
+            .map(|v| v as u64)
+            .unwrap_or(1000);
+
+        // 创建 ModbusDataSource
+        let mut source = ModbusDataSource::new(host.to_string(), port, timeout_ms);
+
+        // 添加传感器
+        source.add_sensor(
+            "main_hook_weight",
+            SensorModbusConfig {
+                name: "主钩重量".to_string(),
+                kind: SensorKind::Analog,
+                slave_id: 1,
+                register_address: 0,
+                register_count: 1,
+                data_type: ModbusDataType::UInt16,
+                byte_order: ModbusByteOrder::BigEndian,
+            },
+        );
+
+        source.add_sensor(
+            "aux_hook_weight",
+            SensorModbusConfig {
+                name: "副钩重量".to_string(),
+                kind: SensorKind::Analog,
+                slave_id: 1,
+                register_address: 3,
+                register_count: 1,
+                data_type: ModbusDataType::UInt16,
+                byte_order: ModbusByteOrder::BigEndian,
+            },
+        );
+
+        source.add_sensor(
+            "radius",
+            SensorModbusConfig {
+                name: "半径".to_string(),
+                kind: SensorKind::Analog,
+                slave_id: 1,
+                register_address: 1,
+                register_count: 1,
+                data_type: ModbusDataType::UInt16,
+                byte_order: ModbusByteOrder::BigEndian,
+            },
+        );
+
+        source.add_sensor(
+            "angle",
+            SensorModbusConfig {
+                name: "角度".to_string(),
+                kind: SensorKind::Analog,
+                slave_id: 1,
+                register_address: 2,
+                register_count: 1,
+                data_type: ModbusDataType::UInt16,
+                byte_order: ModbusByteOrder::BigEndian,
+            },
+        );
 
         source
             .connect()
@@ -31,9 +108,20 @@ impl ModbusAnalogSource {
 
 impl AnalogSource for ModbusAnalogSource {
     fn read(&self) -> SensorResult<(f64, f64, f64)> {
-        self.inner
+        let reading = self
+            .inner
             .read_all()
-            .map_err(|e| crate::SensorError::ReadError(format!("Modbus 读取失败: {:?}", e)))
+            .map_err(|e| crate::SensorError::ReadError(format!("Modbus 读取失败: {:?}", e)))?;
+
+        let ad1 = reading
+            .analog
+            .get("main_hook_weight")
+            .copied()
+            .unwrap_or(0.0);
+        let ad2 = reading.analog.get("radius").copied().unwrap_or(0.0);
+        let ad3 = reading.analog.get("angle").copied().unwrap_or(0.0);
+
+        Ok((ad1, ad2, ad3))
     }
 
     fn is_connected(&self) -> bool {
@@ -123,7 +211,8 @@ mod tests {
         let source = SensorSourceFactory::create_from_config(Path::new("/nonexistent/config.toml"));
 
         let result = source.read_all().unwrap();
-        assert!(result.0 >= 0.0 && result.0 <= 4095.0);
+        let (ad1, _, _, _, _) = result.to_tuple();
+        assert!(ad1 >= 0.0 && ad1 <= 4095.0);
     }
 
     #[test]

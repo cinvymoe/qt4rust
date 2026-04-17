@@ -86,7 +86,7 @@ mod tests {
     fn test_default_config_cache() {
         let cache = ConfigCache::default();
         assert_eq!(cache.version, 0);
-        assert_eq!(cache.sensor_calibration.weight.multiplier, 1.0);
+        assert_eq!(cache.sensor_calibration.weight().multiplier, 1.0);
     }
 
     #[test]

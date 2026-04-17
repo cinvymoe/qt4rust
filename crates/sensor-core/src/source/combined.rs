@@ -1,4 +1,5 @@
 use crate::{AnalogSource, DigitalInputSource, SensorResult, SensorSource};
+use sensor_traits::SensorReading;
 
 /// 组合模拟量 + 数字输入源
 pub struct CombinedSensorSource {
@@ -13,10 +14,10 @@ impl CombinedSensorSource {
 }
 
 impl SensorSource for CombinedSensorSource {
-    fn read_all(&self) -> SensorResult<(f64, f64, f64, bool, bool)> {
+    fn read_all(&self) -> SensorResult<SensorReading> {
         let (ad1, ad2, ad3) = self.analog.read()?;
         let (di0, di1) = self.digital.read()?;
-        Ok((ad1, ad2, ad3, di0, di1))
+        Ok(SensorReading::from_tuple(ad1, ad2, ad3, di0, di1))
     }
 
     fn is_connected(&self) -> bool {
@@ -71,7 +72,11 @@ mod tests {
         let combined = CombinedSensorSource::new(analog, digital);
         let result = combined.read_all().unwrap();
 
-        assert_eq!(result, (1.0, 2.0, 3.0, true, false));
+        assert_eq!(result.analog.get("main_hook_weight"), Some(&1.0));
+        assert_eq!(result.analog.get("radius"), Some(&2.0));
+        assert_eq!(result.analog.get("angle"), Some(&3.0));
+        assert_eq!(result.digital.get("main_hook_switch"), Some(&true));
+        assert_eq!(result.digital.get("aux_hook_switch"), Some(&false));
     }
 
     #[test]

@@ -55,6 +55,7 @@ async-trait = "0.1"
 rusqlite = { version = "0.31", features = ["bundled"] }
 thiserror = "1.0"
 rand = "0.8"
+serde_json = "1.0.149"
 
 [build-dependencies]
 # lib 不需要 cxx-qt-build

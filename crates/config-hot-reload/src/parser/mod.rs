@@ -151,9 +151,9 @@ multiplier = 1.0
         assert!(result.is_ok());
 
         let config = result.unwrap();
-        assert_eq!(config.weight.scale_value, 50.0);
-        assert_eq!(config.angle.scale_value, 90.0);
-        assert_eq!(config.radius.scale_value, 20.0);
+        assert_eq!(config.weight().scale_value, 50.0);
+        assert_eq!(config.angle().scale_value, 90.0);
+        assert_eq!(config.radius().scale_value, 20.0);
     }
 
     #[test]

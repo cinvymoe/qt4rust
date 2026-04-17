@@ -55,5 +55,5 @@ pub trait DatabaseSchema {
     }
 
     /// Gets field values for parameter binding
-    fn field_values(&self) -> Vec<&dyn ToSql>;
+    fn field_values(&self) -> Vec<Box<dyn ToSql>>;
 }

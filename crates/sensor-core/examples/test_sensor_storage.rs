@@ -166,11 +166,11 @@ fn verify_storage(repository: &MockStorageRepository) -> bool {
                     "[{}] {} -> weight={:.1}, radius={:.1}, angle={:.1}, di0={}, di1={}",
                     i,
                     source_id,
-                    data.ad1_load,
-                    data.ad2_radius,
-                    data.ad3_angle,
-                    data.digital_input_0,
-                    data.digital_input_1
+                    data.ad1_load(),
+                    data.ad2_radius(),
+                    data.ad3_angle(),
+                    data.digital_input_0(),
+                    data.digital_input_1()
                 );
             }
         }

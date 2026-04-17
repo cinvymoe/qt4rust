@@ -132,8 +132,12 @@ impl DatabaseSchema for SensorData {
         cols.as_slice()
     }
 
-    fn field_values(&self) -> Vec<&dyn ToSql> {
-        vec![]
+    fn field_values(&self) -> Vec<Box<dyn ToSql>> {
+        let analog_json = serde_json::to_string(&self.analog).unwrap_or_else(|_| "{}".to_string());
+        let digital_json =
+            serde_json::to_string(&self.digital).unwrap_or_else(|_| "{}".to_string());
+
+        vec![Box::new(analog_json), Box::new(digital_json)]
     }
 }
 

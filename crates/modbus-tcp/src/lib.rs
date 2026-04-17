@@ -3,7 +3,7 @@ pub mod config;
 pub mod data_source;
 pub mod error;
 
-pub use data_source::ModbusDataSource;
+pub use data_source::{ModbusDataSource, SensorKind, SensorModbusConfig};
 
 pub mod prelude {
     pub use crate::client::*;

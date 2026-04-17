@@ -4,7 +4,7 @@ use crate::models::{AlarmRecord, AlarmType, ProcessedData, SensorData};
 use crate::repositories::sensor_data_repository::SensorDataRepository;
 use crate::repositories::storage_repository::StorageRepository;
 use async_trait::async_trait;
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, ToSql};
 use sensor_core::error::StorageError;
 use sensor_core::pipeline::aggregator::AggregatedSensorData;
 use sensor_core::pipeline::data_source::DataSourceId;
@@ -292,6 +292,8 @@ impl StorageRepository for SqliteStorageRepository {
                     timestamp,
                     current_load: row.get(2)?,
                     rated_load: 25.0, // 从数据库读取时使用默认值
+                    aux_current_load: 0.0,
+                    aux_moment_percentage: 0.0,
                     working_radius: row.get(3)?,
                     boom_angle: row.get(4)?,
                     boom_length: row.get(5)?,
@@ -550,6 +552,8 @@ impl StorageRepository for SqliteStorageRepository {
                     timestamp,
                     current_load: row.get(2)?,
                     rated_load: 25.0, // 从数据库读取时使用默认值
+                    aux_current_load: 0.0,
+                    aux_moment_percentage: 0.0,
                     working_radius: row.get(3)?,
                     boom_angle: row.get(4)?,
                     boom_length: row.get(5)?,
@@ -589,17 +593,9 @@ impl SensorDataRepository for SqliteStorageRepository {
 
         for item in data {
             let values = item.field_values();
+            let params: Vec<&dyn ToSql> = values.iter().map(|v| v.as_ref()).collect();
 
-            // Runtime assertion to ensure field count matches
-            assert_eq!(
-                values.len(),
-                SensorData::columns().len(),
-                "field_values() returned {} values but columns() defines {} fields",
-                values.len(),
-                SensorData::columns().len()
-            );
-
-            match conn.execute(&sql, &*values) {
+            match conn.execute(&sql, params.as_slice()) {
                 Ok(rows) => {
                     saved_count += rows;
                 }
@@ -622,19 +618,20 @@ impl SensorDataRepository for SqliteStorageRepository {
 
         let mut stmt = conn
             .prepare(
-                "SELECT ad1_load, ad2_radius, ad3_angle
+                "SELECT analog_json, digital_json
                  FROM sensor_data
-                 ORDER BY timestamp DESC
+                 ORDER BY created_at DESC
                  LIMIT ?1",
             )
             .map_err(|e| format!("Failed to prepare statement: {}", e))?;
 
         let rows = stmt
             .query_map([limit], |row| {
-                let ad1: f64 = row.get(0)?;
-                let ad2: f64 = row.get(1)?;
-                let ad3: f64 = row.get(2)?;
-                Ok(SensorData::from_tuple(ad1, ad2, ad3, false, false))
+                let analog_json: String = row.get(0)?;
+                let digital_json: String = row.get(1)?;
+                let analog: std::collections::HashMap<String, f64> = serde_json::from_str(&analog_json).unwrap_or_default();
+                let digital: std::collections::HashMap<String, bool> = serde_json::from_str(&digital_json).unwrap_or_default();
+                Ok(SensorData::new(analog, digital))
             })
             .map_err(|e| format!("Failed to query: {}", e))?;
 
@@ -650,16 +647,17 @@ impl SensorDataRepository for SqliteStorageRepository {
         let conn = self.connection.lock().await;
 
         let result: Result<SensorData, _> = conn.query_row(
-            "SELECT ad1_load, ad2_radius, ad3_angle
+            "SELECT analog_json, digital_json
              FROM sensor_data
-             ORDER BY timestamp DESC
+             ORDER BY created_at DESC
              LIMIT 1",
             [],
             |row| {
-                let ad1: f64 = row.get(0)?;
-                let ad2: f64 = row.get(1)?;
-                let ad3: f64 = row.get(2)?;
-                Ok(SensorData::from_tuple(ad1, ad2, ad3, false, false))
+                let analog_json: String = row.get(0)?;
+                let digital_json: String = row.get(1)?;
+                let analog: std::collections::HashMap<String, f64> = serde_json::from_str(&analog_json).unwrap_or_default();
+                let digital: std::collections::HashMap<String, bool> = serde_json::from_str(&digital_json).unwrap_or_default();
+                Ok(SensorData::new(analog, digital))
             },
         );
 
@@ -960,9 +958,9 @@ mod tests {
         assert_eq!(retrieved.len(), 3);
 
         // Verify data integrity (most recent first due to ORDER BY timestamp DESC)
-        assert_eq!(retrieved[0].ad1_load, 22.0);
-        assert_eq!(retrieved[1].ad1_load, 21.0);
-        assert_eq!(retrieved[2].ad1_load, 20.0);
+        assert_eq!(retrieved[0].ad1_load(), 22.0);
+        assert_eq!(retrieved[1].ad1_load(), 21.0);
+        assert_eq!(retrieved[2].ad1_load(), 20.0);
     }
 
     #[tokio::test]
@@ -984,9 +982,9 @@ mod tests {
         let latest = repo.get_latest_sensor_data().await.unwrap();
         assert!(latest.is_some());
         let latest = latest.unwrap();
-        assert_eq!(latest.ad1_load, 20.0);
-        assert_eq!(latest.ad2_radius, 10.0);
-        assert_eq!(latest.ad3_angle, 60.0);
+        assert_eq!(latest.ad1_load(), 20.0);
+        assert_eq!(latest.ad2_radius(), 10.0);
+        assert_eq!(latest.ad3_angle(), 60.0);
     }
 
     #[tokio::test]

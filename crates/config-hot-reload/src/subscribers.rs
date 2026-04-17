@@ -119,10 +119,10 @@ impl ConfigSubscriber for DataProcessingSubscriber {
 
                 match self.sensor_calibration.write() {
                     Ok(mut guard) => {
-                        let old_weight = guard.weight.scale_value;
-                        let old_weight_multiplier = guard.weight.multiplier;
-                        let old_angle = guard.angle.scale_value;
-                        let old_radius = guard.radius.scale_value;
+                        let old_weight = guard.weight().scale_value;
+                        let old_weight_multiplier = guard.weight().multiplier;
+                        let old_angle = guard.angle().scale_value;
+                        let old_radius = guard.radius().scale_value;
 
                         *guard = snapshot.sensor_calibration.clone();
                         let new_cal = &*guard;
@@ -130,23 +130,23 @@ impl ConfigSubscriber for DataProcessingSubscriber {
                         info!(
                             subscriber = "DataProcessingSubscriber",
                             weight_scale =
-                                format!("{} -> {}", old_weight, new_cal.weight.scale_value),
+                                format!("{} -> {}", old_weight, new_cal.weight().scale_value),
                             weight_multiplier = format!(
                                 "{} -> {}",
-                                old_weight_multiplier, new_cal.weight.multiplier
+                                old_weight_multiplier, new_cal.weight().multiplier
                             ),
-                            angle_scale = format!("{} -> {}", old_angle, new_cal.angle.scale_value),
+                            angle_scale = format!("{} -> {}", old_angle, new_cal.angle().scale_value),
                             radius_scale =
-                                format!("{} -> {}", old_radius, new_cal.radius.scale_value),
+                                format!("{} -> {}", old_radius, new_cal.radius().scale_value),
                             "🔄 传感器校准配置已更新，将在下一次数据转换时生效"
                         );
 
                         info!("📝 [新标定参数] weight: zero_ad={:.2}, zero_value={:.2}, scale_ad={:.2}, scale_value={:.2}, multiplier={:.2}",
-                            new_cal.weight.zero_ad,
-                            new_cal.weight.zero_value,
-                            new_cal.weight.scale_ad,
-                            new_cal.weight.scale_value,
-                            new_cal.weight.multiplier);
+                            new_cal.weight().zero_ad,
+                            new_cal.weight().zero_value,
+                            new_cal.weight().scale_ad,
+                            new_cal.weight().scale_value,
+                            new_cal.weight().multiplier);
                     }
                     Err(e) => {
                         error!(subscriber = "DataProcessingSubscriber", error = %e, "获取传感器校准配置写锁失败");

@@ -1,7 +1,7 @@
 use crate::error::{PipelineError, SensorError};
 use crate::pipeline::{DataSourceId, PipelineConfig, SourceSensorData};
 use qt_threading_utils::runtime::spawn;
-use sensor_traits::SensorSource;
+use sensor_traits::{SensorReading, SensorSource};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -11,7 +11,7 @@ use tokio::task::{block_in_place, JoinHandle};
 pub struct BoxedSensorSource(pub Box<dyn SensorSource + Send + Sync>);
 
 impl SensorSource for BoxedSensorSource {
-    fn read_all(&self) -> crate::SensorResult<(f64, f64, f64, bool, bool)> {
+    fn read_all(&self) -> crate::SensorResult<SensorReading> {
         self.0.read_all()
     }
     fn is_connected(&self) -> bool {
@@ -93,8 +93,8 @@ impl<S: SensorSource + Send + Sync + 'static> SensorPipeline<S> {
                 let mut retry_count = 0;
                 let data = loop {
                     match block_in_place(|| source.read_all()) {
-                        Ok((weight, angle, radius, di1, di2)) => {
-                            break Ok((weight, angle, radius, di1, di2));
+                        Ok(reading) => {
+                            break Ok(reading);
                         }
                         Err(e) => {
                             retry_count += 1;
@@ -108,7 +108,8 @@ impl<S: SensorSource + Send + Sync + 'static> SensorPipeline<S> {
                 };
 
                 match data {
-                    Ok((weight, angle, radius, di1, di2)) => {
+                    Ok(reading) => {
+                        let (weight, angle, radius, di1, di2) = reading.to_tuple();
                         let sensor_data = SourceSensorData::new(
                             source_id,
                             weight as u16,
@@ -176,7 +177,7 @@ mod tests {
         mpsc::Receiver<SourceSensorData>,
     ) {
         let (tx, rx) = mpsc::channel(100);
-        let source = Arc::new(MockSensorSource::new(data));
+        let source = Arc::new(MockSensorSource::from_tuples(data));
         let config = PipelineConfig {
             read_interval: Duration::from_millis(10),
             max_retries: 3,

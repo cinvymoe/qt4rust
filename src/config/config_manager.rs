@@ -231,7 +231,7 @@ mod tests {
         assert!(config.is_ok(), "应该能获取配置");
 
         let config = config.unwrap();
-        assert!(config.sensor_calibration.weight.scale_ad > 0.0);
+        assert!(config.sensor_calibration.weight().scale_ad > 0.0);
         assert!(config.rated_load_table.len() > 0);
     }
 

@@ -65,11 +65,11 @@ impl Default for LoadCalibrationViewModelRust {
         let calibration = manager.load().unwrap_or_default();
 
         Self {
-            calibration_multiplier: calibration.weight.multiplier,
-            point1_ad: calibration.weight.zero_ad,
-            point1_weight: calibration.weight.zero_value,
-            point2_ad: calibration.weight.scale_ad,
-            point2_weight: calibration.weight.scale_value,
+            calibration_multiplier: calibration.weight().multiplier,
+            point1_ad: calibration.weight().zero_ad,
+            point1_weight: calibration.weight().zero_value,
+            point2_ad: calibration.weight().scale_ad,
+            point2_weight: calibration.weight().scale_value,
             current_load: 0.0,
             current_ad: 0.0,
             config_path,
@@ -95,11 +95,17 @@ impl load_calibration_bridge::LoadCalibrationViewModel {
             }
         };
 
-        calibration.weight.zero_ad = p1_ad;
-        calibration.weight.zero_value = p1_wt;
-        calibration.weight.scale_ad = p2_ad;
-        calibration.weight.scale_value = p2_wt;
-        calibration.weight.multiplier = multiplier;
+        calibration.set_calibration(
+            "main_hook_weight",
+            sensor_core::SensorCalibrationParams {
+                zero_ad: p1_ad,
+                zero_value: p1_wt,
+                scale_ad: p2_ad,
+                scale_value: p2_wt,
+                multiplier,
+                actual_multiplier: multiplier,
+            },
+        );
 
         match manager.save(&calibration) {
             Ok(_) => {
@@ -118,12 +124,12 @@ impl load_calibration_bridge::LoadCalibrationViewModel {
 
     pub fn reset_to_default(mut self: Pin<&mut Self>) {
         let calibration = sensor_core::SensorCalibration::default();
-        self.as_mut().set_point1_ad(calibration.weight.zero_ad);
+        self.as_mut().set_point1_ad(calibration.weight().zero_ad);
         self.as_mut()
-            .set_point1_weight(calibration.weight.zero_value);
-        self.as_mut().set_point2_ad(calibration.weight.scale_ad);
+            .set_point1_weight(calibration.weight().zero_value);
+        self.as_mut().set_point2_ad(calibration.weight().scale_ad);
         self.as_mut()
-            .set_point2_weight(calibration.weight.scale_value);
+            .set_point2_weight(calibration.weight().scale_value);
         self.as_mut().set_calibration_multiplier(1.0);
     }
 

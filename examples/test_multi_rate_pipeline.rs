@@ -67,8 +67,8 @@ fn test_filter_buffer_basic() -> Result<(), String> {
         buffer.push(SensorData::from_tuple(10.0, 5.0, 30.0, false, false));
         buffer.push(SensorData::from_tuple(20.0, 6.0, 31.0, false, false));
         let result = buffer.get_filtered().unwrap();
-        assert_eq!(result.ad1_load, 20.0);
-        println!("    ✓ None滤波返回最新数据: ad1={}", result.ad1_load);
+        assert_eq!(result.ad1_load(), 20.0);
+        println!("    ✓ None滤波返回最新数据: ad1={}", result.ad1_load());
     }
 
     println!("  - 测试均值滤波 (Mean)");
@@ -82,8 +82,8 @@ fn test_filter_buffer_basic() -> Result<(), String> {
             buffer.push(SensorData::from_tuple((i + 1) as f64 * 10.0, 5.0, 30.0, false, false));
         }
         let result = buffer.get_filtered().unwrap();
-        assert_eq!(result.ad1_load, 30.0);
-        println!("    ✓ Mean滤波正确: ad1={} (期望30)", result.ad1_load);
+        assert_eq!(result.ad1_load(), 30.0);
+        println!("    ✓ Mean滤波正确: ad1={} (期望30)", result.ad1_load());
     }
 
     println!("  - 测试中值滤波 (Median)");
@@ -99,8 +99,8 @@ fn test_filter_buffer_basic() -> Result<(), String> {
         buffer.push(SensorData::from_tuple(40.0, 5.0, 30.0, false, false));
         buffer.push(SensorData::from_tuple(30.0, 5.0, 30.0, false, false));
         let result = buffer.get_filtered().unwrap();
-        assert_eq!(result.ad1_load, 30.0);
-        println!("    ✓ Median滤波正确: ad1={} (期望30)", result.ad1_load);
+        assert_eq!(result.ad1_load(), 30.0);
+        println!("    ✓ Median滤波正确: ad1={} (期望30)", result.ad1_load());
     }
 
     println!("  - 测试窗口溢出 (窗口3,数据5)");
@@ -114,10 +114,10 @@ fn test_filter_buffer_basic() -> Result<(), String> {
             buffer.push(SensorData::from_tuple((i + 1) as f64 * 10.0, 5.0, 30.0, false, false));
         }
         let result = buffer.get_filtered().unwrap();
-        assert_eq!(result.ad1_load, 40.0);
+        assert_eq!(result.ad1_load(), 40.0);
         println!(
             "    ✓ 窗口溢出正确: ad1={} (期望40,只用最近3条)",
-            result.ad1_load
+            result.ad1_load()
         );
     }
 

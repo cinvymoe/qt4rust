@@ -32,12 +32,12 @@ impl CalibrationService {
         let cal = self.calibration.read().unwrap();
         let raw = AdConverter::convert(
             ad_value,
-            cal.weight.zero_ad,
-            cal.weight.zero_value,
-            cal.weight.scale_ad,
-            cal.weight.scale_value,
+            cal.weight().zero_ad,
+            cal.weight().zero_value,
+            cal.weight().scale_ad,
+            cal.weight().scale_value,
         );
-        raw * cal.weight.multiplier
+        raw * cal.weight().multiplier
     }
 
     /// 转换角度 AD 值到物理值（度）
@@ -45,10 +45,10 @@ impl CalibrationService {
         let cal = self.calibration.read().unwrap();
         AdConverter::convert(
             ad_value,
-            cal.angle.zero_ad,
-            cal.angle.zero_value,
-            cal.angle.scale_ad,
-            cal.angle.scale_value,
+            cal.angle().zero_ad,
+            cal.angle().zero_value,
+            cal.angle().scale_ad,
+            cal.angle().scale_value,
         )
     }
 
@@ -57,10 +57,10 @@ impl CalibrationService {
         let cal = self.calibration.read().unwrap();
         AdConverter::convert(
             ad_value,
-            cal.radius.zero_ad,
-            cal.radius.zero_value,
-            cal.radius.scale_ad,
-            cal.radius.scale_value,
+            cal.radius().zero_ad,
+            cal.radius().zero_value,
+            cal.radius().scale_ad,
+            cal.radius().scale_value,
         )
     }
 
@@ -104,20 +104,40 @@ mod tests {
     use sensor_core::SensorCalibration;
 
     fn create_test_calibration() -> SensorCalibration {
-        let mut cal = SensorCalibration::default();
-        cal.weight.zero_ad = 0.0;
-        cal.weight.zero_value = 0.0;
-        cal.weight.scale_ad = 4095.0;
-        cal.weight.scale_value = 50.0;
-        cal.weight.multiplier = 1.0;
-        cal.angle.zero_ad = 0.0;
-        cal.angle.zero_value = 0.0;
-        cal.angle.scale_ad = 4095.0;
-        cal.angle.scale_value = 90.0;
-        cal.radius.zero_ad = 0.0;
-        cal.radius.zero_value = 0.0;
-        cal.radius.scale_ad = 4095.0;
-        cal.radius.scale_value = 20.0;
+        let mut cal = SensorCalibration::new();
+        cal.set_calibration(
+            "main_hook_weight",
+            sensor_core::SensorCalibrationParams {
+                zero_ad: 0.0,
+                zero_value: 0.0,
+                scale_ad: 4095.0,
+                scale_value: 50.0,
+                multiplier: 1.0,
+                actual_multiplier: 1.0,
+            },
+        );
+        cal.set_calibration(
+            "angle",
+            sensor_core::SensorCalibrationParams {
+                zero_ad: 0.0,
+                zero_value: 0.0,
+                scale_ad: 4095.0,
+                scale_value: 90.0,
+                multiplier: 1.0,
+                actual_multiplier: 1.0,
+            },
+        );
+        cal.set_calibration(
+            "radius",
+            sensor_core::SensorCalibrationParams {
+                zero_ad: 0.0,
+                zero_value: 0.0,
+                scale_ad: 4095.0,
+                scale_value: 20.0,
+                multiplier: 1.0,
+                actual_multiplier: 1.0,
+            },
+        );
         cal
     }
 
@@ -168,9 +188,9 @@ mod tests {
         let service = CalibrationService::new(Arc::new(RwLock::new(cal.clone())));
 
         let retrieved = service.get_calibration();
-        assert_eq!(retrieved.weight.scale_value, 50.0);
-        assert_eq!(retrieved.angle.scale_value, 90.0);
-        assert_eq!(retrieved.radius.scale_value, 20.0);
+        assert_eq!(retrieved.weight().scale_value, 50.0);
+        assert_eq!(retrieved.angle().scale_value, 90.0);
+        assert_eq!(retrieved.radius().scale_value, 20.0);
     }
 
     #[test]
@@ -178,13 +198,23 @@ mod tests {
         let cal = create_test_calibration();
         let service = CalibrationService::new(Arc::new(RwLock::new(cal)));
 
-        let mut new_cal = SensorCalibration::default();
-        new_cal.weight.scale_value = 100.0;
+        let mut new_cal = SensorCalibration::with_defaults();
+        new_cal.set_calibration(
+            "main_hook_weight",
+            sensor_core::SensorCalibrationParams {
+                zero_ad: 0.0,
+                zero_value: 0.0,
+                scale_ad: 4095.0,
+                scale_value: 100.0,
+                multiplier: 1.0,
+                actual_multiplier: 1.0,
+            },
+        );
 
         service.update_calibration(new_cal.clone());
 
         let retrieved = service.get_calibration();
-        assert_eq!(retrieved.weight.scale_value, 100.0);
+        assert_eq!(retrieved.weight().scale_value, 100.0);
     }
 
     #[test]
@@ -206,8 +236,18 @@ mod tests {
         let service2 = CalibrationService::new(Arc::clone(&arc_cal));
 
         // 更新 via service1
-        let mut new_cal = SensorCalibration::default();
-        new_cal.weight.scale_value = 100.0;
+        let mut new_cal = SensorCalibration::with_defaults();
+        new_cal.set_calibration(
+            "main_hook_weight",
+            sensor_core::SensorCalibrationParams {
+                zero_ad: 0.0,
+                zero_value: 0.0,
+                scale_ad: 4095.0,
+                scale_value: 100.0,
+                multiplier: 1.0,
+                actual_multiplier: 1.0,
+            },
+        );
         service1.update_calibration(new_cal);
 
         // service2 应该看到更新
