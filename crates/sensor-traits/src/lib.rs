@@ -51,10 +51,10 @@ pub trait SensorProvider {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "mock"))]
 pub use mock::MockSensorSource;
 
-#[cfg(test)]
+#[cfg(any(test, feature = "mock"))]
 mod mock {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};

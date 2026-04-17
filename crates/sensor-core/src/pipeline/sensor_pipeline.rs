@@ -215,7 +215,7 @@ mod tests {
         let result2 = pipeline.start();
         assert!(result2.is_err());
         match result2 {
-            Err(SensorError::Pipeline(PipelineError::AlreadyRunning)) => {}
+            Err(SensorError::Pipeline(msg)) if msg.contains("already running") => {}
             _ => panic!("Expected AlreadyRunning error"),
         }
 
@@ -229,7 +229,7 @@ mod tests {
         let result = pipeline.stop();
         assert!(result.is_err());
         match result {
-            Err(SensorError::Pipeline(PipelineError::NotRunning)) => {}
+            Err(SensorError::Pipeline(msg)) if msg.contains("not running") => {}
             _ => panic!("Expected NotRunning error"),
         }
     }

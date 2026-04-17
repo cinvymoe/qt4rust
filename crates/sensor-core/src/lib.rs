@@ -1,5 +1,6 @@
 pub mod algorithms;
 pub mod calibration;
+pub mod config;
 pub mod data;
 pub mod error;
 pub mod pipeline;

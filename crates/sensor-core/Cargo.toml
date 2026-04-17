@@ -16,7 +16,7 @@ qt-threading-utils = { path = "../qt-threading-utils" }
 tracing = "0.1"
 rand = "0.8"
 toml = "0.8"
-sensor-traits = { path = "../sensor-traits" }
+sensor-traits = { path = "../sensor-traits", features = ["mock"] }
 modbus-tcp = { path = "../modbus-tcp" }
 
 [dev-dependencies]

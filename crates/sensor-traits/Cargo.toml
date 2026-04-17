@@ -13,3 +13,4 @@ async-trait = { version = "0.1", optional = true }
 [features]
 default = []
 async = ["async-trait"]
+mock = []
