@@ -1,5 +1,6 @@
 use crate::algorithms::ad_converter::AdConverter;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SensorCalibrationParams {
@@ -46,17 +47,99 @@ impl SensorCalibrationParams {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// 传感器标定配置 - 使用 HashMap 存储
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SensorCalibration {
-    pub weight: SensorCalibrationParams,
-    pub angle: SensorCalibrationParams,
-    pub radius: SensorCalibrationParams,
+    /// 标定参数集合 (key = 传感器ID)
+    #[serde(flatten)]
+    pub params: HashMap<String, SensorCalibrationParams>,
 }
 
-impl Default for SensorCalibration {
-    fn default() -> Self {
+impl SensorCalibration {
+    /// 创建空的标定配置
+    pub fn new() -> Self {
         Self {
-            weight: SensorCalibrationParams {
+            params: HashMap::new(),
+        }
+    }
+
+    /// 获取指定传感器的标定参数
+    pub fn get_calibration(&self, sensor_id: &str) -> Option<&SensorCalibrationParams> {
+        self.params.get(sensor_id)
+    }
+
+    /// 设置传感器的标定参数
+    pub fn set_calibration(&mut self, sensor_id: &str, params: SensorCalibrationParams) {
+        self.params.insert(sensor_id.to_string(), params);
+    }
+
+    /// 转换 AD 值为物理值
+    pub fn convert(&self, sensor_id: &str, ad: f64) -> f64 {
+        self.params
+            .get(sensor_id)
+            .map(|p| p.convert_ad_to_value(ad))
+            .unwrap_or(ad)
+    }
+
+    /// 验证所有标定参数
+    pub fn validate(&self) -> Result<(), String> {
+        for (id, params) in &self.params {
+            params
+                .validate()
+                .map_err(|e| format!("传感器 {} 标定参数错误: {}", id, e))?;
+        }
+        Ok(())
+    }
+
+    // ===== 兼容旧 API =====
+
+    /// 兼容旧 API: 获取主钩重量标定
+    pub fn weight(&self) -> SensorCalibrationParams {
+        self.params
+            .get("main_hook_weight")
+            .or_else(|| self.params.get("weight"))
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    /// 兼容旧 API: 获取角度标定
+    pub fn angle(&self) -> SensorCalibrationParams {
+        self.params.get("angle").cloned().unwrap_or_default()
+    }
+
+    /// 兼容旧 API: 获取半径标定
+    pub fn radius(&self) -> SensorCalibrationParams {
+        self.params.get("radius").cloned().unwrap_or_default()
+    }
+
+    /// 兼容旧 API: 转换主钩重量
+    pub fn convert_weight_ad_to_value(&self, ad: f64) -> f64 {
+        if let Some(params) = self.params.get("main_hook_weight") {
+            return params.convert_ad_to_value(ad);
+        }
+        if let Some(params) = self.params.get("weight") {
+            return params.convert_ad_to_value(ad);
+        }
+        ad
+    }
+
+    /// 兼容旧 API: 转换角度
+    pub fn convert_angle_ad_to_value(&self, ad: f64) -> f64 {
+        self.convert("angle", ad)
+    }
+
+    /// 兼容旧 API: 转换半径
+    pub fn convert_radius_ad_to_value(&self, ad: f64) -> f64 {
+        self.convert("radius", ad)
+    }
+
+    /// 创建默认标定配置（包含常用传感器）
+    pub fn with_defaults() -> Self {
+        let mut params = HashMap::new();
+
+        params.insert(
+            "main_hook_weight".to_string(),
+            SensorCalibrationParams {
                 zero_ad: 0.0,
                 zero_value: 0.0,
                 scale_ad: 4095.0,
@@ -64,7 +147,11 @@ impl Default for SensorCalibration {
                 multiplier: 1.0,
                 actual_multiplier: 1.0,
             },
-            angle: SensorCalibrationParams {
+        );
+
+        params.insert(
+            "angle".to_string(),
+            SensorCalibrationParams {
                 zero_ad: 0.0,
                 zero_value: 0.0,
                 scale_ad: 4095.0,
@@ -72,7 +159,11 @@ impl Default for SensorCalibration {
                 multiplier: 1.0,
                 actual_multiplier: 1.0,
             },
-            radius: SensorCalibrationParams {
+        );
+
+        params.insert(
+            "radius".to_string(),
+            SensorCalibrationParams {
                 zero_ad: 0.0,
                 zero_value: 0.0,
                 scale_ad: 4095.0,
@@ -80,34 +171,9 @@ impl Default for SensorCalibration {
                 multiplier: 1.0,
                 actual_multiplier: 1.0,
             },
-        }
-    }
-}
+        );
 
-impl SensorCalibration {
-    pub fn convert_weight_ad_to_value(&self, ad: f64) -> f64 {
-        self.weight.convert_ad_to_value(ad)
-    }
-
-    pub fn convert_angle_ad_to_value(&self, ad: f64) -> f64 {
-        self.angle.convert_ad_to_value(ad)
-    }
-
-    pub fn convert_radius_ad_to_value(&self, ad: f64) -> f64 {
-        self.radius.convert_ad_to_value(ad)
-    }
-
-    pub fn validate(&self) -> Result<(), String> {
-        self.weight
-            .validate()
-            .map_err(|e| format!("重量传感器标定参数错误: {}", e))?;
-        self.angle
-            .validate()
-            .map_err(|e| format!("角度传感器标定参数错误: {}", e))?;
-        self.radius
-            .validate()
-            .map_err(|e| format!("半径传感器标定参数错误: {}", e))?;
-        Ok(())
+        Self { params }
     }
 }
 
@@ -243,8 +309,69 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_convert_with_calibration() {
+        let mut calibration = SensorCalibration::new();
+        calibration.set_calibration(
+            "test_sensor",
+            SensorCalibrationParams {
+                zero_ad: 0.0,
+                zero_value: 0.0,
+                scale_ad: 4095.0,
+                scale_value: 100.0,
+                multiplier: 1.0,
+                actual_multiplier: 1.0,
+            },
+        );
+
+        let value = calibration.convert("test_sensor", 2047.5);
+        assert!((value - 50.0).abs() < 0.5);
+    }
+
+    #[test]
+    fn test_convert_missing_calibration() {
+        let calibration = SensorCalibration::new();
+
+        let value = calibration.convert("nonexistent", 100.0);
+        assert_eq!(value, 100.0);
+    }
+
+    #[test]
+    fn test_compatibility_api() {
+        let calibration = SensorCalibration::with_defaults();
+
+        let weight = calibration.convert_weight_ad_to_value(2047.5);
+        assert!((weight - 25.0).abs() < 0.5);
+
+        let angle = calibration.convert_angle_ad_to_value(4095.0);
+        assert!((angle - 90.0).abs() < 0.01);
+
+        let radius = calibration.convert_radius_ad_to_value(4095.0);
+        assert!((radius - 20.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_aux_hook_calibration() {
+        let mut calibration = SensorCalibration::with_defaults();
+
+        calibration.set_calibration(
+            "aux_hook_weight",
+            SensorCalibrationParams {
+                zero_ad: 0.0,
+                zero_value: 0.0,
+                scale_ad: 4095.0,
+                scale_value: 25.0,
+                multiplier: 1.0,
+                actual_multiplier: 1.0,
+            },
+        );
+
+        let aux_weight = calibration.convert("aux_hook_weight", 4095.0);
+        assert!((aux_weight - 25.0).abs() < 0.01);
+    }
+
+    #[test]
     fn test_convert_weight_ad_to_value() {
-        let calibration = SensorCalibration::default();
+        let calibration = SensorCalibration::with_defaults();
 
         let weight = calibration.convert_weight_ad_to_value(0.0);
         assert!((weight - 0.0).abs() < 0.01);
@@ -258,7 +385,7 @@ mod tests {
 
     #[test]
     fn test_convert_angle_ad_to_value() {
-        let calibration = SensorCalibration::default();
+        let calibration = SensorCalibration::with_defaults();
 
         let angle = calibration.convert_angle_ad_to_value(0.0);
         assert!((angle - 0.0).abs() < 0.01);
@@ -269,7 +396,7 @@ mod tests {
 
     #[test]
     fn test_convert_radius_ad_to_value() {
-        let calibration = SensorCalibration::default();
+        let calibration = SensorCalibration::with_defaults();
 
         let radius = calibration.convert_radius_ad_to_value(0.0);
         assert!((radius - 0.0).abs() < 0.01);
