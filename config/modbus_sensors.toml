@@ -1,5 +1,5 @@
 # ModbusTcp 传感器配置
-# 用于配置通过 ModbusTcp 协议读取真实传感器数据
+# 配置驱动的传感器定义 - 支持动态添加任意传感器
 
 [global]
 mode = "modbus_tcp"
@@ -9,43 +9,78 @@ host = "192.168.110.62"
 port = 502
 timeout_ms = 1000
 
-[ad1_load]
-name = "Load Cell"
+# ========== 模拟传感器 ==========
+
+# 主钩重量传感器
+[sensors.main_hook_weight]
+name = "主钩重量"
+type = "analog"
+description = "主钩载荷传感器"
 slave_id = 1
 register_address = 0
-register_count = 1        # UInt16 只需 1 个寄存器
+register_count = 1
 data_type = "UInt16"
-byte_order = "BigEndian"  # UInt16 不使用字节序
+byte_order = "BigEndian"
 
-[ad2_radius]
-name = "Radius Sensor"
+# 副钩重量传感器
+[sensors.aux_hook_weight]
+name = "副钩重量"
+type = "analog"
+description = "副钩载荷传感器"
+slave_id = 1
+register_address = 3
+register_count = 1
+data_type = "UInt16"
+byte_order = "BigEndian"
+
+# 半径传感器
+[sensors.radius]
+name = "半径传感器"
+type = "analog"
+description = "工作半径传感器"
 slave_id = 1
 register_address = 1
 register_count = 1
 data_type = "UInt16"
 byte_order = "BigEndian"
 
-[ad3_angle]
-name = "Angle Sensor"
+# 角度传感器
+[sensors.angle]
+name = "角度传感器"
+type = "analog"
+description = "吊臂角度传感器"
 slave_id = 1
 register_address = 2
 register_count = 1
 data_type = "UInt16"
 byte_order = "BigEndian"
 
-# 数字输入配置
+# ========== 数字输入 ==========
+
+# 主钩勾头开关
+[sensors.main_hook_switch]
+name = "主钩勾头开关"
+type = "digital"
+description = "主钩勾头开关状态"
+slave_id = 1
+register_address = 10
+register_count = 1
+data_type = "UInt16"
+byte_order = "BigEndian"
+
+# 副钩勾头开关
+[sensors.aux_hook_switch]
+name = "副钩勾头开关"
+type = "digital"
+description = "副钩勾头开关状态"
+slave_id = 1
+register_address = 11
+register_count = 1
+data_type = "UInt16"
+byte_order = "BigEndian"
+
+# ========== 数字输入配置（模拟器用）==========
+
 [digital_input]
-source_type = "simulator"  # simulator | gpio | spi | modbus
+source_type = "simulator"
 toggle_interval_secs = 10
-
-# GPIO 配置示例（仅 source_type = "gpio" 时需要）
-# [digital_input.gpio]
-# pin_0 = 17
-# pin_1 = 18
-# active_low = false
-
-# SPI 配置示例（仅 source_type = "spi" 时需要）
-# [digital_input.spi]
-# device = "/dev/spidev0.0"
-# chip_select = 0
-# speed_hz = 1000000
