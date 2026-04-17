@@ -1,15 +1,177 @@
 use crate::client::{ModbusProvider, ModbusTcpClient};
 use crate::config::{ModbusByteOrder, ModbusDataType, ModbusTcpConfig};
 use crate::error::{ModbusError, ModbusResult};
-use sensor_traits::{SensorError, SensorResult, SensorSource};
+use sensor_traits::{SensorError, SensorReading, SensorResult, SensorSource};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
+/// 传感器类型
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SensorKind {
+    Analog,
+    Digital,
+}
+
+/// 单个传感器的 Modbus 配置
+#[derive(Debug, Clone)]
+pub struct SensorModbusConfig {
+    pub name: String,
+    pub kind: SensorKind,
+    pub slave_id: u8,
+    pub register_address: u16,
+    pub register_count: u8,
+    pub data_type: ModbusDataType,
+    pub byte_order: ModbusByteOrder,
+}
+
+/// 动态 Modbus 数据源
 pub struct ModbusDataSource {
+    /// 服务器配置
+    host: String,
+    port: u16,
+    timeout_ms: u64,
+    /// 模拟传感器客户端 (key = 传感器ID)
+    analog_clients: HashMap<String, ModbusTcpClient>,
+    /// 数字输入客户端 (key = 传感器ID)
+    digital_clients: HashMap<String, ModbusTcpClient>,
+}
+
+impl ModbusDataSource {
+    /// 创建新的数据源
+    pub fn new(host: String, port: u16, timeout_ms: u64) -> Self {
+        Self {
+            host,
+            port,
+            timeout_ms,
+            analog_clients: HashMap::new(),
+            digital_clients: HashMap::new(),
+        }
+    }
+
+    /// 添加传感器
+    pub fn add_sensor(&mut self, sensor_id: &str, config: SensorModbusConfig) {
+        let modbus_config = ModbusTcpConfig {
+            host: self.host.clone(),
+            port: self.port,
+            slave_id: config.slave_id,
+            register_address: config.register_address,
+            register_count: config.register_count,
+            data_type: config.data_type,
+            timeout_ms: self.timeout_ms,
+            byte_order: config.byte_order,
+        };
+
+        let client = ModbusTcpClient::new(modbus_config, &config.name);
+
+        match config.kind {
+            SensorKind::Analog => {
+                self.analog_clients.insert(sensor_id.to_string(), client);
+            }
+            SensorKind::Digital => {
+                self.digital_clients.insert(sensor_id.to_string(), client);
+            }
+        }
+    }
+
+    /// 从配置列表创建数据源
+    pub fn from_config_list(
+        host: String,
+        port: u16,
+        timeout_ms: u64,
+        sensors: Vec<(String, SensorModbusConfig)>,
+    ) -> Self {
+        let mut source = Self::new(host, port, timeout_ms);
+        for (id, config) in sensors {
+            source.add_sensor(&id, config);
+        }
+        source
+    }
+
+    /// 连接所有客户端
+    pub fn connect(&mut self) -> ModbusResult<()> {
+        for (id, client) in &mut self.analog_clients {
+            client
+                .connect()
+                .map_err(|e| ModbusError::InitError(format!("{} 连接失败: {:?}", id, e)))?;
+        }
+        for (id, client) in &mut self.digital_clients {
+            client
+                .connect()
+                .map_err(|e| ModbusError::InitError(format!("{} 连接失败: {:?}", id, e)))?;
+        }
+        Ok(())
+    }
+
+    /// 读取所有传感器数据
+    pub fn read_sensors(&self) -> ModbusResult<SensorReading> {
+        let mut analog = HashMap::new();
+        let mut digital = HashMap::new();
+
+        for (id, client) in &self.analog_clients {
+            match client.read() {
+                Ok(value) => {
+                    analog.insert(id.clone(), value);
+                }
+                Err(e) => {
+                    tracing::warn!("传感器 {} 读取失败: {:?}", id, e);
+                }
+            }
+        }
+
+        for (id, client) in &self.digital_clients {
+            match client.read() {
+                Ok(value) => {
+                    digital.insert(id.clone(), value > 0.5);
+                }
+                Err(e) => {
+                    tracing::warn!("数字输入 {} 读取失败: {:?}", id, e);
+                }
+            }
+        }
+
+        Ok(SensorReading { analog, digital })
+    }
+
+    /// 检查连接状态
+    pub fn is_connected(&self) -> bool {
+        self.analog_clients.values().all(|c| c.is_connected())
+            && self.digital_clients.values().all(|c| c.is_connected())
+    }
+
+    fn convert_error(e: ModbusError) -> SensorError {
+        match e {
+            ModbusError::ReadError(msg) => SensorError::ReadError(msg),
+            ModbusError::InitError(msg) => SensorError::InitError(msg),
+            ModbusError::Timeout => SensorError::Timeout,
+            ModbusError::ConfigError(msg) => SensorError::ConfigError(msg),
+            ModbusError::NotConnected => SensorError::NotConnected,
+            ModbusError::IoError(io) => SensorError::IoError(io.to_string()),
+            ModbusError::ProtocolError(msg) => SensorError::ReadError(msg),
+        }
+    }
+}
+
+impl SensorSource for ModbusDataSource {
+    fn read_all(&self) -> SensorResult<SensorReading> {
+        self.read_sensors().map_err(Self::convert_error)
+    }
+
+    fn is_connected(&self) -> bool {
+        ModbusDataSource::is_connected(self)
+    }
+}
+
+// ===== 兼容旧 API =====
+
+/// 旧版 ModbusDataSource（保持向后兼容）
+pub struct LegacyModbusDataSource {
     ad1: ModbusTcpClient,
     ad2: ModbusTcpClient,
     ad3: ModbusTcpClient,
 }
 
-impl ModbusDataSource {
+impl LegacyModbusDataSource {
     pub fn new(
         host: &str,
         port: u16,
@@ -56,149 +218,6 @@ impl ModbusDataSource {
         }
     }
 
-    pub fn from_config(config: &str) -> ModbusResult<Self> {
-        let config: toml::Value = toml::from_str(config)
-            .map_err(|e| ModbusError::ConfigError(format!("Failed to parse config: {}", e)))?;
-
-        let server = config
-            .get("server")
-            .ok_or_else(|| ModbusError::ConfigError("Missing [server] section".to_string()))?;
-
-        let host = server
-            .get("host")
-            .and_then(|v| v.as_str())
-            .ok_or_else(|| ModbusError::ConfigError("Missing server.host".to_string()))?;
-
-        let port = server
-            .get("port")
-            .and_then(|v| v.as_integer())
-            .map(|v| v as u16)
-            .ok_or_else(|| ModbusError::ConfigError("Missing server.port".to_string()))?;
-
-        let timeout_ms = server
-            .get("timeout_ms")
-            .and_then(|v| v.as_integer())
-            .map(|v| v as u64)
-            .unwrap_or(1000);
-
-        let ad1 = config
-            .get("ad1_load")
-            .ok_or_else(|| ModbusError::ConfigError("Missing [ad1_load] section".to_string()))?;
-        let ad2 = config
-            .get("ad2_radius")
-            .ok_or_else(|| ModbusError::ConfigError("Missing [ad2_radius] section".to_string()))?;
-        let ad3 = config
-            .get("ad3_angle")
-            .ok_or_else(|| ModbusError::ConfigError("Missing [ad3_angle] section".to_string()))?;
-
-        let slave_id = ad1
-            .get("slave_id")
-            .and_then(|v| v.as_integer())
-            .map(|v| v as u8)
-            .ok_or_else(|| ModbusError::ConfigError("Missing ad1_load.slave_id".to_string()))?;
-
-        let ad1_register = ad1
-            .get("register_address")
-            .and_then(|v| v.as_integer())
-            .map(|v| v as u16)
-            .ok_or_else(|| {
-                ModbusError::ConfigError("Missing ad1_load.register_address".to_string())
-            })?;
-
-        let ad2_register = ad2
-            .get("register_address")
-            .and_then(|v| v.as_integer())
-            .map(|v| v as u16)
-            .ok_or_else(|| {
-                ModbusError::ConfigError("Missing ad2_radius.register_address".to_string())
-            })?;
-
-        let ad3_register = ad3
-            .get("register_address")
-            .and_then(|v| v.as_integer())
-            .map(|v| v as u16)
-            .ok_or_else(|| {
-                ModbusError::ConfigError("Missing ad3_angle.register_address".to_string())
-            })?;
-
-        let data_type_str = ad1
-            .get("data_type")
-            .and_then(|v| v.as_str())
-            .unwrap_or("Float32");
-
-        let data_type = match data_type_str {
-            "UInt16" => ModbusDataType::UInt16,
-            "Float32" => ModbusDataType::Float32,
-            _ => {
-                return Err(ModbusError::ConfigError(format!(
-                    "Unsupported data type: {}",
-                    data_type_str
-                )))
-            }
-        };
-
-        let register_count = match data_type {
-            ModbusDataType::UInt16 => 1,
-            ModbusDataType::Float32 => 2,
-            _ => 1,
-        };
-
-        let byte_order_str = ad1
-            .get("byte_order")
-            .and_then(|v| v.as_str())
-            .unwrap_or("BigEndian");
-
-        let byte_order = match byte_order_str {
-            "BigEndian" => ModbusByteOrder::BigEndian,
-            "LittleEndian" => ModbusByteOrder::LittleEndian,
-            _ => {
-                return Err(ModbusError::ConfigError(format!(
-                    "Unsupported byte order: {}",
-                    byte_order_str
-                )))
-            }
-        };
-
-        let ad1_config = ModbusTcpConfig {
-            host: host.to_string(),
-            port,
-            slave_id,
-            register_address: ad1_register,
-            register_count,
-            data_type: data_type.clone(),
-            timeout_ms,
-            byte_order: byte_order.clone(),
-        };
-
-        let ad2_config = ModbusTcpConfig {
-            host: host.to_string(),
-            port,
-            slave_id,
-            register_address: ad2_register,
-            register_count,
-            data_type: data_type.clone(),
-            timeout_ms,
-            byte_order: byte_order.clone(),
-        };
-
-        let ad3_config = ModbusTcpConfig {
-            host: host.to_string(),
-            port,
-            slave_id,
-            register_address: ad3_register,
-            register_count,
-            data_type,
-            timeout_ms,
-            byte_order,
-        };
-
-        Ok(Self {
-            ad1: ModbusTcpClient::new(ad1_config, "AD1 Load Cell"),
-            ad2: ModbusTcpClient::new(ad2_config, "AD2 Radius"),
-            ad3: ModbusTcpClient::new(ad3_config, "AD3 Angle"),
-        })
-    }
-
     pub fn connect(&mut self) -> ModbusResult<()> {
         self.ad1.connect().map_err(|e| {
             ModbusError::InitError(format!("AD1 Modbus connection failed: {:?}", e))
@@ -219,43 +238,45 @@ impl ModbusDataSource {
         Ok((ad1, ad2, ad3))
     }
 
-    pub fn ad1(&self) -> &ModbusTcpClient {
-        &self.ad1
-    }
-
-    pub fn ad2(&self) -> &ModbusTcpClient {
-        &self.ad2
-    }
-
-    pub fn ad3(&self) -> &ModbusTcpClient {
-        &self.ad3
-    }
-
     pub fn is_connected(&self) -> bool {
         self.ad1.is_connected() && self.ad2.is_connected() && self.ad3.is_connected()
     }
-
-    fn convert_error(e: ModbusError) -> SensorError {
-        match e {
-            ModbusError::ReadError(msg) => SensorError::ReadError(msg),
-            ModbusError::InitError(msg) => SensorError::InitError(msg),
-            ModbusError::Timeout => SensorError::Timeout,
-            ModbusError::ConfigError(msg) => SensorError::ConfigError(msg),
-            ModbusError::NotConnected => SensorError::NotConnected,
-            ModbusError::IoError(io) => SensorError::IoError(io.to_string()),
-            ModbusError::ProtocolError(msg) => SensorError::ReadError(msg),
-        }
-    }
 }
 
-impl SensorSource for ModbusDataSource {
-    fn read_all(&self) -> SensorResult<(f64, f64, f64, bool, bool)> {
-        let (ad1, ad2, ad3) = self.read_all().map_err(Self::convert_error)?;
-        // Modbus 数据源暂时不支持数字输入，返回 false
-        Ok((ad1, ad2, ad3, false, false))
-    }
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    fn is_connected(&self) -> bool {
-        ModbusDataSource::is_connected(self)
+    #[test]
+    fn test_create_data_source() {
+        let mut source = ModbusDataSource::new("127.0.0.1".to_string(), 502, 1000);
+
+        source.add_sensor(
+            "main_hook_weight",
+            SensorModbusConfig {
+                name: "主钩重量".to_string(),
+                kind: SensorKind::Analog,
+                slave_id: 1,
+                register_address: 0,
+                register_count: 1,
+                data_type: ModbusDataType::UInt16,
+                byte_order: ModbusByteOrder::BigEndian,
+            },
+        );
+
+        source.add_sensor(
+            "aux_hook_weight",
+            SensorModbusConfig {
+                name: "副钩重量".to_string(),
+                kind: SensorKind::Analog,
+                slave_id: 1,
+                register_address: 3,
+                register_count: 1,
+                data_type: ModbusDataType::UInt16,
+                byte_order: ModbusByteOrder::BigEndian,
+            },
+        );
+
+        assert_eq!(source.analog_clients.len(), 2);
     }
 }
