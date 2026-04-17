@@ -8,12 +8,21 @@ use std::time::SystemTime;
 /// 处理后的数据（计算后的结果）
 #[derive(Debug, Clone, PartialEq)]
 pub struct ProcessedData {
+    // ===== 主钩 =====
     /// 当前载荷（吨）
     pub current_load: f64,
 
     /// 额定载荷（吨，从载荷表查询得到）
     pub rated_load: f64,
 
+    // ===== 副钩 =====
+    /// 副钩当前载荷（吨）
+    pub aux_current_load: f64,
+
+    /// 副钩力矩百分比
+    pub aux_moment_percentage: f64,
+
+    // ===== 共享参数 =====
     /// 工作半径（米）
     pub working_radius: f64,
 
@@ -23,9 +32,11 @@ pub struct ProcessedData {
     /// 臂长（米）
     pub boom_length: f64,
 
-    /// 力矩百分比
+    // ===== 力矩计算 =====
+    /// 力矩百分比（主钩）
     pub moment_percentage: f64,
 
+    // ===== 报警状态 =====
     /// 是否预警（达到预警阈值，>=90%）
     pub is_warning: bool,
 
@@ -63,12 +74,22 @@ impl ProcessedData {
         let is_danger = moment_percentage >= 100.0;
         let validation_error = raw_data.validate().err();
 
+        // 副钩载荷（从 analog HashMap 获取）
+        let aux_current_load = raw_data.get_analog_or("aux_hook_weight", 0.0);
+        let aux_moment_percentage = Self::calculate_moment_percentage_with_load(
+            aux_current_load,
+            raw_data.ad2_radius(),
+            Self::DEFAULT_RATED_LOAD,
+        );
+
         Self {
             current_load: raw_data.ad1_load(),
             rated_load: Self::DEFAULT_RATED_LOAD,
+            aux_current_load,
+            aux_moment_percentage,
             working_radius: raw_data.ad2_radius(),
             boom_angle: raw_data.ad3_angle(),
-            boom_length: raw_data.ad2_radius(), // 简化模式：臂长等于半径
+            boom_length: raw_data.ad2_radius(),
             moment_percentage,
             is_warning,
             is_danger,
@@ -94,25 +115,31 @@ impl ProcessedData {
         config: &CraneConfig,
         sequence_number: u64,
     ) -> Self {
-        // ad1 -> current_load
+        // 主钩载荷
         let current_load = config
             .sensor_calibration
             .convert_weight_ad_to_value(raw_data.ad1_load());
 
-        // ad2 -> boom_length (臂长)
+        // 副钩载荷
+        let aux_current_load = config.sensor_calibration.convert(
+            "aux_hook_weight",
+            raw_data.get_analog_or("aux_hook_weight", 0.0),
+        );
+
+        // 臂长
         let boom_length = config
             .sensor_calibration
             .convert_radius_ad_to_value(raw_data.ad2_radius());
 
-        // ad3 -> boom_angle (臂角，0° = 水平)
+        // 吊臂角度
         let boom_angle = config
             .sensor_calibration
             .convert_angle_ad_to_value(raw_data.ad3_angle());
 
-        // 计算工作幅度: working_radius = boom_length * cos(boom_angle)
+        // 计算工作幅度
         let working_radius = Self::calculate_working_radius(boom_length, boom_angle);
 
-        // 根据臂长和幅度查询额定载荷
+        // 查询额定载荷
         let rated_load = config
             .rated_load_table
             .get_rated_load(boom_length, working_radius);
@@ -120,12 +147,15 @@ impl ProcessedData {
         // 计算力矩百分比
         let moment_percentage =
             Self::calculate_moment_percentage_with_load(current_load, working_radius, rated_load);
+        let aux_moment_percentage = Self::calculate_moment_percentage_with_load(
+            aux_current_load,
+            working_radius,
+            rated_load,
+        );
 
-        // 分别判断是否达到预警和报警阈值
         let is_warning = config.alarm_thresholds.is_moment_warning(moment_percentage);
         let is_danger = config.alarm_thresholds.is_moment_alarm(moment_percentage);
 
-        // 检查传感器值是否超过预警/报警阈值
         let mut validation_error = None;
 
         if config.alarm_thresholds.is_moment_alarm(moment_percentage) {
@@ -143,6 +173,8 @@ impl ProcessedData {
         Self {
             current_load,
             rated_load,
+            aux_current_load,
+            aux_moment_percentage,
             working_radius,
             boom_angle,
             boom_length,
