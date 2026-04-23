@@ -92,6 +92,7 @@ fn main() {
     .file("src/monitoring_viewmodel.rs")
     .file("src/calibration_viewmodel.rs")
     .file("src/data_collection_controller.rs")
+    .file("src/history_viewmodel.rs")
     .file("src/load_calibration_viewmodel.rs")
     .file("src/angle_calibration_viewmodel.rs")
     .file("src/radius_calibration_viewmodel.rs")

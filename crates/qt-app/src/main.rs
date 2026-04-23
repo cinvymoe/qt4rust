@@ -5,6 +5,7 @@
 mod application;
 mod calibration_viewmodel;
 mod data_collection_controller;
+mod history_viewmodel;
 mod monitoring_viewmodel;
 mod settings_viewmodel;
 mod viewmodel_manager;

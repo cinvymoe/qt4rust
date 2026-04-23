@@ -16,6 +16,15 @@ cxx = "1.0"
 cxx-qt = "0.8"
 cxx-qt-lib = { version = "0.8", features = ["full"] }
 
+# 异步运行时
+tokio = { workspace = true }
+
+# JSON 序列化
+serde_json = "1.0"
+
+# 日期时间处理
+chrono = "0.4"
+
 # 日志依赖
 tracing = "0.1"
 
