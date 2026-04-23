@@ -12,7 +12,7 @@ import "styles"
 
 Window {
     id: root
-    width: 800
+    width: 1024
     height: 600
     visible: true
     title: "Crane Monitoring System"
