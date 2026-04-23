@@ -2,28 +2,48 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import qt.rust.demo
 import "../styles"
 import "../components/controls"
 
 Item {
     id: chartView
     
-    // 模拟时间序列数据
-    property var timeLabels: ["14:33:49", "14:33:52", "14:33:55", "14:33:59", "14:34:02", 
-                               "14:34:05", "14:34:08", "14:34:11", "14:34:14", "14:34:17",
-                               "14:34:20", "14:34:23", "14:34:25", "14:34:28", "14:34:32"]
+    // 动态数据属性（从 ViewModel 加载）
+    property var timeLabels: []
+    property var momentData: []
+    property var loadData: []
+    property var radiusData: []
+    property var angleData: []
     
-    // 力矩百分比数据 (0-100)
-    property var momentData: [85, 88, 92, 95, 94, 93, 91, 89, 87, 90, 92, 94, 96, 95, 93]
+    // HistoryViewModel 实例
+    HistoryViewModel {
+        id: historyViewModel
+        
+        Component.onCompleted: {
+            historyViewModel.init_with_repository()
+        }
+    }
     
-    // 载荷数据 (吨)
-    property var loadData: [22, 28, 27, 18, 20, 21, 21, 25, 24, 28, 26, 19, 20, 21, 22]
+    // 监听 ViewModel 属性变化
+    Connections {
+        target: historyViewModel
+        function onChart_data_jsonChanged() { parseChartData() }
+    }
     
-    // 工作半径数据 (米)
-    property var radiusData: [8, 10, 12, 15, 18, 20, 22, 25, 28, 30, 32, 35, 38, 40, 42]
-    
-    // 吊臂角度数据 (度)
-    property var angleData: [75, 72, 70, 68, 65, 63, 60, 58, 55, 52, 50, 48, 45, 43, 40]
+    // 解析图表数据 JSON
+    function parseChartData() {
+        try {
+            var data = JSON.parse(historyViewModel.chart_data_json)
+            chartView.timeLabels = data.timeLabels || []
+            chartView.momentData = data.momentData || []
+            chartView.loadData = data.loadData || []
+            chartView.radiusData = data.radiusData || []
+            chartView.angleData = data.angleData || []
+        } catch (e) {
+            console.log("解析图表数据失败:", e)
+        }
+    }
     
     Rectangle {
         anchors.fill: parent
@@ -67,15 +87,65 @@ Item {
                 
                 Item { Layout.fillWidth: true }
                 
-                // 右侧时间范围筛选区域
-                TimeRangeFilter {
-                    id: timeRangeFilter
-                    selectedRange: "1h"
+                // 右侧刷新按钮和时间范围筛选
+                RowLayout {
+                    spacing: Theme.spacingMedium
                     
-                    onRangeChanged: function(range, hours) {
-                        console.log("时间范围已更改:", range, "小时数:", hours)
-                        // TODO: 根据选择的时间范围更新图表数据
-                        // 可以在这里调用 Rust 后端获取对应时间范围的数据
+                    // 刷新按钮
+                    Button {
+                        text: "刷新"
+                        implicitWidth: 60
+                        implicitHeight: 32
+                        
+                        background: Rectangle {
+                            color: parent.down ? Theme.darkAccent : Theme.darkSurface
+                            radius: Theme.radiusMedium
+                            border.color: Theme.darkBorder
+                            border.width: Theme.borderNormal
+                        }
+                        
+                        contentItem: Text {
+                            text: parent.text
+                            font.pixelSize: Theme.fontSizeSmall
+                            font.family: Theme.fontFamilyDefault
+                            color: Theme.textPrimary
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        
+                        onClicked: {
+                            historyViewModel.refresh_chart_data()
+                        }
+                    }
+                    
+                    // 时间范围筛选
+                    TimeRangeFilter {
+                        id: timeRangeFilter
+                        selectedRange: "1h"
+                        
+                        onRangeChanged: function(range, hours) {
+                            // 根据时间范围设置筛选
+                            var filter = "all"
+                            if (hours <= 1) filter = "today"
+                            else if (hours <= 24) filter = "today"
+                            else if (hours <= 168) filter = "week"
+                            else filter = "month"
+                            
+                            historyViewModel.set_filter(filter)
+                            historyViewModel.refresh_chart_data()
+                        }
+                        
+                        onCustomRangeChanged: function(startTime, endTime) {
+                            // 解析时间字符串并转换为时间戳
+                            // 格式: "YYYY/MM/DD HH:MM"
+                            var startDate = new Date(startTime.replace(/\//g, "-"))
+                            var endDate = new Date(endTime.replace(/\//g, "-"))
+                            var startTimestamp = Math.floor(startDate.getTime() / 1000)
+                            var endTimestamp = Math.floor(endDate.getTime() / 1000)
+                            
+                            historyViewModel.set_custom_time_range(startTimestamp, endTimestamp)
+                            historyViewModel.refresh_chart_data()
+                        }
                     }
                 }
             }
