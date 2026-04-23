@@ -1,7 +1,8 @@
 // 存储仓库 trait（抽象接口）
 
-use crate::models::{AlarmRecord, ProcessedData};
+use crate::models::{AlarmRecord, AlarmStatistics, ProcessedData};
 use async_trait::async_trait;
+use std::time::SystemTime;
 
 /// 存储仓库 trait
 ///
@@ -128,4 +129,86 @@ pub trait StorageRepository: Send + Sync {
         offset: i64,
         limit: usize,
     ) -> Result<Vec<ProcessedData>, String>;
+
+    /// 按时间范围查询运行数据
+    ///
+    /// # 参数
+    /// - `start_time`: 开始时间
+    /// - `end_time`: 结束时间
+    /// - `limit`: 查询数量限制
+    ///
+    /// # 返回
+    /// - `Ok(Vec<ProcessedData>)`: 运行数据列表
+    /// - `Err(String)`: 错误信息
+    async fn query_runtime_data_by_time_range(
+        &self,
+        start_time: SystemTime,
+        end_time: SystemTime,
+        limit: usize,
+    ) -> Result<Vec<ProcessedData>, String>;
+
+    /// 按时间范围查询报警记录
+    ///
+    /// # 参数
+    /// - `start_time`: 开始时间
+    /// - `end_time`: 结束时间
+    ///
+    /// # 返回
+    /// - `Ok(Vec<AlarmRecord>)`: 报警记录列表
+    /// - `Err(String)`: 错误信息
+    async fn query_alarm_records_by_time_range(
+        &self,
+        start_time: SystemTime,
+        end_time: SystemTime,
+    ) -> Result<Vec<AlarmRecord>, String>;
+
+    /// 按筛选条件查询报警记录
+    ///
+    /// # 参数
+    /// - `filter`: 筛选条件 ("all", "today", "week", "month")
+    ///
+    /// # 返回
+    /// - `Ok(Vec<AlarmRecord>)`: 报警记录列表
+    /// - `Err(String)`: 错误信息
+    async fn query_alarm_records_by_filter(
+        &self,
+        filter: &str,
+    ) -> Result<Vec<AlarmRecord>, String>;
+
+    /// 按筛选条件查询运行数据
+    ///
+    /// # 参数
+    /// - `filter`: 筛选条件 ("all", "today", "week", "month")
+    /// - `limit`: 查询数量限制
+    ///
+    /// # 返回
+    /// - `Ok(Vec<ProcessedData>)`: 运行数据列表
+    /// - `Err(String)`: 错误信息
+    async fn query_runtime_data_by_filter(
+        &self,
+        filter: &str,
+        limit: usize,
+    ) -> Result<Vec<ProcessedData>, String>;
+
+    /// 获取报警统计（全部）
+    ///
+    /// # 返回
+    /// - `Ok(AlarmStatistics)`: 报警统计信息
+    /// - `Err(String)`: 错误信息
+    async fn get_alarm_statistics(&self) -> Result<AlarmStatistics, String>;
+
+    /// 按时间范围获取报警统计
+    ///
+    /// # 参数
+    /// - `start_time`: 开始时间
+    /// - `end_time`: 结束时间
+    ///
+    /// # 返回
+    /// - `Ok(AlarmStatistics)`: 报警统计信息
+    /// - `Err(String)`: 错误信息
+    async fn get_alarm_statistics_by_time_range(
+        &self,
+        start_time: SystemTime,
+        end_time: SystemTime,
+    ) -> Result<AlarmStatistics, String>;
 }
