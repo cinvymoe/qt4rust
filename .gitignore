@@ -76,3 +76,5 @@ crane_data_device.db
 docs/superpowers/
 .worktrees/
 Cargo.lock
+
+.config
