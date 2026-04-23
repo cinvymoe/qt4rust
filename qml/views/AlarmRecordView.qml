@@ -2,11 +2,54 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import qt.rust.demo
 import "../styles"
 import "../components/controls"
 
 Item {
     id: alarmRecordView
+    
+    // HistoryViewModel 实例
+    HistoryViewModel {
+        id: historyViewModel
+        
+        Component.onCompleted: {
+            historyViewModel.init_with_repository()
+        }
+    }
+    
+    // 监听 ViewModel 属性变化
+    Connections {
+        target: historyViewModel
+        function onAlarm_records_jsonChanged() { parseAlarmRecords() }
+        function onTotal_alarm_countChanged() { /* 统计数据会通过属性绑定自动更新 */ }
+    }
+    
+    // 报警记录列表模型
+    ListModel {
+        id: alarmRecordModel
+    }
+    
+    // 解析报警记录 JSON
+    function parseAlarmRecords() {
+        try {
+            var records = JSON.parse(historyViewModel.alarm_records_json)
+            alarmRecordModel.clear()
+            for (var i = 0; i < records.length; i++) {
+                var r = records[i]
+                alarmRecordModel.append({
+                    alarmType: r.alarmType,
+                    title: r.title,
+                    message: r.message,
+                    date: r.date,
+                    time: r.time,
+                    momentValue: r.momentValue
+                })
+            }
+        } catch (e) {
+            console.log("解析报警记录失败:", e)
+        }
+    }
     
     // 主容器
     Rectangle {
@@ -53,11 +96,46 @@ Item {
                     Item { Layout.fillWidth: true }
                     
                     // 右侧历史记录筛选区域
-                    HistoryFilterBar {
-                        id: historyFilter
-                        onFilterChanged: function(filter) {
-                            console.log("筛选条件已更改:", filter)
-                            // 这里可以添加筛选逻辑
+                    RowLayout {
+                        spacing: Theme.spacingMedium
+                        
+                        HistoryFilterBar {
+                            id: historyFilter
+                            onFilterChanged: function(filter) {
+                                historyViewModel.set_filter(filter)
+                                historyViewModel.refresh_alarm_records()
+                            }
+                            onCustomTimeRangeChanged: function(startTimestamp, endTimestamp) {
+                                historyViewModel.set_custom_time_range(startTimestamp, endTimestamp)
+                                historyViewModel.refresh_alarm_records()
+                            }
+                        }
+                        
+                        // 刷新按钮
+                        Button {
+                            text: "刷新"
+                            implicitWidth: 60
+                            implicitHeight: 32
+                            
+                            background: Rectangle {
+                                color: parent.down ? Theme.darkAccent : Theme.darkSurface
+                                radius: Theme.radiusMedium
+                                border.color: Theme.darkBorder
+                                border.width: Theme.borderNormal
+                            }
+                            
+                            contentItem: Text {
+                                text: parent.text
+                                font.pixelSize: Theme.fontSizeSmall
+                                font.family: Theme.fontFamilyDefault
+                                color: Theme.textPrimary
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            
+                            onClicked: {
+                                historyViewModel.refresh_alarm_records()
+                            }
                         }
                     }
                 }
@@ -117,7 +195,7 @@ Item {
                                 }
                                 
                                 Text {
-                                    text: "14"
+                                    text: historyViewModel.total_alarm_count.toString()
                                     font.pixelSize: Theme.fontSizeXXLarge
                                     font.family: Theme.fontFamilyMono
                                     color: Theme.textPrimary
@@ -158,7 +236,7 @@ Item {
                                 }
                                 
                                 Text {
-                                    text: "10"
+                                    text: historyViewModel.warning_count.toString()
                                     font.pixelSize: Theme.fontSizeXXLarge
                                     font.family: Theme.fontFamilyMono
                                     color: Theme.warningColor
@@ -199,7 +277,7 @@ Item {
                                 }
                                 
                                 Text {
-                                    text: "4"
+                                    text: historyViewModel.danger_count.toString()
                                     font.pixelSize: Theme.fontSizeXXLarge
                                     font.family: Theme.fontFamilyMono
                                     color: Theme.dangerLight
@@ -363,81 +441,7 @@ Item {
 
                     // 报警记录列表 - 使用 Repeater 在 ColumnLayout 中
                     Repeater {
-                        model: ListModel {
-                            id: alarmRecordModel
-                            
-                            ListElement {
-                                alarmType: "danger"
-                                title: "危险报警"
-                                message: "危险！力矩已达 95%，请立即减载！"
-                                date: "2026/3/6"
-                                time: "15:48:32"
-                                momentValue: "95.0%"
-                            }
-                            
-                            ListElement {
-                                alarmType: "warning"
-                                title: "预警提示"
-                                message: "预警：力矩达到 75.9%，注意安全！"
-                                date: "2026/3/6"
-                                time: "15:47:36"
-                                momentValue: "75.9%"
-                            }
-                            
-                            ListElement {
-                                alarmType: "danger"
-                                title: "危险报警"
-                                message: "危险！力矩已达 94%，请立即减载！"
-                                date: "2026/3/6"
-                                time: "15:47:19"
-                                momentValue: "94.0%"
-                            }
-                            
-                            ListElement {
-                                alarmType: "warning"
-                                title: "预警提示"
-                                message: "预警：力矩达到 82.3%，注意安全！"
-                                date: "2026/3/6"
-                                time: "15:46:54"
-                                momentValue: "82.3%"
-                            }
-                            
-                            ListElement {
-                                alarmType: "danger"
-                                title: "危险报警"
-                                message: "危险！力矩已达 91%，请立即减载！"
-                                date: "2026/3/6"
-                                time: "15:45:28"
-                                momentValue: "91.0%"
-                            }
-                            
-                            ListElement {
-                                alarmType: "warning"
-                                title: "预警提示"
-                                message: "预警：力矩达到 78.5%，注意安全！"
-                                date: "2026/3/6"
-                                time: "15:44:12"
-                                momentValue: "78.5%"
-                            }
-                            
-                            ListElement {
-                                alarmType: "warning"
-                                title: "预警提示"
-                                message: "预警：力矩达到 76.2%，注意安全！"
-                                date: "2026/3/6"
-                                time: "15:43:05"
-                                momentValue: "76.2%"
-                            }
-                            
-                            ListElement {
-                                alarmType: "danger"
-                                title: "危险报警"
-                                message: "危险！力矩已达 93%，请立即减载！"
-                                date: "2026/3/6"
-                                time: "15:42:18"
-                                momentValue: "93.0%"
-                            }
-                        }
+                        model: alarmRecordModel
                         
                         AlarmRecordItem {
                             Layout.fillWidth: true
