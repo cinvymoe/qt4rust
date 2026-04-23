@@ -1,6 +1,6 @@
 // Mock 存储仓库（用于测试）
 
-use crate::models::{AlarmRecord, ProcessedData};
+use crate::models::{AlarmRecord, AlarmStatistics, ProcessedData};
 use crate::repositories::sensor_data_repository::SensorDataRepository;
 use crate::repositories::storage_repository::StorageRepository;
 use async_trait::async_trait;
@@ -170,6 +170,91 @@ impl StorageRepository for MockStorageRepository {
         }
 
         Ok(storage[start..end].to_vec())
+    }
+
+    async fn query_runtime_data_by_time_range(
+        &self,
+        start_time: std::time::SystemTime,
+        end_time: std::time::SystemTime,
+        limit: usize,
+    ) -> Result<Vec<ProcessedData>, String> {
+        let storage = self.runtime_data.lock().unwrap();
+        let result: Vec<ProcessedData> = storage
+            .iter()
+            .filter(|d| d.timestamp >= start_time && d.timestamp <= end_time)
+            .rev()
+            .take(limit)
+            .cloned()
+            .collect();
+        Ok(result)
+    }
+
+    async fn query_alarm_records_by_time_range(
+        &self,
+        start_time: std::time::SystemTime,
+        end_time: std::time::SystemTime,
+    ) -> Result<Vec<AlarmRecord>, String> {
+        let alarms = self.alarm_records.lock().unwrap();
+        let result: Vec<AlarmRecord> = alarms
+            .iter()
+            .filter(|a| a.timestamp >= start_time && a.timestamp <= end_time)
+            .rev()
+            .cloned()
+            .collect();
+        Ok(result)
+    }
+
+    async fn query_alarm_records_by_filter(
+        &self,
+        _filter: &str,
+    ) -> Result<Vec<AlarmRecord>, String> {
+        let alarms = self.alarm_records.lock().unwrap();
+        Ok(alarms.iter().rev().cloned().collect())
+    }
+
+    async fn query_runtime_data_by_filter(
+        &self,
+        _filter: &str,
+        limit: usize,
+    ) -> Result<Vec<ProcessedData>, String> {
+        let storage = self.runtime_data.lock().unwrap();
+        Ok(storage.iter().rev().take(limit).cloned().collect())
+    }
+
+    async fn get_alarm_statistics(&self) -> Result<AlarmStatistics, String> {
+        let alarms = self.alarm_records.lock().unwrap();
+        let total_count = alarms.len() as i32;
+        let warning_count = alarms
+            .iter()
+            .filter(|a| a.alarm_type == crate::models::AlarmType::Warning)
+            .count() as i32;
+        let danger_count = alarms
+            .iter()
+            .filter(|a| a.alarm_type == crate::models::AlarmType::Danger)
+            .count() as i32;
+        Ok(AlarmStatistics::new(total_count, warning_count, danger_count))
+    }
+
+    async fn get_alarm_statistics_by_time_range(
+        &self,
+        start_time: std::time::SystemTime,
+        end_time: std::time::SystemTime,
+    ) -> Result<AlarmStatistics, String> {
+        let alarms = self.alarm_records.lock().unwrap();
+        let filtered: Vec<_> = alarms
+            .iter()
+            .filter(|a| a.timestamp >= start_time && a.timestamp <= end_time)
+            .collect();
+        let total_count = filtered.len() as i32;
+        let warning_count = filtered
+            .iter()
+            .filter(|a| a.alarm_type == crate::models::AlarmType::Warning)
+            .count() as i32;
+        let danger_count = filtered
+            .iter()
+            .filter(|a| a.alarm_type == crate::models::AlarmType::Danger)
+            .count() as i32;
+        Ok(AlarmStatistics::new(total_count, warning_count, danger_count))
     }
 }
 

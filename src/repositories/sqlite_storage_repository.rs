@@ -1,6 +1,6 @@
 // SQLite 存储仓库实现
 
-use crate::models::{AlarmRecord, AlarmType, ProcessedData, SensorData};
+use crate::models::{AlarmRecord, AlarmStatistics, AlarmType, ProcessedData, SensorData};
 use crate::repositories::sensor_data_repository::SensorDataRepository;
 use crate::repositories::storage_repository::StorageRepository;
 use async_trait::async_trait;
@@ -115,6 +115,64 @@ impl SqliteStorageRepository {
 
         tracing::info!("Database tables initialized");
         Ok(())
+    }
+
+    /// 根据筛选条件计算时间范围（返回 Unix 时间戳秒数）
+    fn calculate_time_range(filter: &str) -> Option<(i64, i64)> {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+
+        match filter {
+            "all" => None, // 不限制
+            "today" => {
+                // 今天开始（午夜）
+                let today_start = now - (now % 86400);
+                Some((today_start, now))
+            }
+            "week" => {
+                // 最近7天
+                let week_start = now - 7 * 86400;
+                Some((week_start, now))
+            }
+            "month" => {
+                // 最近30天
+                let month_start = now - 30 * 86400;
+                Some((month_start, now))
+            }
+            _ => None,
+        }
+    }
+
+    fn parse_alarm_record_row(row: &rusqlite::Row) -> rusqlite::Result<AlarmRecord> {
+        let timestamp_secs: i64 = row.get(2)?;
+        let timestamp =
+            SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(timestamp_secs as u64);
+
+        let alarm_type_str: String = row.get(3)?;
+        let alarm_type = AlarmType::from_str(&alarm_type_str).unwrap_or(AlarmType::Warning);
+
+        let acknowledged_at: Option<i64> = row.get(12)?;
+        let acknowledged_at_time = acknowledged_at.map(|secs| {
+            SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(secs as u64)
+        });
+
+        Ok(AlarmRecord {
+            id: Some(row.get(0)?),
+            sequence_number: row.get::<_, i64>(1)? as u64,
+            timestamp,
+            alarm_type,
+            current_load: row.get(4)?,
+            rated_load: row.get(5)?,
+            working_radius: row.get(6)?,
+            boom_angle: row.get(7)?,
+            boom_length: row.get(8)?,
+            moment_percentage: row.get(9)?,
+            description: row.get(10)?,
+            acknowledged: row.get(11)?,
+            acknowledged_at: acknowledged_at_time,
+        })
     }
 }
 
@@ -574,6 +632,299 @@ impl StorageRepository for SqliteStorageRepository {
 
         Ok(result)
     }
+
+    async fn query_runtime_data_by_time_range(
+        &self,
+        start_time: SystemTime,
+        end_time: SystemTime,
+        limit: usize,
+    ) -> Result<Vec<ProcessedData>, String> {
+        let conn = self.connection.lock().await;
+
+        let start_timestamp = start_time
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+
+        let end_timestamp = end_time
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+
+        let mut stmt = conn
+            .prepare(
+                "SELECT sequence_number, timestamp, current_load, working_radius, boom_angle, 
+                    boom_length, moment_percentage, is_danger, validation_error 
+                 FROM runtime_data 
+                 WHERE timestamp >= ?1 AND timestamp <= ?2 
+                 ORDER BY timestamp DESC 
+                 LIMIT ?3",
+            )
+            .map_err(|e| format!("Failed to prepare statement: {}", e))?;
+
+        let rows = stmt
+            .query_map(params![start_timestamp, end_timestamp, limit as i64], |row| {
+                let timestamp_secs: i64 = row.get(1)?;
+                let timestamp =
+                    SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(timestamp_secs as u64);
+                let moment_percentage: f64 = row.get(6)?;
+                let is_danger: bool = row.get(7)?;
+                let is_warning = !is_danger && moment_percentage >= 90.0;
+
+                Ok(ProcessedData {
+                    sequence_number: row.get::<_, i64>(0)? as u64,
+                    timestamp,
+                    current_load: row.get(2)?,
+                    rated_load: 25.0,
+                    aux_current_load: 0.0,
+                    aux_moment_percentage: 0.0,
+                    working_radius: row.get(3)?,
+                    boom_angle: row.get(4)?,
+                    boom_length: row.get(5)?,
+                    moment_percentage,
+                    is_warning,
+                    is_danger,
+                    validation_error: row.get(8)?,
+                    alarm_sources: Vec::new(),
+                    alarm_messages: Vec::new(),
+                })
+            })
+            .map_err(|e| format!("Failed to query runtime data: {}", e))?;
+
+        let mut result = Vec::new();
+        for row in rows {
+            result.push(row.map_err(|e| format!("Failed to parse row: {}", e))?);
+        }
+
+        Ok(result)
+    }
+
+    async fn query_alarm_records_by_time_range(
+        &self,
+        start_time: SystemTime,
+        end_time: SystemTime,
+    ) -> Result<Vec<AlarmRecord>, String> {
+        let conn = self.connection.lock().await;
+
+        let start_timestamp = start_time
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+
+        let end_timestamp = end_time
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, sequence_number, timestamp, alarm_type, current_load, rated_load,
+                    working_radius, boom_angle, boom_length, moment_percentage, 
+                    description, acknowledged, acknowledged_at
+                 FROM alarm_records 
+                 WHERE timestamp >= ?1 AND timestamp <= ?2 
+                 ORDER BY timestamp DESC",
+            )
+            .map_err(|e| format!("Failed to prepare statement: {}", e))?;
+
+        let rows = stmt
+            .query_map(params![start_timestamp, end_timestamp], Self::parse_alarm_record_row)
+            .map_err(|e| format!("Failed to query alarm records: {}", e))?;
+
+        let mut result = Vec::new();
+        for row in rows {
+            result.push(row.map_err(|e| format!("Failed to parse row: {}", e))?);
+        }
+
+        Ok(result)
+    }
+
+    async fn query_alarm_records_by_filter(
+        &self,
+        filter: &str,
+    ) -> Result<Vec<AlarmRecord>, String> {
+        let conn = self.connection.lock().await;
+
+        let time_range = Self::calculate_time_range(filter);
+
+        let sql = if let Some((_start, _end)) = time_range {
+            "SELECT id, sequence_number, timestamp, alarm_type, current_load, rated_load,
+                working_radius, boom_angle, boom_length, moment_percentage, 
+                description, acknowledged, acknowledged_at
+             FROM alarm_records 
+             WHERE timestamp >= ?1 AND timestamp <= ?2 
+             ORDER BY timestamp DESC"
+        } else {
+            "SELECT id, sequence_number, timestamp, alarm_type, current_load, rated_load,
+                working_radius, boom_angle, boom_length, moment_percentage, 
+                description, acknowledged, acknowledged_at
+             FROM alarm_records 
+             ORDER BY timestamp DESC"
+        };
+
+        let mut stmt = conn
+            .prepare(sql)
+            .map_err(|e| format!("Failed to prepare statement: {}", e))?;
+
+        let rows = if let Some((start, end)) = time_range {
+            stmt.query_map(params![start, end], Self::parse_alarm_record_row)
+        } else {
+            stmt.query_map([], Self::parse_alarm_record_row)
+        }
+        .map_err(|e| format!("Failed to query alarm records: {}", e))?;
+
+        let mut result = Vec::new();
+        for row in rows {
+            result.push(row.map_err(|e| format!("Failed to parse row: {}", e))?);
+        }
+
+        Ok(result)
+    }
+
+    async fn query_runtime_data_by_filter(
+        &self,
+        filter: &str,
+        limit: usize,
+    ) -> Result<Vec<ProcessedData>, String> {
+        let conn = self.connection.lock().await;
+
+        let time_range = Self::calculate_time_range(filter);
+
+        let parse_row = |row: &rusqlite::Row| -> rusqlite::Result<ProcessedData> {
+            let timestamp_secs: i64 = row.get(1)?;
+            let timestamp =
+                SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(timestamp_secs as u64);
+            let moment_percentage: f64 = row.get(6)?;
+            let is_danger: bool = row.get(7)?;
+            let is_warning = !is_danger && moment_percentage >= 90.0;
+
+            Ok(ProcessedData {
+                sequence_number: row.get::<_, i64>(0)? as u64,
+                timestamp,
+                current_load: row.get(2)?,
+                rated_load: 25.0,
+                aux_current_load: 0.0,
+                aux_moment_percentage: 0.0,
+                working_radius: row.get(3)?,
+                boom_angle: row.get(4)?,
+                boom_length: row.get(5)?,
+                moment_percentage,
+                is_warning,
+                is_danger,
+                validation_error: row.get(8)?,
+                alarm_sources: Vec::new(),
+                alarm_messages: Vec::new(),
+            })
+        };
+
+        let result = if let Some((start, end)) = time_range {
+            let mut stmt = conn
+                .prepare(
+                    "SELECT sequence_number, timestamp, current_load, working_radius, boom_angle, 
+                        boom_length, moment_percentage, is_danger, validation_error 
+                     FROM runtime_data 
+                     WHERE timestamp >= ?1 AND timestamp <= ?2 
+                     ORDER BY timestamp DESC 
+                     LIMIT ?3",
+                )
+                .map_err(|e| format!("Failed to prepare statement: {}", e))?;
+
+            let rows = stmt
+                .query_map(params![start, end, limit as i64], parse_row)
+                .map_err(|e| format!("Failed to query runtime data: {}", e))?;
+
+            let mut data = Vec::new();
+            for row in rows {
+                data.push(row.map_err(|e| format!("Failed to parse row: {}", e))?);
+            }
+            data
+        } else {
+            let mut stmt = conn
+                .prepare(
+                    "SELECT sequence_number, timestamp, current_load, working_radius, boom_angle, 
+                        boom_length, moment_percentage, is_danger, validation_error 
+                     FROM runtime_data 
+                     ORDER BY timestamp DESC 
+                     LIMIT ?1",
+                )
+                .map_err(|e| format!("Failed to prepare statement: {}", e))?;
+
+            let rows = stmt
+                .query_map(params![limit as i64], parse_row)
+                .map_err(|e| format!("Failed to query runtime data: {}", e))?;
+
+            let mut data = Vec::new();
+            for row in rows {
+                data.push(row.map_err(|e| format!("Failed to parse row: {}", e))?);
+            }
+            data
+        };
+
+        Ok(result)
+    }
+
+    async fn get_alarm_statistics(&self) -> Result<AlarmStatistics, String> {
+        let conn = self.connection.lock().await;
+
+        let stats: AlarmStatistics = conn
+            .query_row(
+                "SELECT 
+                    COUNT(*) as total_count,
+                    SUM(CASE WHEN alarm_type = 'warning' THEN 1 ELSE 0 END) as warning_count,
+                    SUM(CASE WHEN alarm_type = 'danger' THEN 1 ELSE 0 END) as danger_count
+                 FROM alarm_records",
+                [],
+                |row| {
+                    Ok(AlarmStatistics {
+                        total_count: row.get::<_, i64>(0)? as i32,
+                        warning_count: row.get::<_, i64>(1)? as i32,
+                        danger_count: row.get::<_, i64>(2)? as i32,
+                    })
+                },
+            )
+            .map_err(|e| format!("Failed to get alarm statistics: {}", e))?;
+
+        Ok(stats)
+    }
+
+    async fn get_alarm_statistics_by_time_range(
+        &self,
+        start_time: SystemTime,
+        end_time: SystemTime,
+    ) -> Result<AlarmStatistics, String> {
+        let conn = self.connection.lock().await;
+
+        let start_timestamp = start_time
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+
+        let end_timestamp = end_time
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+
+        let stats: AlarmStatistics = conn
+            .query_row(
+                "SELECT 
+                    COUNT(*) as total_count,
+                    SUM(CASE WHEN alarm_type = 'warning' THEN 1 ELSE 0 END) as warning_count,
+                    SUM(CASE WHEN alarm_type = 'danger' THEN 1 ELSE 0 END) as danger_count
+                 FROM alarm_records
+                 WHERE timestamp >= ?1 AND timestamp <= ?2",
+                params![start_timestamp, end_timestamp],
+                |row| {
+                    Ok(AlarmStatistics {
+                        total_count: row.get::<_, i64>(0)? as i32,
+                        warning_count: row.get::<_, i64>(1)? as i32,
+                        danger_count: row.get::<_, i64>(2)? as i32,
+                    })
+                },
+            )
+            .map_err(|e| format!("Failed to get alarm statistics: {}", e))?;
+
+        Ok(stats)
+    }
 }
 
 #[async_trait]
@@ -1021,5 +1372,136 @@ mod tests {
         use crate::repositories::sensor_data_repository::SensorDataRepository;
         let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
         assert!(SensorDataRepository::health_check(&repo).await.is_ok());
+    }
+
+    // ==================== Time Range Query Tests ====================
+
+    #[tokio::test]
+    async fn test_query_runtime_data_by_time_range() {
+        let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
+
+        // Create and save test data
+        let sensor_data1 = SensorData::from_tuple(20.0, 10.0, 60.0, false, false);
+        let processed1 = ProcessedData::from_sensor_data(sensor_data1, 1);
+
+        let sensor_data2 = SensorData::from_tuple(21.0, 11.0, 61.0, false, false);
+        let processed2 = ProcessedData::from_sensor_data(sensor_data2, 2);
+
+        repo.save_runtime_data_batch(&[processed1.clone(), processed2.clone()])
+            .await
+            .unwrap();
+
+        // Query all data by time range
+        let now = SystemTime::now();
+        let start = now - std::time::Duration::from_secs(3600);
+        let end = now + std::time::Duration::from_secs(3600);
+
+        let data = repo
+            .query_runtime_data_by_time_range(start, end, 10)
+            .await
+            .unwrap();
+        assert_eq!(data.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_query_alarm_records_by_time_range() {
+        let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
+
+        // Create and save alarm
+        let sensor_data = SensorData::from_tuple(23.0, 10.0, 60.0, false, false);
+        let processed = ProcessedData::from_sensor_data(sensor_data, 1);
+        repo.save_alarm_record(&processed).await.unwrap();
+
+        // Query by time range
+        let now = SystemTime::now();
+        let start = now - std::time::Duration::from_secs(3600);
+        let end = now + std::time::Duration::from_secs(3600);
+
+        let alarms = repo
+            .query_alarm_records_by_time_range(start, end)
+            .await
+            .unwrap();
+        assert_eq!(alarms.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_query_alarm_records_by_filter() {
+        let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
+
+        // Create and save alarm
+        let sensor_data = SensorData::from_tuple(23.0, 10.0, 60.0, false, false);
+        let processed = ProcessedData::from_sensor_data(sensor_data, 1);
+        repo.save_alarm_record(&processed).await.unwrap();
+
+        // Query with "all" filter
+        let alarms = repo.query_alarm_records_by_filter("all").await.unwrap();
+        assert_eq!(alarms.len(), 1);
+
+        // Query with "today" filter
+        let alarms = repo.query_alarm_records_by_filter("today").await.unwrap();
+        assert_eq!(alarms.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_query_runtime_data_by_filter() {
+        let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
+
+        // Create and save test data
+        let sensor_data = SensorData::from_tuple(20.0, 10.0, 60.0, false, false);
+        let processed = ProcessedData::from_sensor_data(sensor_data, 1);
+        repo.save_runtime_data_batch(&[processed]).await.unwrap();
+
+        // Query with "all" filter
+        let data = repo
+            .query_runtime_data_by_filter("all", 10)
+            .await
+            .unwrap();
+        assert_eq!(data.len(), 1);
+
+        // Query with "today" filter
+        let data = repo
+            .query_runtime_data_by_filter("today", 10)
+            .await
+            .unwrap();
+        assert_eq!(data.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_get_alarm_statistics() {
+        let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
+
+        // Create and save alarms
+        let sensor_data1 = SensorData::from_tuple(23.0, 10.0, 60.0, false, false);
+        let processed1 = ProcessedData::from_sensor_data(sensor_data1, 1);
+        repo.save_alarm_record(&processed1).await.unwrap();
+
+        let sensor_data2 = SensorData::from_tuple(26.0, 10.0, 60.0, false, false);
+        let processed2 = ProcessedData::from_sensor_data(sensor_data2, 2);
+        repo.save_alarm_record(&processed2).await.unwrap();
+
+        let stats = repo.get_alarm_statistics().await.unwrap();
+        assert_eq!(stats.total_count, 2);
+        assert!(stats.warning_count >= 1);
+    }
+
+    #[tokio::test]
+    async fn test_get_alarm_statistics_by_time_range() {
+        let repo = SqliteStorageRepository::new(":memory:").await.unwrap();
+
+        // Create and save alarm
+        let sensor_data = SensorData::from_tuple(23.0, 10.0, 60.0, false, false);
+        let processed = ProcessedData::from_sensor_data(sensor_data, 1);
+        repo.save_alarm_record(&processed).await.unwrap();
+
+        // Query stats by time range
+        let now = SystemTime::now();
+        let start = now - std::time::Duration::from_secs(3600);
+        let end = now + std::time::Duration::from_secs(3600);
+
+        let stats = repo
+            .get_alarm_statistics_by_time_range(start, end)
+            .await
+            .unwrap();
+        assert_eq!(stats.total_count, 1);
     }
 }
