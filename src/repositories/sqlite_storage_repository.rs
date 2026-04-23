@@ -328,7 +328,7 @@ impl StorageRepository for SqliteStorageRepository {
         let mut stmt = conn
             .prepare(
                 "SELECT sequence_number, timestamp, current_load, working_radius, 
-                    boom_angle, moment_percentage, is_danger, validation_error
+                    boom_angle, boom_length, moment_percentage, is_danger, validation_error
              FROM runtime_data 
              ORDER BY timestamp DESC 
              LIMIT ?1",
@@ -358,7 +358,7 @@ impl StorageRepository for SqliteStorageRepository {
                     moment_percentage,
                     is_warning,
                     is_danger,
-                    validation_error: row.get(8)?,
+                    validation_error: row.get::<_, Option<String>>(8)?,
                     alarm_sources: Vec::new(),
                     alarm_messages: Vec::new(),
                 })
@@ -589,7 +589,7 @@ impl StorageRepository for SqliteStorageRepository {
         let mut stmt = conn
             .prepare(
                 "SELECT sequence_number, timestamp, current_load, working_radius, boom_angle, 
-                    moment_percentage, is_danger, validation_error 
+                    boom_length, moment_percentage, is_danger, validation_error 
              FROM runtime_data 
              ORDER BY id ASC 
              LIMIT ? OFFSET ?",
@@ -618,7 +618,7 @@ impl StorageRepository for SqliteStorageRepository {
                     moment_percentage,
                     is_warning,
                     is_danger,
-                    validation_error: row.get(8)?,
+                    validation_error: row.get::<_, Option<String>>(8)?,
                     alarm_sources: Vec::new(),
                     alarm_messages: Vec::new(),
                 })
@@ -684,7 +684,7 @@ impl StorageRepository for SqliteStorageRepository {
                     moment_percentage,
                     is_warning,
                     is_danger,
-                    validation_error: row.get(8)?,
+                    validation_error: row.get::<_, Option<String>>(8)?,
                     alarm_sources: Vec::new(),
                     alarm_messages: Vec::new(),
                 })
@@ -811,7 +811,7 @@ impl StorageRepository for SqliteStorageRepository {
                 moment_percentage,
                 is_warning,
                 is_danger,
-                validation_error: row.get(8)?,
+                validation_error: row.get::<_, Option<String>>(8)?,
                 alarm_sources: Vec::new(),
                 alarm_messages: Vec::new(),
             })
