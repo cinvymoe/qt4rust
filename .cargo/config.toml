@@ -2,13 +2,17 @@
 # 用于将 Rust Qt 应用程序编译到 ARM32 Linux 平台
 
 [target.armv7-unknown-linux-gnueabihf]
-# 指定 ARM32 交叉编译器作为链接器
 linker = "arm-linux-gnueabihf-gcc"
 
-# 链接器参数配置
-# 确保链接器能找到必要的系统库和 Qt 库
 rustflags = [
     "-C", "link-arg=-Wl,-rpath-link,/usr/arm-linux-gnueabihf/lib",
+]
+
+[target.aarch64-unknown-linux-gnu]
+linker = "aarch64-linux-gnu-gcc"
+
+rustflags = [
+    "-C", "link-arg=-Wl,-rpath-link,/usr/aarch64-linux-gnu/lib",
 ]
 
 [env]
@@ -17,10 +21,14 @@ rustflags = [
 QT_QML_IMPORT_PATH = "/usr/lib/qt6/qml"
 QT_PLUGIN_PATH = "/usr/lib/qt6/plugins"
 
-# ARM32 交叉编译环境配置
 [target.armv7-unknown-linux-gnueabihf.env]
 PKG_CONFIG_ALLOW_CROSS = "1"
 PKG_CONFIG_PATH = "/usr/lib/arm-linux-gnueabihf/pkgconfig"
+PKG_CONFIG_SYSROOT_DIR = "/"
+
+[target.aarch64-unknown-linux-gnu.env]
+PKG_CONFIG_ALLOW_CROSS = "1"
+PKG_CONFIG_PATH = "/usr/lib/aarch64-linux-gnu/pkgconfig"
 PKG_CONFIG_SYSROOT_DIR = "/"
 
 [build]

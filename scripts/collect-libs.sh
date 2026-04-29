@@ -8,19 +8,35 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+ARCH="${ARCH:-arm32}"
+
+if [ "$ARCH" = "arm64" ]; then
+    TARGET="aarch64-unknown-linux-gnu"
+    READELF="aarch64-linux-gnu-readelf"
+    LIB_BASE="/usr/lib/aarch64-linux-gnu"
+    QT_PLUGIN_DIR="/usr/lib/aarch64-linux-gnu/qt6/plugins"
+    QT_QML_DIR="/usr/lib/aarch64-linux-gnu/qt6/qml"
+else
+    TARGET="armv7-unknown-linux-gnueabihf"
+    READELF="arm-linux-gnueabihf-readelf"
+    LIB_BASE="/usr/lib/arm-linux-gnueabihf"
+    QT_PLUGIN_DIR="/usr/lib/arm-linux-gnueabihf/qt6/plugins"
+    QT_QML_DIR="/usr/lib/arm-linux-gnueabihf/qt6/qml"
+fi
+
 # 优先使用 release 版本，如果不存在则使用 debug 版本
-BINARY_RELEASE="target/armv7-unknown-linux-gnueabihf/release/qt-rust-demo"
-BINARY_DEBUG="target/armv7-unknown-linux-gnueabihf/debug/qt-rust-demo"
+BINARY_RELEASE="target/$TARGET/release/qt-rust-demo"
+BINARY_DEBUG="target/$TARGET/debug/qt-rust-demo"
 
 if [ -f "$BINARY_RELEASE" ]; then
     BINARY="$BINARY_RELEASE"
-    echo -e "${GREEN}使用 release 版本${NC}"
+    echo -e "${GREEN}使用 release 版本 ($ARCH)${NC}"
 elif [ -f "$BINARY_DEBUG" ]; then
     BINARY="$BINARY_DEBUG"
-    echo -e "${YELLOW}使用 debug 版本${NC}"
+    echo -e "${YELLOW}使用 debug 版本 ($ARCH)${NC}"
 else
-    echo -e "${RED}错误: 未找到二进制文件${NC}"
-    echo "请先运行: cargo build --release --target armv7-unknown-linux-gnueabihf"
+    echo -e "${RED}错误: 未找到二进制文件 ($ARCH)${NC}"
+    echo "请先运行: make build 或 make build-arm64"
     exit 1
 fi
 
@@ -32,20 +48,19 @@ echo -e "${GREEN}=== 收集共享库依赖 ===${NC}"
 mkdir -p "$OUTPUT_DIR"
 
 echo -e "${YELLOW}分析依赖...${NC}"
-LIBS=$(arm-linux-gnueabihf-readelf -d "$BINARY" | grep "NEEDED" | sed 's/.*\[\(.*\)\]/\1/')
+LIBS=$($READELF -d "$BINARY" | grep "NEEDED" | sed 's/.*\[\(.*\)\]/\1/')
 
 echo "找到以下依赖库："
 echo "$LIBS"
 echo ""
 
 echo -e "${YELLOW}复制库文件...${NC}"
-LIB_BASE="/usr/lib/arm-linux-gnueabihf"
 
 for lib in $LIBS; do
     # 跳过系统基础库（通常设备已有）
     if [[ "$lib" == "libc.so.6" ]] || \
        [[ "$lib" == "libm.so.6" ]] || \
-       [[ "$lib" == "ld-linux-armhf.so.3" ]]; then
+       [[ "$lib" == "ld-linux"* ]]; then
         echo -e "  ${YELLOW}跳过系统库: $lib${NC}"
         continue
     fi
@@ -70,9 +85,8 @@ done
 # 添加 Qt 插件依赖
 echo ""
 echo -e "${YELLOW}添加 Qt 平台插件依赖...${NC}"
-QT_PLUGIN_DIR="/usr/lib/arm-linux-gnueabihf/qt6/plugins"
 if [ -f "$QT_PLUGIN_DIR/platforms/libqlinuxfb.so" ]; then
-    PLUGIN_DEPS=$(arm-linux-gnueabihf-readelf -d "$QT_PLUGIN_DIR/platforms/libqlinuxfb.so" 2>/dev/null | grep "NEEDED" | sed 's/.*\[\(.*\)\]/\1/' | grep -v "^lib[cm].so" | grep -v "ld-linux" || true)
+    PLUGIN_DEPS=$($READELF -d "$QT_PLUGIN_DIR/platforms/libqlinuxfb.so" 2>/dev/null | grep "NEEDED" | sed 's/.*\[\(.*\)\]/\1/' | grep -v "^lib[cm].so" | grep -v "ld-linux" || true)
     
     for dep in $PLUGIN_DEPS; do
         if [ -z "$dep" ]; then
@@ -97,11 +111,10 @@ fi
 # 添加 QML 插件依赖
 echo ""
 echo -e "${YELLOW}添加 QML 插件依赖...${NC}"
-QT_QML_DIR="/usr/lib/arm-linux-gnueabihf/qt6/qml"
 if [ -d "$QT_QML_DIR" ]; then
     # 查找所有 QML 插件 .so 文件
     find "$QT_QML_DIR" -name "*.so" -type f 2>/dev/null | while read qml_plugin; do
-        QML_DEPS=$(arm-linux-gnueabihf-readelf -d "$qml_plugin" 2>/dev/null | grep "NEEDED" | sed 's/.*\[\(.*\)\]/\1/' | grep -v "^lib[cm].so" | grep -v "ld-linux" || true)
+        QML_DEPS=$($READELF -d "$qml_plugin" 2>/dev/null | grep "NEEDED" | sed 's/.*\[\(.*\)\]/\1/' | grep -v "^lib[cm].so" | grep -v "ld-linux" || true)
         
         for dep in $QML_DEPS; do
             if [ -z "$dep" ]; then
@@ -133,7 +146,7 @@ for iteration in {1..5}; do
     FOUND_NEW=0
     for libfile in "$OUTPUT_DIR"/*.so* "$OUTPUT_DIR"/*.so; do
         if [ -f "$libfile" ]; then
-            QT_DEPS=$(arm-linux-gnueabihf-readelf -d "$libfile" 2>/dev/null | grep "NEEDED" | sed 's/.*\[\(.*\)\]/\1/' | grep -v "^lib[cm].so" | grep -v "ld-linux" || true)
+            QT_DEPS=$($READELF -d "$libfile" 2>/dev/null | grep "NEEDED" | sed 's/.*\[\(.*\)\]/\1/' | grep -v "^lib[cm].so" | grep -v "ld-linux" || true)
             
             for dep in $QT_DEPS; do
                 if [ -z "$dep" ]; then

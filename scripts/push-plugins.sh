@@ -11,8 +11,19 @@ NC='\033[0m'
 echo -e "${GREEN}=== 推送 Qt 平台插件 ===${NC}"
 
 DEVICE_DIR="/data/local/tmp/qt-rust-demo"
-QT_PLUGIN_DIR="/usr/lib/arm-linux-gnueabihf/qt6/plugins"
-LIB_BASE="/usr/lib/arm-linux-gnueabihf"
+
+# 架构参数，默认 arm32
+ARCH="${ARCH:-arm32}"
+
+if [ "$ARCH" = "arm64" ]; then
+	QT_PLUGIN_DIR="/usr/lib/aarch64-linux-gnu/qt6/plugins"
+	LIB_BASE="/usr/lib/aarch64-linux-gnu"
+else
+	QT_PLUGIN_DIR="/usr/lib/arm-linux-gnueabihf/qt6/plugins"
+	LIB_BASE="/usr/lib/arm-linux-gnueabihf"
+fi
+
+echo -e "${GREEN}使用 ${ARCH} 架构${NC}"
 
 # 检查设备连接
 if ! adb devices | grep -q "device$"; then

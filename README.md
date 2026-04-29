@@ -1,10 +1,13 @@
 # Qt Rust Demo
 
-基于 Rust 语言和 Qt 框架的演示应用程序，使用 QML 进行 UI 开发，目标部署平台为 Linux ARM32 设备。
+基于 Rust 语言和 Qt 框架的演示应用程序，使用 QML 进行 UI 开发，目标部署平台为 Linux ARM32/ARM64 设备。
 
 ## 项目概述
 
-本项目展示了如何使用 Rust 与 Qt 6.x 框架集成，通过 cxx-qt 库实现 Rust 后端与 QML 前端的双向数据绑定和事件处理。应用程序支持交叉编译到 ARM32 Linux 平台。
+本项目展示了如何使用 Rust 与 Qt 6.x 框架集成，通过 cxx-qt 库实现 Rust 后端与 QML 前端的双向数据绑定和事件处理。应用程序支持交叉编译到 ARM32 和 ARM64 Linux 平台。
+
+**详细文档**：
+- [ARM64 支持文档](docs/arm64-support.md) - ARM64 交叉编译和部署指南
 
 ## 配置管理
 
@@ -245,9 +248,61 @@ arm-linux-gnueabihf-readelf -d target/armv7-unknown-linux-gnueabihf/release/qt-r
 # 检查动态链接库依赖
 ```
 
-## 部署到 ARM32 设备
+### ARM64 Linux 目标平台
 
-### 1. 复制二进制文件到目标设备
+#### 1. 安装交叉编译工具链
+
+```bash
+rustup target add aarch64-unknown-linux-gnu
+sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+```
+
+#### 2. 交叉编译
+
+```bash
+cargo build --target aarch64-unknown-linux-gnu --release
+```
+
+#### 3. 验证生成的二进制文件
+
+```bash
+file target/aarch64-unknown-linux-gnu/release/qt-rust-demo
+# 输出应显示: ELF 64-bit LSB executable, ARM aarch64, ...
+
+aarch64-linux-gnu-readelf -d target/aarch64-unknown-linux-gnu/release/qt-rust-demo
+# 检查动态链接库依赖
+```
+
+### 使用 Makefile 简化编译
+
+```bash
+# ARM32
+make build
+
+# ARM64
+make build-arm64
+```
+
+## 部署到设备
+
+### 使用 Makefile（推荐）
+
+```bash
+# ARM32 完整部署
+make deploy
+
+# ARM64 完整部署
+make deploy-arm64
+
+# 分步执行
+make build-arm64    # 编译
+make push-arm64     # 推送到设备
+make run-arm64      # 运行
+```
+
+### ARM32 手动部署
+
+#### 1. 复制二进制文件到目标设备
 
 ```bash
 scp target/armv7-unknown-linux-gnueabihf/release/qt-rust-demo user@device-ip:/home/user/
@@ -272,6 +327,32 @@ cd /home/user
 ```bash
 # 在 ARM32 设备上
 sudo apt install qt6-base-runtime qt6-declarative-runtime
+```
+
+### ARM64 手动部署
+
+ARM64 设备通常使用 Wayland 显示，需要额外的环境配置。详见 [ARM64 支持文档](docs/arm64-support.md)。
+
+#### 使用部署脚本
+
+```bash
+# 设置架构并部署
+ARCH=arm64 ./scripts/deploy-to-device.sh
+
+# 运行
+ARCH=arm64 ./scripts/run-on-device.sh
+```
+
+#### 关键环境变量
+
+ARM64 Wayland 设备需要以下环境变量：
+
+```bash
+export QT_QPA_PLATFORM=wayland
+export QT_QUICK_BACKEND=software
+export WAYLAND_WAIT=1
+export XDG_RUNTIME_DIR=/var/run
+export WAYLAND_DISPLAY=wayland-0
 ```
 
 ## 传感器数据管线架构

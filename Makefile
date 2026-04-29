@@ -1,4 +1,4 @@
-.PHONY: help build push push-qml push-config push-fonts push-no-plugins run stop clean deploy install-autostart push-no-plugins-with-build pull-db push-db pull-config
+.PHONY: help build build-arm64 push push-qml push-config push-fonts push-no-plugins push-arm64 push-arm64-no-plugins run run-arm64 stop clean deploy deploy-arm64 install-autostart push-no-plugins-with-build pull-db push-db pull-config
 
 # 脚本目录
 SCRIPTS_DIR := scripts
@@ -8,15 +8,20 @@ help:
 	@echo "Qt Rust Demo - Makefile"
 	@echo ""
 	@echo "可用命令:"
-	@echo "  make build             - 编译 ARM 版本应用"
-	@echo "  make push              - 推送应用和依赖到设备"
+	@echo "  make build             - 编译 ARM32 版本应用"
+	@echo "  make build-arm64       - 编译 ARM64 版本应用"
+	@echo "  make push              - 推送 ARM32 应用和依赖到设备"
+	@echo "  make push-arm64        - 推送 ARM64 应用和依赖到设备"
+	@echo "  make push-arm64-no-plugins - 推送 ARM64 应用（跳过 Qt 插件和共享库）"
 	@echo "  make push-qml          - 仅推送 QML 文件到设备"
 	@echo "  make push-config       - 仅推送配置文件到设备"
 	@echo "  make push-fonts        - 收集并推送字体到设备"
-	@echo "  make push-no-plugins   - 推送应用但不推送 Qt 插件和共享库"
-	@echo "  make run               - 在设备上运行应用"
+	@echo "  make push-no-plugins   - 推送 ARM32 应用（跳过 Qt 插件和共享库）"
+	@echo "  make run               - 在设备上运行 ARM32 应用"
+	@echo "  make run-arm64         - 在设备上运行 ARM64 应用"
 	@echo "  make stop              - 停止设备上的应用"
-	@echo "  make deploy            - 编译并推送到设备"
+	@echo "  make deploy            - 编译 ARM32 并推送到设备"
+	@echo "  make deploy-arm64      - 编译 ARM64 并推送到设备"
 	@echo "  make install-autostart - 安装自动启动脚本"
 	@echo "  make pull-db           - 从设备拉取数据库文件到 db/ 文件夹"
 	@echo "  make pull-config       - 从设备拉取配置文件到 dev/config/ 文件夹"
@@ -24,15 +29,30 @@ help:
 	@echo "  make clean             - 清理编译产物"
 	@echo ""
 
-# 编译 ARM 版本
+# 编译 ARM32 版本
 build:
-	@echo "=== 编译 ARM 版本 ==="
+	@echo "=== 编译 ARM32 版本 ==="
 	cargo build --release --target armv7-unknown-linux-gnueabihf -p qt-app
+
+# 编译 ARM64 版本
+build-arm64:
+	@echo "=== 编译 ARM64 版本 ==="
+	cargo build --release --target aarch64-unknown-linux-gnu -p qt-app
 
 # 推送到设备
 push:
-	@echo "=== 推送到设备 ==="
+	@echo "=== 推送到设备 (ARM32) ==="
 	@bash $(SCRIPTS_DIR)/deploy-to-device.sh
+
+# 推送 ARM64 到设备
+push-arm64:
+	@echo "=== 推送到设备 (ARM64) ==="
+	@ARCH=arm64 bash $(SCRIPTS_DIR)/deploy-to-device.sh
+
+# 推送 ARM64 到设备（不推送 Qt 平台插件和共享库）
+push-arm64-no-plugins:
+	@echo "=== 推送到设备 (ARM64, 跳过 Qt 平台插件和共享库) ==="
+	@ARCH=arm64 SKIP_LIBS=1 bash $(SCRIPTS_DIR)/deploy-to-device.sh
 
 # 仅推送 QML 文件
 push-qml:
@@ -64,20 +84,30 @@ push-no-plugins:
 push-no-plugins-with-build: build push-no-plugins run
 	@echo "=== 第一执编译、推送并运行完成 ==="
 
-# 在设备上运行
+# 在设备上运行 ARM32 应用
 run: stop
-	@echo "=== 在设备上运行应用 ==="
+	@echo "=== 在设备上运行 ARM32 应用 ==="
 	@echo "按 Ctrl+C 停止应用"
-	@adb shell "sh /data/local/tmp/qt-rust-demo/run.sh"
+	@ARCH=arm32 bash $(SCRIPTS_DIR)/run-on-device.sh
+
+# 在设备上运行 ARM64 应用
+run-arm64: stop
+	@echo "=== 在设备上运行 ARM64 应用 ==="
+	@echo "按 Ctrl+C 停止应用"
+	@ARCH=arm64 bash $(SCRIPTS_DIR)/run-on-device.sh
 
 # 停止设备上的应用
 stop:
 	@echo "=== 停止设备上的应用 ==="
 	@adb shell "killall qt-rust-demo" || echo "应用未运行或已停止"
 
-# 编译并部署
+# 编译并部署 ARM32
 deploy: build push run
-	@echo "=== 部署完成 ==="
+	@echo "=== 部署完成 (ARM32) ==="
+
+# 编译并部署 ARM64
+deploy-arm64: build-arm64 push-arm64 run
+	@echo "=== 部署完成 (ARM64) ==="
 
 # 安装自动启动
 install-autostart:

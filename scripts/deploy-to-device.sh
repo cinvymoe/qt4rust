@@ -29,18 +29,29 @@ fi
 
 echo -e "${GREEN}✓ 设备已连接${NC}"
 
-# 配置
-BINARY_PATH="target/armv7-unknown-linux-gnueabihf/release/qt-rust-demo"
-DEVICE_DIR="/userdata/local/tmp/qt-rust-demo"
+# 配置 - 支持通过环境变量 ARCH 选择架构
+# 默认为 arm32，可选 arm64
+ARCH="${ARCH:-arm32}"
+DEVICE_DIR="/data/local/tmp/qt-rust-demo"
 DEVICE_LIB_DIR="$DEVICE_DIR/lib"
 QML_DIR="qml"
 
+if [ "$ARCH" = "arm64" ]; then
+	BINARY_PATH="target/aarch64-unknown-linux-gnu/release/qt-rust-demo"
+	TARGET="aarch64-unknown-linux-gnu"
+else
+	BINARY_PATH="target/armv7-unknown-linux-gnueabihf/release/qt-rust-demo"
+	TARGET="armv7-unknown-linux-gnueabihf"
+fi
+
 # 检查二进制文件是否存在
 if [ ! -f "$BINARY_PATH" ]; then
-	echo -e "${RED}错误: 未找到编译的二进制文件${NC}"
-	echo "请先运行: cargo build --target armv7-unknown-linux-gnueabihf"
+	echo -e "${RED}错误: 未找到编译的二进制文件 (${ARCH})${NC}"
+	echo "请先运行: make build 或 make build-arm64"
 	exit 1
 fi
+
+echo -e "${GREEN}✓ 使用 ${ARCH} 架构二进制文件${NC}"
 
 echo -e "${YELLOW}创建设备目录...${NC}"
 adb shell "mkdir -p $DEVICE_DIR"
@@ -95,7 +106,7 @@ if [ -z "$SKIP_LIBS" ]; then
 	COLLECT_SCRIPT="$(dirname "$0")/collect-libs.sh"
 	if [ -f "$COLLECT_SCRIPT" ]; then
 		echo "  运行库收集脚本..."
-		bash "$COLLECT_SCRIPT" >/dev/null 2>&1
+		ARCH="$ARCH" bash "$COLLECT_SCRIPT" >/dev/null 2>&1
 
 		if [ -d "libs-to-deploy" ] && [ "$(ls -A libs-to-deploy 2>/dev/null)" ]; then
 			echo "  推送所有收集的库 (共 $(ls libs-to-deploy | wc -l) 个文件)..."
@@ -117,16 +128,29 @@ fi
 # 推送 Qt 平台插件（可选）
 if [ -z "$SKIP_QT_PLUGINS" ]; then
 	echo -e "${YELLOW}推送 Qt6 平台插件...${NC}"
-	QT_PLUGIN_DIR="/usr/lib/arm-linux-gnueabihf/qt6/plugins"
+	
+	if [ "$ARCH" = "arm64" ]; then
+		QT_PLUGIN_DIR="/usr/lib/aarch64-linux-gnu/qt6/plugins"
+		QT_QML_DIR="/usr/lib/aarch64-linux-gnu/qt6/qml"
+	else
+		QT_PLUGIN_DIR="/usr/lib/arm-linux-gnueabihf/qt6/plugins"
+		QT_QML_DIR="/usr/lib/arm-linux-gnueabihf/qt6/qml"
+	fi
 
 	if [ -d "$QT_PLUGIN_DIR/platforms" ]; then
 		adb shell "mkdir -p $DEVICE_DIR/plugins/platforms"
 
-		# 推送 linuxfb 插件
+		# 推送 linuxfb 插件 (ARM32 默认使用)
 		if [ -f "$QT_PLUGIN_DIR/platforms/libqlinuxfb.so" ]; then
 			echo "  推送 linuxfb 平台插件..."
 			adb push "$QT_PLUGIN_DIR/platforms/libqlinuxfb.so" "$DEVICE_DIR/plugins/platforms/"
 			echo -e "${GREEN}✓ linuxfb 插件已推送${NC}"
+		fi
+
+		# 推送 Wayland 插件 (ARM64 使用)
+		if [ -f "$QT_PLUGIN_DIR/platforms/libqwayland-generic.so" ]; then
+			echo "  推送 Wayland 平台插件..."
+			adb push "$QT_PLUGIN_DIR/platforms/libqwayland-generic.so" "$DEVICE_DIR/plugins/platforms/" 2>/dev/null || true
 		fi
 
 		# 推送其他可能有用的插件
@@ -136,6 +160,14 @@ if [ -z "$SKIP_QT_PLUGINS" ]; then
 				adb push "$QT_PLUGIN_DIR/platforms/$plugin" "$DEVICE_DIR/plugins/platforms/" 2>/dev/null || true
 			fi
 		done
+	fi
+
+	# 推送 Wayland shell 集成插件 (ARM64 Wayland 需要)
+	if [ -d "$QT_PLUGIN_DIR/wayland-shell-integration" ]; then
+		echo -e "${YELLOW}推送 Wayland shell 集成插件...${NC}"
+		adb shell "mkdir -p $DEVICE_DIR/plugins/wayland-shell-integration"
+		adb push "$QT_PLUGIN_DIR/wayland-shell-integration/." "$DEVICE_DIR/plugins/wayland-shell-integration/" 2>/dev/null || true
+		echo -e "${GREEN}✓ Wayland shell 插件已推送${NC}"
 	fi
 
 	# 推送图像格式插件（SVG 支持）
@@ -177,7 +209,14 @@ fi
 
 # 推送 QML 模块
 echo -e "${YELLOW}推送 QML 模块...${NC}"
-QT_QML_DIR="/usr/lib/arm-linux-gnueabihf/qt6/qml"
+
+if [ -z "$QT_QML_DIR" ]; then
+	if [ "$ARCH" = "arm64" ]; then
+		QT_QML_DIR="/usr/lib/aarch64-linux-gnu/qt6/qml"
+	else
+		QT_QML_DIR="/usr/lib/arm-linux-gnueabihf/qt6/qml"
+	fi
+fi
 
 if [ -d "$QT_QML_DIR" ]; then
 	adb shell "mkdir -p $DEVICE_DIR/qml_modules"
@@ -227,17 +266,17 @@ fi
 echo -e "${YELLOW}创建启动脚本...${NC}"
 cat >/tmp/run-qt-rust-demo.sh <<'EOF'
 #!/bin/sh
-cd /userdata/local/tmp/qt-rust-demo
-export LD_LIBRARY_PATH=/userdata/local/tmp/qt-rust-demo/lib:$LD_LIBRARY_PATH
-export QT_PLUGIN_PATH=/userdata/local/tmp/qt-rust-demo/plugins
-export QT_QPA_PLATFORM_PLUGIN_PATH=/userdata/local/tmp/qt-rust-demo/plugins
+cd /data/local/tmp/qt-rust-demo
+export LD_LIBRARY_PATH=/data/local/tmp/qt-rust-demo/lib:$LD_LIBRARY_PATH
+export QT_PLUGIN_PATH=/data/local/tmp/qt-rust-demo/plugins
+export QT_QPA_PLATFORM_PLUGIN_PATH=/data/local/tmp/qt-rust-demo/plugins
 export QT_QPA_PLATFORM=linuxfb:fb=/dev/fb0
-export QML2_IMPORT_PATH=/userdata/local/tmp/qt-rust-demo/qml_modules
+export QML2_IMPORT_PATH=/data/local/tmp/qt-rust-demo/qml_modules
 export QT_QPA_FB_DISABLE_INPUT=0
 export QT_IM_MODULE=qtvirtualkeyboard
 export QT_VIRTUALKEYBOARD_DESKTOP_DISABLE=0
-export FONTCONFIG_FILE=/userdata/local/tmp/qt-rust-demo/fonts/fonts.conf
-export FONTCONFIG_PATH=/userdata/local/tmp/qt-rust-demo/fonts
+export FONTCONFIG_FILE=/data/local/tmp/qt-rust-demo/fonts/fonts.conf
+export FONTCONFIG_PATH=/data/local/tmp/qt-rust-demo/fonts
 # 将 Qt VirtualKeyboard 用户数据目录重定向到可写路径
 # 避免 "Cannot create directory for user data /root/.config/qtvirtualkeyboard"
 export XDG_CONFIG_HOME=/tmp/qt-app-config
