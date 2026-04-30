@@ -1,4 +1,4 @@
-.PHONY: help build build-arm64 push push-qml push-config push-fonts push-no-plugins push-arm64 push-arm64-no-plugins run run-arm64 stop clean deploy deploy-arm64 install-autostart push-no-plugins-with-build pull-db push-db pull-config
+.PHONY: help build build-arm64 build-local push push-qml push-config push-fonts push-no-plugins push-arm64 push-arm64-no-plugins run run-arm64 run-local stop clean deploy deploy-arm64 install-autostart push-no-plugins-with-build pull-db push-db pull-config
 
 # 脚本目录
 SCRIPTS_DIR := scripts
@@ -10,6 +10,7 @@ help:
 	@echo "可用命令:"
 	@echo "  make build             - 编译 ARM32 版本应用"
 	@echo "  make build-arm64       - 编译 ARM64 版本应用"
+	@echo "  make build-local       - 编译本地 X86 版本应用"
 	@echo "  make push              - 推送 ARM32 应用和依赖到设备"
 	@echo "  make push-arm64        - 推送 ARM64 应用和依赖到设备"
 	@echo "  make push-arm64-no-plugins - 推送 ARM64 应用（跳过 Qt 插件和共享库）"
@@ -19,6 +20,7 @@ help:
 	@echo "  make push-no-plugins   - 推送 ARM32 应用（跳过 Qt 插件和共享库）"
 	@echo "  make run               - 在设备上运行 ARM32 应用"
 	@echo "  make run-arm64         - 在设备上运行 ARM64 应用"
+	@echo "  make run-local         - 在本地运行 X86 应用（X11 转发）"
 	@echo "  make stop              - 停止设备上的应用"
 	@echo "  make deploy            - 编译 ARM32 并推送到设备"
 	@echo "  make deploy-arm64      - 编译 ARM64 并推送到设备"
@@ -38,6 +40,11 @@ build:
 build-arm64:
 	@echo "=== 编译 ARM64 版本 ==="
 	cargo build --release --target aarch64-unknown-linux-gnu -p qt-app
+
+# 编译本地 X86 版本
+build-local:
+	@echo "=== 编译本地 X86 版本 ==="
+	cargo build -p qt-app
 
 # 推送到设备
 push:
@@ -95,6 +102,13 @@ run-arm64: stop
 	@echo "=== 在设备上运行 ARM64 应用 ==="
 	@echo "按 Ctrl+C 停止应用"
 	@ARCH=arm64 bash $(SCRIPTS_DIR)/run-on-device.sh
+
+# 在本地运行 X86 应用（X11 转发）
+run-local:
+	@echo "=== 在本地运行 X86 应用 ==="
+	@echo "使用 DISPLAY=$(or $(DISPLAY),localhost:10.0)"
+	@echo "按 Ctrl+C 停止应用"
+	@DISPLAY=$(or $(DISPLAY),localhost:10.0) cargo run -p qt-app
 
 # 停止设备上的应用
 stop:
