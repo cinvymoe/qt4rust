@@ -1,6 +1,8 @@
 // Application 应用程序入口 - 封装 Qt 应用初始化逻辑
 
 use crate::viewmodel_manager;
+use crate::i18n::create_translation_provider;
+use crate::translation_bridge::set_global_translation_provider;
 use cxx_qt_lib::{QGuiApplication, QQmlApplicationEngine, QUrl};
 use std::fmt;
 
@@ -27,6 +29,23 @@ impl fmt::Display for ApplicationError {
 
 impl std::error::Error for ApplicationError {}
 
+fn init_i18n() {
+    use std::path::PathBuf;
+    
+    let config_dir = PathBuf::from("config");
+    let translations_dir = PathBuf::from("qml/assets/translations");
+    
+    match create_translation_provider(config_dir, translations_dir) {
+        Ok(provider) => {
+            set_global_translation_provider(provider);
+            tracing::info!("i18n system initialized successfully");
+        }
+        Err(e) => {
+            tracing::error!("Failed to initialize i18n: {}", e);
+        }
+    }
+}
+
 /// Application 结构体 - 管理应用程序生命周期
 pub struct Application {
     qt_app: cxx::UniquePtr<QGuiApplication>,
@@ -39,7 +58,8 @@ impl Application {
     pub fn new() -> Result<Self, ApplicationError> {
         tracing::info!("Initializing Qt application...");
 
-        // 初始化 ViewModel 管理器
+        init_i18n();
+
         viewmodel_manager::init_viewmodel_manager();
 
         // 创建 Qt 应用程序实例

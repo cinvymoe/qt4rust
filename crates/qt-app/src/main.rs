@@ -9,6 +9,7 @@ mod history_viewmodel;
 mod monitoring_viewmodel;
 mod settings_viewmodel;
 mod viewmodel_manager;
+mod translation_bridge;
 
 // i18n 国际化模块
 mod i18n;

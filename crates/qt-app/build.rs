@@ -51,7 +51,8 @@ fn main() {
             .qml_file("qml/components/dialogs/CustomMultiplierDialog.qml")
             .qml_file("qml/components/dialogs/FileSelectDialog.qml")
             // 样式系统
-            .qml_file("qml/styles/Theme.qml"),
+            .qml_file("qml/styles/Theme.qml")
+            .qml_file("qml/i18n/Tr.qml"),
     )
     // 添加图片资源到 Qt 资源系统
     .qrc_resources(vec![
@@ -87,6 +88,8 @@ fn main() {
         "qml/assets/images/icon-email.svg",
         "qml/assets/images/icon-location.svg",
         "qml/assets/images/icon-boom-length.svg",
+        "qml/assets/translations/zh-CN.ftl",
+        "qml/assets/translations/en-US.ftl",
     ])
     .qt_module("Network")
     .file("src/monitoring_viewmodel.rs")
@@ -98,5 +101,6 @@ fn main() {
     .file("src/radius_calibration_viewmodel.rs")
     .file("src/alarm_threshold_viewmodel.rs")
     .file("src/moment_curve_viewmodel.rs")
+    .file("src/translation_bridge.rs")
     .build();
 }
