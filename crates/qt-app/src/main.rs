@@ -10,6 +10,9 @@ mod monitoring_viewmodel;
 mod settings_viewmodel;
 mod viewmodel_manager;
 
+// i18n 国际化模块
+mod i18n;
+
 // Settings ViewModels (在 src/ 根目录以满足 cxx-qt 构建限制)
 mod alarm_threshold_viewmodel;
 mod angle_calibration_viewmodel;
