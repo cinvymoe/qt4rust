@@ -357,11 +357,12 @@ Item {
                                 spacing: Theme.spacingSmall
                                 
                                 Text {
-                                    text: "报警模式"
+                                    text: tr.t("alarmThreshold.mode")
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textSecondary
                                 }
-                                
+                                 
+
                                 Row {
                                     spacing: Theme.spacingMedium
                                     
@@ -500,11 +501,12 @@ Item {
                                 spacing: Theme.spacingSmall
                                 
                                 Text {
-                                    text: "报警模式"
+                                    text: tr.t("alarmThreshold.mode")
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textSecondary
                                 }
-                                
+                                 
+
                                 Row {
                                     spacing: Theme.spacingMedium
                                     
