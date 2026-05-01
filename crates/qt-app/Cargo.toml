@@ -28,6 +28,11 @@ chrono = "0.4"
 # 日志依赖
 tracing = "0.1"
 
+# i18n support
+fluent = "0.16"
+fluent-bundle = "0.16"
+fluent-syntax = "0.12"
+
 [build-dependencies]
 cxx-qt-build = { version = "0.8", features = ["link_qt_object_files"] }
 
