@@ -7,9 +7,13 @@ import "../components/controls"
 import "../components/layouts"
 import "../components/dialogs"  // 导入对话框组件
 import "../styles"
+import "../i18n"
 
 Item {
     id: monitoringView
+    
+    // i18n 翻译对象
+    Tr { id: tr }
     
     // 顶部栏显示状态（从父组件传递）
     property bool headerVisible: true
@@ -112,9 +116,9 @@ Item {
         monitoringDataModel.append({
             type: "dataCard",
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-weight.png",
-            label: "当前载荷",
-            unit: "吨",
-            description: "额定载荷",
+            label: Tr.t("monitoring.currentLoad"),
+            unit: Tr.t("monitoring.unit.ton"),
+            description: Tr.t("monitoring.ratedLoad"),
             showProgress: true,
             value: currentLoad,
             maxValue: ratedLoad
@@ -123,9 +127,9 @@ Item {
         monitoringDataModel.append({
             type: "dataCard",
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-radius.png",
-            label: "工作半径",
-            unit: "米",
-            description: "水平工作距离",
+            label: Tr.t("monitoring.workingRadius"),
+            unit: Tr.t("monitoring.unit.meter"),
+            description: Tr.t("monitoring.horizontalDistance"),
             showProgress: false,
             value: workingRadius,
             maxValue: 0.0
@@ -134,9 +138,9 @@ Item {
         monitoringDataModel.append({
             type: "dataCard",
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-angle.png",
-            label: "吊臂角度",
-            unit: "度",
-            description: "与水平面夹角",
+            label: Tr.t("monitoring.boomAngle"),
+            unit: Tr.t("monitoring.unit.degree"),
+            description: Tr.t("monitoring.angleWithHorizontal"),
             showProgress: false,
             value: boomAngle,
             maxValue: 0.0
@@ -144,7 +148,7 @@ Item {
 
         monitoringDataModel.append({
             type: "boomLength",
-            label: "臂长",
+            label: Tr.t("monitoring.boomLength"),
             value: boomLength
         })
     }
@@ -179,7 +183,7 @@ Item {
                 }
                 
                 Text {
-                    text: "传感器连接断开"
+                    text: Tr.t("monitoring.sensorDisconnected")
                     font.pixelSize: Theme.fontSizeMedium
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textPrimary
@@ -240,14 +244,14 @@ Item {
                     isAngleAlarm: viewModel.is_angle_alarm
                     // 根据状态显示不同的消息：角度报警、危险报警或力矩预警
                     title: {
-                        if (viewModel.is_angle_alarm) return "角度报警"
-                        return viewModel.is_danger ? "危险报警" : "力矩预警"
+                        if (viewModel.is_angle_alarm) return Tr.t("danger.title.angleAlarm")
+                        return viewModel.is_danger ? Tr.t("danger.title.danger") : Tr.t("danger.title.warning")
                     }
                     message: {
-                        if (viewModel.is_angle_alarm) return "吊臂角度超限！请立即调整角度"
+                        if (viewModel.is_angle_alarm) return Tr.t("danger.message.angleAlarm")
                         return viewModel.is_danger ?
-                            "力矩严重超限！立即停止作业" :
-                            "力矩接近上限，请注意控制载荷"
+                            Tr.t("danger.message.danger") :
+                            Tr.t("danger.message.warning")
                     }
 
                     Behavior on visible {
@@ -298,14 +302,14 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                             }
                             
-                            Text {
-                                text: "起重机臂架状态"
-                                font.pixelSize: Theme.fontSizeLarge
-                                font.family: Theme.fontFamilyDefault
-                                font.weight: Font.Medium
-                                color: Theme.textPrimary
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
+Text {
+                                 text: Tr.t("danger.craneStatus")
+                                 font.pixelSize: Theme.fontSizeLarge
+                                 font.family: Theme.fontFamilyDefault
+                                 font.weight: Font.Medium
+                                 color: Theme.textPrimary
+                                 anchors.verticalCenter: parent.verticalCenter
+                             }
                         }
                         
                         // 臂架图
@@ -371,7 +375,7 @@ Item {
                             unit: model.unit || ""
                             description: {
                                 if (model.showProgress) {
-                                    return "额定: " + (model.maxValue || 0).toFixed(1) + (model.unit || "")
+                                    return Tr.t("common.rated") + ": " + (model.maxValue || 0).toFixed(1) + (model.unit || "")
                                 }
                                 return model.description || ""
                             }

@@ -9,6 +9,7 @@ import QtQuick.VirtualKeyboard
 import "views"
 import "components/layouts"
 import "styles"
+import "i18n"
 
 Window {
     id: root
@@ -17,6 +18,9 @@ Window {
     visible: true
     title: "Crane Monitoring System"
     color: Theme.darkBackground
+    
+    // i18n 翻译对象
+    Tr { id: tr }
     
     // 导航栏显示状态
     property bool navigationVisible: true
@@ -163,7 +167,7 @@ Window {
             
             // 应用标题
             Text {
-                text: "起重机力矩监测系统"
+                text: Tr.t("main.title")
                 font.pixelSize: Theme.fontSizeXXLarge
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textPrimary
@@ -181,7 +185,7 @@ Window {
             
             // 副标题
             Text {
-                text: "Crane Monitoring System"
+                text: Tr.t("main.subtitle")
                 font.pixelSize: Theme.fontSizeMedium
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
