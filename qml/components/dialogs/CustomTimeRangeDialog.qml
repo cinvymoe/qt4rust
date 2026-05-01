@@ -3,9 +3,12 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../../styles"
+import "../../i18n"
 
 Dialog {
     id: root
+    
+    Tr { id: tr }
     
     // 对外暴露的属性
     property string startTime: ""
@@ -70,7 +73,7 @@ Dialog {
             
             // 主标题
             Text {
-                text: "时间筛选设置"
+                text: tr.t("dialog.timeRange")
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.bold: true
@@ -79,7 +82,7 @@ Dialog {
             
             // 副标题
             Text {
-                text: "选择自定义时间范围以筛选曲线数据"
+                text: tr.t("dialog.timeRangeDesc")
                 font.pixelSize: Theme.fontSizeSmall
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
@@ -100,7 +103,7 @@ Dialog {
                 spacing: Theme.spacingSmall
                 
                 Text {
-                    text: "开始时间"
+                    text: tr.t("dialog.startTime")
                     font.pixelSize: Theme.fontSizeMedium
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textSecondary
@@ -133,7 +136,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: startYearCombo.displayText + "年"
+                            text: startYearCombo.displayText + tr.t("timeUnit.year")
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -150,7 +153,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: modelData + "年"
+                                text: modelData + tr.t("timeUnit.year")
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -200,7 +203,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: startMonthCombo.displayText + "月"
+                            text: startMonthCombo.displayText + tr.t("timeUnit.month")
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -217,7 +220,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: modelData + "月"
+                                text: modelData + tr.t("timeUnit.month")
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -273,7 +276,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: startDayCombo.displayText + "日"
+                            text: startDayCombo.displayText + tr.t("timeUnit.day")
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -290,7 +293,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: modelData + "日"
+                                text: modelData + tr.t("timeUnit.day")
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -346,7 +349,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: (startHourCombo.displayText < 10 ? "0" : "") + startHourCombo.displayText + "时"
+                            text: (startHourCombo.displayText < 10 ? "0" : "") + startHourCombo.displayText + tr.t("timeUnit.hour")
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -363,7 +366,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: (modelData < 10 ? "0" : "") + modelData + "时"
+                                text: (modelData < 10 ? "0" : "") + modelData + tr.t("timeUnit.hour")
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -419,7 +422,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: (startMinuteCombo.displayText < 10 ? "0" : "") + startMinuteCombo.displayText + "分"
+                            text: (startMinuteCombo.displayText < 10 ? "0" : "") + startMinuteCombo.displayText + tr.t("timeUnit.minute")
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -436,7 +439,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: (modelData < 10 ? "0" : "") + modelData + "分"
+                                text: (modelData < 10 ? "0" : "") + modelData + tr.t("timeUnit.minute")
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -485,7 +488,7 @@ Dialog {
                 spacing: Theme.spacingSmall
                 
                 Text {
-                    text: "结束时间（可选）"
+                    text: tr.t("dialog.endTime")
                     font.pixelSize: Theme.fontSizeMedium
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textSecondary
@@ -518,7 +521,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: endYearCombo.displayText + "年"
+                            text: endYearCombo.displayText + tr.t("timeUnit.year")
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -535,7 +538,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: modelData + "年"
+                                text: modelData + tr.t("timeUnit.year")
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -585,7 +588,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: endMonthCombo.displayText + "月"
+                            text: endMonthCombo.displayText + tr.t("timeUnit.month")
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -602,7 +605,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: modelData + "月"
+                                text: modelData + tr.t("timeUnit.month")
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -658,7 +661,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: endDayCombo.displayText + "日"
+                            text: endDayCombo.displayText + tr.t("timeUnit.day")
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -675,7 +678,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: modelData + "日"
+                                text: modelData + tr.t("timeUnit.day")
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -731,7 +734,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: (endHourCombo.displayText < 10 ? "0" : "") + endHourCombo.displayText + "时"
+                            text: (endHourCombo.displayText < 10 ? "0" : "") + endHourCombo.displayText + tr.t("timeUnit.hour")
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -748,7 +751,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: (modelData < 10 ? "0" : "") + modelData + "时"
+                                text: (modelData < 10 ? "0" : "") + modelData + tr.t("timeUnit.hour")
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -804,7 +807,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: (endMinuteCombo.displayText < 10 ? "0" : "") + endMinuteCombo.displayText + "分"
+                            text: (endMinuteCombo.displayText < 10 ? "0" : "") + endMinuteCombo.displayText + tr.t("timeUnit.minute")
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -821,7 +824,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: (modelData < 10 ? "0" : "") + modelData + "分"
+                                text: (modelData < 10 ? "0" : "") + modelData + tr.t("timeUnit.minute")
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -871,7 +874,7 @@ Dialog {
             // 重置筛选按钮
             Button {
                 id: resetButton
-                text: "重置筛选"
+                text: tr.t("dialog.resetFilter")
                 implicitWidth: 120
                 implicitHeight: 44
                 
@@ -918,7 +921,7 @@ Dialog {
             // 应用筛选按钮
             Button {
                 id: applyButton
-                text: "应用筛选"
+                text: tr.t("dialog.applyFilter")
                 implicitWidth: 120
                 implicitHeight: 44
                 

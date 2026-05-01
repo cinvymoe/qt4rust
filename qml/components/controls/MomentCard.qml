@@ -2,9 +2,12 @@
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
+import "../../i18n"
 
 Rectangle {
     id: momentCard
+    
+    Tr { id: tr }
     
     property real percentage: 94.8
     property real warningThreshold: 90.0
@@ -38,7 +41,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: "力矩百分比"
+                    text: tr.t("moment.percentage")
                     font.pixelSize: Theme.fontSizeNormal
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textSecondary
@@ -57,9 +60,9 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 
                 Text {
-                    text: momentCard.percentage >= momentCard.dangerThreshold ? "超限危险" : 
-                          momentCard.percentage >= momentCard.warningThreshold ? "预警状态" : 
-                          "正常"
+                    text: momentCard.percentage >= momentCard.dangerThreshold ? tr.t("moment.danger") : 
+                          momentCard.percentage >= momentCard.warningThreshold ? tr.t("moment.warning") : 
+                          tr.t("alarm.level.normal")
                     font.pixelSize: Theme.fontSizeSmall
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textPrimary
@@ -133,7 +136,7 @@ Rectangle {
                     }
                     
                     Text {
-                        text: "预警 " + momentCard.warningThreshold.toFixed(0) + "%"
+                        text: tr.t("moment.warning") + " " + momentCard.warningThreshold.toFixed(0) + "%"
                         font.pixelSize: Theme.fontSizeSmall
                         font.family: Theme.fontFamilyDefault
                         color: Theme.warningColor
@@ -145,7 +148,7 @@ Rectangle {
                     }
                     
                     Text {
-                        text: "危险 " + momentCard.dangerThreshold.toFixed(0) + "%"
+                        text: tr.t("moment.danger") + " " + momentCard.dangerThreshold.toFixed(0) + "%"
                         font.pixelSize: Theme.fontSizeSmall
                         font.family: Theme.fontFamilyDefault
                         color: Theme.dangerLight

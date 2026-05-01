@@ -3,9 +3,12 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../../styles"
+import "../../i18n"
 
 Dialog {
     id: root
+    
+    Tr { id: tr }
     
     // 对外属性
     property real currentMultiplier: 1.0
@@ -68,7 +71,7 @@ Dialog {
             
             // 主标题
             Text {
-                text: "选择自定义倍率"
+                text: tr.t("dialog.selectMultiplier")
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.bold: true
@@ -77,7 +80,7 @@ Dialog {
             
             // 副标题
             Text {
-                text: "请选择标定倍率（0.5 - 10.0）"
+                text: tr.t("dialog.selectMultiplierDesc")
                 font.pixelSize: Theme.fontSizeSmall
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
@@ -158,7 +161,7 @@ Dialog {
                 }
                 
                 contentItem: Text {
-                    text: "取消"
+                    text: tr.t("dialog.cancel")
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textPrimary
                     horizontalAlignment: Text.AlignHCenter
@@ -178,7 +181,7 @@ Dialog {
                 }
                 
                 contentItem: Text {
-                    text: "确定"
+                    text: tr.t("dialog.confirm")
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textPrimary
                     horizontalAlignment: Text.AlignHCenter

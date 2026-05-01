@@ -191,6 +191,7 @@ dialog.applyFilter = Apply Filter
 dialog.importRatedLoad = Import Rated Load Table
 dialog.importRatedLoadDesc = Please enter CSV file path
 dialog.importHint = Tip: You can use relative or absolute path
+dialog.info = Info
 
 ## Filter Bar
 filter.history = History:
@@ -211,6 +212,10 @@ timeRange.label = Time Range:
 systemStatus.sensorConnection = Sensor Connection Status
 systemStatus.systemInfo = System Information
 systemStatus.network = Network & Communication
+
+## Home View
+home.placeholder = Click to test virtual keyboard...
+home.inputContent = Input content
 
 ## Common
 common.version = v1.0.0

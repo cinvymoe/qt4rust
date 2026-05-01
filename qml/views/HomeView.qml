@@ -3,9 +3,12 @@ import QtQuick
 import QtQuick.Controls
 import qt.rust.demo
 import "../components/controls"
+import "../i18n"
 
 Item {
     id: homeView
+    
+    Tr { id: tr }
     
     property alias counter: counter
     
@@ -47,7 +50,7 @@ Item {
             id: textField
             anchors.horizontalCenter: parent.horizontalCenter
             width: 400
-            placeholderText: "点击测试虚拟键盘..."
+            placeholderText: tr.t("home.placeholder")
             font.pixelSize: 20
             
             onActiveFocusChanged: {
@@ -59,7 +62,7 @@ Item {
         
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: "输入内容: " + textField.text
+            text: tr.t("home.inputContent") + ": " + textField.text
             font.pixelSize: 16
             color: "#666"
         }

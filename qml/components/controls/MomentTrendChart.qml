@@ -1,9 +1,12 @@
 // MomentTrendChart.qml - 力矩百分比趋势图组件
 import QtQuick
 import "../../styles"
+import "../../i18n"
 
 Rectangle {
     id: root
+    
+    Tr { id: tr }
     
     // 公开属性
     property var timeLabels: []
@@ -31,7 +34,7 @@ Rectangle {
             }
             
             Text {
-                text: "力矩百分比趋势"
+                text: tr.t("chart.momentTrend")
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.weight: Font.Medium
@@ -165,7 +168,7 @@ Rectangle {
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: parent.height * 0.25
-                text: "预警线 75%"
+                text: tr.t("moment.warning") + " 75%"
                 font.pixelSize: Theme.fontSizeTiny
                 font.family: Theme.fontFamilyDefault
                 color: Theme.warningColor
@@ -175,7 +178,7 @@ Rectangle {
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: parent.height * 0.1
-                text: "危险线 90%"
+                text: tr.t("moment.danger") + " 90%"
                 font.pixelSize: Theme.fontSizeTiny
                 font.family: Theme.fontFamilyDefault
                 color: Theme.dangerColor

@@ -4,9 +4,13 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import "../../styles"
 import "../dialogs"
+import "../../i18n"
 
 RowLayout {
     id: timeRangeFilter
+    
+    Tr { id: tr }
+    
     spacing: Theme.spacingSmall
     
     // 对外暴露的属性
@@ -20,7 +24,7 @@ RowLayout {
     signal customRangeChanged(string startTime, string endTime)
     
     Text {
-        text: "时间范围:"
+        text: tr.t("timeRange.label")
         font.pixelSize: Theme.fontSizeMedium
         font.family: Theme.fontFamilyDefault
         color: Theme.textSecondary
@@ -28,7 +32,7 @@ RowLayout {
     
     Button {
         id: oneHourButton
-        text: "1小时"
+        text: tr.t("timeRange.1hour")
         background: Rectangle {
             color: timeRangeFilter.selectedRange === "1h" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -51,7 +55,7 @@ RowLayout {
     
     Button {
         id: twoHoursButton
-        text: "2小时"
+        text: tr.t("timeRange.2hours")
         background: Rectangle {
             color: timeRangeFilter.selectedRange === "2h" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -74,7 +78,7 @@ RowLayout {
     
     Button {
         id: fiveHoursButton
-        text: "5小时"
+        text: tr.t("timeRange.5hours")
         background: Rectangle {
             color: timeRangeFilter.selectedRange === "5h" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -97,7 +101,7 @@ RowLayout {
     
     Button {
         id: customButton
-        text: "自定义"
+        text: tr.t("timeRange.custom")
         background: Rectangle {
             color: timeRangeFilter.selectedRange === "custom" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium

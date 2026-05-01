@@ -5,9 +5,12 @@ import QtQuick.Layouts
 import qt.rust.demo
 import "../styles"
 import "../components/controls"
+import "../i18n"
 
 Item {
     id: alarmRecordView
+    
+    Tr { id: tr }
     
     // HistoryViewModel 实例
     HistoryViewModel {
@@ -79,14 +82,14 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: "报警记录"
+                            text: tr.t("alarm.title")
                             font.pixelSize: Theme.fontSizeXLarge
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
                         }
                         
                         Text {
-                            text: "系统报警历史与统计分析"
+                            text: tr.t("alarm.subtitle")
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textTertiary
@@ -113,7 +116,7 @@ Item {
                         
                         // 刷新按钮
                         Button {
-                            text: "刷新"
+                            text: tr.t("chart.refresh")
                             implicitWidth: 60
                             implicitHeight: 32
                             
@@ -187,7 +190,7 @@ Item {
                                     }
                                     
                                     Text {
-                                        text: "总报警次数"
+                                        text: tr.t("alarm.totalCount")
                                         font.pixelSize: Theme.fontSizeMedium
                                         font.family: Theme.fontFamilyDefault
                                         color: Theme.textTertiary
@@ -228,7 +231,7 @@ Item {
                                     }
                                     
                                     Text {
-                                        text: "预警次数"
+                                        text: tr.t("alarm.warningCount")
                                         font.pixelSize: Theme.fontSizeMedium
                                         font.family: Theme.fontFamilyDefault
                                         color: Theme.textTertiary
@@ -269,7 +272,7 @@ Item {
                                     }
                                     
                                     Text {
-                                        text: "危险次数"
+                                        text: tr.t("alarm.dangerCount")
                                         font.pixelSize: Theme.fontSizeMedium
                                         font.family: Theme.fontFamilyDefault
                                         color: Theme.textTertiary
@@ -303,7 +306,7 @@ Item {
                             spacing: Theme.spacingMedium - 4
                             
                             Text {
-                                text: "报警级别说明"
+                                text: tr.t("alarm.levels")
                                 font.pixelSize: Theme.fontSizeNormal
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -338,14 +341,14 @@ Item {
                                             spacing: 0
                                             
                                             Text {
-                                                text: "正常"
+                                                text: tr.t("alarm.level.normal")
                                                 font.pixelSize: Theme.fontSizeMedium
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.successColor
                                             }
                                             
                                             Text {
-                                                text: "力矩 0-75%"
+                                                text: tr.t("alarm.level.normalDesc")
                                                 font.pixelSize: Theme.fontSizeSmall
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.textTertiary
@@ -379,14 +382,14 @@ Item {
                                             spacing: 0
                                             
                                             Text {
-                                                text: "预警"
+                                                text: tr.t("alarm.level.warning")
                                                 font.pixelSize: Theme.fontSizeMedium
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.warningColor
                                             }
                                             
                                             Text {
-                                                text: "力矩 75-90%"
+                                                text: tr.t("alarm.level.warningDesc")
                                                 font.pixelSize: Theme.fontSizeSmall
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.textTertiary
@@ -420,14 +423,14 @@ Item {
                                             spacing: 0
                                             
                                             Text {
-                                                text: "危险"
+                                                text: tr.t("alarm.level.danger")
                                                 font.pixelSize: Theme.fontSizeMedium
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.dangerLight
                                             }
                                             
                                             Text {
-                                                text: "力矩 ≥90%"
+                                                text: tr.t("alarm.level.dangerDesc")
                                                 font.pixelSize: Theme.fontSizeSmall
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.textTertiary

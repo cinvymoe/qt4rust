@@ -2,9 +2,12 @@
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
+import "../../i18n"
 
 Rectangle {
     id: root
+    
+    Tr { id: tr }
     
     // 公开属性
     property real boomLength: 0.0    // 臂长（米）
@@ -40,7 +43,7 @@ Rectangle {
             }
             
             Text {
-                text: "臂长"
+                text: tr.t("boomLength.title")
                 font.pixelSize: Theme.fontSizeSmall
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
@@ -60,7 +63,7 @@ Rectangle {
             }
             
             Text {
-                text: "米"
+                text: tr.t("boomLength.unit")
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textTertiary
@@ -71,7 +74,7 @@ Rectangle {
         
         // 描述文本
         Text {
-            text: "吊臂总长度"
+            text: tr.t("boomLength.description")
             font.pixelSize: Theme.fontSizeTiny
             font.family: Theme.fontFamilyDefault
             color: Theme.textTertiary

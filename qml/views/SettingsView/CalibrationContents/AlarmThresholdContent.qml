@@ -5,6 +5,12 @@ import QtQuick.Layouts
 import qt.rust.demo
 import "../../../styles"
 import "../../../components/controls"
+import "../../../i18n"
+
+Item {
+    id: root
+
+    Tr { id: tr }
 
 Item {
     id: root

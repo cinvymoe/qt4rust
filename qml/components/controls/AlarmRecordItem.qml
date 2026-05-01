@@ -2,9 +2,12 @@
 import QtQuick
 import QtQuick.Layouts
 import "../../styles"
+import "../../i18n"
 
 Rectangle {
     id: root
+    
+    Tr { id: tr }
     
     // 公开属性
     property string alarmType: "warning"  // "warning" 或 "danger"
@@ -100,7 +103,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: "力矩: " + root.momentValue
+                    text: tr.t("alarm.momentValue") + ": " + root.momentValue
                     font.pixelSize: Theme.fontSizeSmall
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textTertiary

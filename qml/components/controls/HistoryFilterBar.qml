@@ -4,9 +4,13 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import "../../styles"
 import "../dialogs"
+import "../../i18n"
 
 RowLayout {
     id: historyFilterBar
+    
+    Tr { id: tr }
+    
     spacing: Theme.spacingSmall
     
     // 对外暴露的属性
@@ -17,7 +21,7 @@ RowLayout {
     signal customTimeRangeChanged(int startTimestamp, int endTimestamp)
     
     Text {
-        text: "历史记录:"
+        text: tr.t("filter.history")
         font.pixelSize: Theme.fontSizeMedium
         font.family: Theme.fontFamilyDefault
         color: Theme.textSecondary
@@ -25,7 +29,7 @@ RowLayout {
     
     Button {
         id: allButton
-        text: "全部"
+        text: tr.t("filter.all")
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "all" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -48,7 +52,7 @@ RowLayout {
     
     Button {
         id: todayButton
-        text: "今天"
+        text: tr.t("filter.today")
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "today" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -71,7 +75,7 @@ RowLayout {
     
     Button {
         id: weekButton
-        text: "最近7天"
+        text: tr.t("filter.last7days")
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "week" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -94,7 +98,7 @@ RowLayout {
     
     Button {
         id: monthButton
-        text: "最近30天"
+        text: tr.t("filter.last30days")
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "month" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -117,7 +121,7 @@ RowLayout {
     
     Button {
         id: customButton
-        text: "自定义"
+        text: tr.t("filter.custom")
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "custom" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium

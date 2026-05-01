@@ -1,13 +1,16 @@
 // InfoDialog.qml - 信息对话框组件
 import QtQuick
 import QtQuick.Controls
+import "../../i18n"
 
 Dialog {
     id: infoDialog
     
     property string message: ""
     
-    title: "信息"
+    Tr { id: tr }
+    
+    title: tr.t("dialog.info")
     modal: true
     standardButtons: Dialog.Ok
     

@@ -4,11 +4,14 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import "../styles"
 import "SettingsView"
+import "../../i18n"
 
 Item {
     id: settingsView
     
     property int currentTabIndex: 0
+    
+    Tr { id: tr }
     
     Rectangle {
         anchors.fill: parent
@@ -68,14 +71,15 @@ Item {
                         
                         Repeater {
                             model: [
-                                {text: "系统状态", icon: "icon-system-status.svg"},
-                                {text: "参数校准", icon: "icon-calibration.svg"},
-                                {text: "力矩曲线", icon: "icon-moment-curve.svg"},
-                                {text: "关于系统", icon: "icon-about-system.svg"}
+                                {text: tr.t("settings.systemStatus"), icon: "icon-system-status.svg"},
+                                {text: tr.t("settings.calibration"), icon: "icon-calibration.svg"},
+                                {text: tr.t("settings.momentCurve"), icon: "icon-moment-curve.svg"},
+                                {text: tr.t("settings.about"), icon: "icon-about-system.svg"},
+                                {text: tr.t("settings.language"), icon: "icon-language.svg"}
                             ]
                             
                             Rectangle {
-                                width: parent.width / 4
+                                width: parent.width / 5
                                 height: Math.max(70, 92.667)
                                 color: currentTabIndex === index ? Theme.darkBackground : "transparent"
                                 
@@ -145,6 +149,12 @@ Item {
                 
                 // Tab 3: 关于系统
                 AboutSystemView {}
+                
+                // Tab 4: 语言设置
+                LanguageView {}
+                
+                // Tab 4: 语言设置
+                LanguageView {}
             }
         }
     }
@@ -152,10 +162,11 @@ Item {
     // 获取当前 Tab 的标题
     function getCurrentTabTitle() {
         switch(currentTabIndex) {
-            case 0: return "系统状态"
-            case 1: return "参数校准"
-            case 2: return "力矩曲线"
-            case 3: return "关于系统"
+            case 0: return tr.t("settings.systemStatus")
+            case 1: return tr.t("settings.calibration")
+            case 2: return tr.t("settings.momentCurve")
+            case 3: return tr.t("settings.about")
+            case 4: return tr.t("settings.language")
             default: return ""
         }
     }
@@ -163,10 +174,11 @@ Item {
     // 获取当前 Tab 的描述文本
     function getCurrentTabDescription() {
         switch(currentTabIndex) {
-            case 0: return "设备运行状态与传感器监控"
-            case 1: return "传感器参数校准与配置"
-            case 2: return "力矩曲线设置与管理"
-            case 3: return "系统版本与设备信息"
+            case 0: return tr.t("systemStatus.sensorConnection")
+            case 1: return tr.t("calibration.multiplierDesc")
+            case 2: return tr.t("momentCurve.title")
+            case 3: return tr.t("about.version")
+            case 4: return tr.t("settings.language")
             default: return ""
         }
     }

@@ -1,9 +1,12 @@
 // LoadComparisonCard.qml - 载荷对比卡片组件
 import QtQuick
 import "../../styles"
+import "../../i18n"
 
 Rectangle {
     id: root
+    
+    Tr { id: tr }
     
     // 公开属性
     property real currentLoad: 0.0    // 当前载荷（吨）
@@ -25,7 +28,7 @@ Rectangle {
         
         // 标题
         Text {
-            text: "载荷对比"
+            text: tr.t("loadComparison.title")
             font.pixelSize: Theme.fontSizeSmall
             font.family: Theme.fontFamilyDefault
             color: Theme.textSecondary
@@ -58,7 +61,7 @@ Rectangle {
                 spacing: 0
                 
                 Text {
-                    text: "实际 " + root.currentLoad.toFixed(1) + "t"
+                    text: tr.t("loadComparison.actual") + " " + root.currentLoad.toFixed(1) + "t"
                     font.pixelSize: Theme.fontSizeTiny
                     font.family: Theme.fontFamilyMono
                     color: Theme.textPrimary
@@ -66,7 +69,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: "额定 " + root.ratedLoad.toFixed(1) + "t"
+                    text: tr.t("loadComparison.rated") + " " + root.ratedLoad.toFixed(1) + "t"
                     font.pixelSize: Theme.fontSizeTiny
                     font.family: Theme.fontFamilyMono
                     color: Theme.textSecondary

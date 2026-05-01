@@ -1,9 +1,12 @@
 // LoadTrendChart.qml - 载荷变化曲线组件
 import QtQuick
 import "../../styles"
+import "../../i18n"
 
 Rectangle {
     id: root
+    
+    Tr { id: tr }
     
     // 公开属性
     property var timeLabels: []
@@ -32,7 +35,7 @@ Rectangle {
             }
             
             Text {
-                text: "载荷变化曲线"
+                text: tr.t("chart.loadTrend")
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.weight: Font.Medium

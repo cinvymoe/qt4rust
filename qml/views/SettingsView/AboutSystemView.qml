@@ -2,9 +2,11 @@
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
+import "../../i18n"
 
 Flickable {
     id: aboutSystemView
+    Tr { id: tr }
     width: parent.width
     height: parent.height
     contentHeight: contentColumn.height + Theme.spacingMedium * 2
@@ -58,7 +60,7 @@ Flickable {
                         spacing: 0
                         
                         Text {
-                            text: "汽车吊力矩监测系统"
+                            text: tr.t("about.title")
                             font.pixelSize: Theme.fontSizeXLarge
                             font.family: Theme.fontFamilyDefault
                             font.weight: Font.Medium
@@ -95,7 +97,7 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: "系统版本"
+                                text: tr.t("about.version")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -123,7 +125,7 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: "发布日期"
+                                text: tr.t("about.releaseDate")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -150,7 +152,7 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: "固件版本"
+                                text: tr.t("about.firmware")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -178,7 +180,7 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: "硬件版本"
+                                text: tr.t("about.hardware")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -222,7 +224,7 @@ Flickable {
                     }
                     
                     Text {
-                        text: "系统特性"
+                        text: tr.t("about.features")
                         font.pixelSize: Theme.fontSizeLarge
                         color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
@@ -261,13 +263,13 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: "实时安全监控"
+                                text: tr.t("about.feature.realtime")
                                 font.pixelSize: Theme.fontSizeMedium
                                 color: "#e2e8f0"
                             }
                             
                             Text {
-                                text: "24/7不间断监测起重机力矩状态，确保作业安全"
+                                text: tr.t("about.feature.realtimeDesc")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                                 wrapMode: Text.WordWrap
@@ -302,13 +304,13 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: "三级预警系统"
+                                text: tr.t("about.feature.warning")
                                 font.pixelSize: Theme.fontSizeMedium
                                 color: "#e2e8f0"
                             }
                             
                             Text {
-                                text: "正常、预警、危险三级报警，提前预防安全事故"
+                                text: tr.t("about.feature.warningDesc")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                                 wrapMode: Text.WordWrap
@@ -343,13 +345,13 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: "高精度传感器"
+                                text: tr.t("about.feature.sensor")
                                 font.pixelSize: Theme.fontSizeMedium
                                 color: "#e2e8f0"
                             }
                             
                             Text {
-                                text: "采用工业级传感器，精度±0.5%，响应时间<50ms"
+                                text: tr.t("about.feature.sensorDesc")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                                 wrapMode: Text.WordWrap
@@ -387,7 +389,7 @@ Flickable {
                     }
                     
                     Text {
-                        text: "技术规格"
+                        text: tr.t("about.techSpecs")
                         font.pixelSize: Theme.fontSizeLarge
                         color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
@@ -461,7 +463,7 @@ Flickable {
                     }
                     
                     Text {
-                        text: "认证与标准"
+                        text: tr.t("about.certifications")
                         font.pixelSize: Theme.fontSizeLarge
                         color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
@@ -543,7 +545,7 @@ Flickable {
                     }
                     
                     Text {
-                        text: "技术支持"
+                        text: tr.t("about.techSupport")
                         font.pixelSize: Theme.fontSizeLarge
                         color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
@@ -573,7 +575,7 @@ Flickable {
                             spacing: 0
                             
                             Text {
-                                text: "服务热线"
+                                text: tr.t("about.hotline")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -604,7 +606,7 @@ Flickable {
                             spacing: 0
                             
                             Text {
-                                text: "技术邮箱"
+                                text: tr.t("about.email")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -635,13 +637,13 @@ Flickable {
                             spacing: 0
                             
                             Text {
-                                text: "公司地址"
+                                text: tr.t("about.address")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
                             
                             Text {
-                                text: "北京市海淀区中关村科技园区"
+                                text: tr.t("about.addressValue")
                                 font.pixelSize: Theme.fontSizeMedium
                                 color: "#e2e8f0"
                             }
@@ -666,7 +668,7 @@ Flickable {
                 spacing: Theme.spacingSmall
                 
                 Text {
-                    text: "© 2025 汽车吊力矩监测系统 版权所有"
+                    text: tr.t("about.copyright")
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textTertiary
                     horizontalAlignment: Text.AlignHCenter
@@ -674,7 +676,7 @@ Flickable {
                 }
                 
                 Text {
-                    text: "未经授权禁止复制、传播或使用本系统的任何内容"
+                    text: tr.t("about.copyrightNotice")
                     font.pixelSize: Theme.fontSizeTiny
                     color: "#62748e"
                     horizontalAlignment: Text.AlignHCenter

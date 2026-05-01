@@ -191,6 +191,7 @@ dialog.applyFilter = 应用筛选
 dialog.importRatedLoad = 导入额定载荷表
 dialog.importRatedLoadDesc = 请输入 CSV 文件路径
 dialog.importHint = 提示：可以使用相对路径或绝对路径
+dialog.info = 信息
 
 ## Filter Bar
 filter.history = 历史记录:
@@ -211,6 +212,10 @@ timeRange.label = 时间范围:
 systemStatus.sensorConnection = 传感器连接状态
 systemStatus.systemInfo = 系统信息
 systemStatus.network = 网络与通信
+
+## Home View
+home.placeholder = 点击测试虚拟键盘...
+home.inputContent = 输入内容
 
 ## Common
 common.version = v1.0.0

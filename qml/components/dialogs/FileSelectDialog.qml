@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Controls
 import "../../styles"
 import "../controls"
+import "../../i18n"
 
 Dialog {
     id: root
@@ -12,6 +13,8 @@ Dialog {
     
     // 信号
     signal fileSelected(string filePath)
+    
+    Tr { id: tr }
     
     modal: true
     closePolicy: Popup.CloseOnEscape
@@ -68,7 +71,7 @@ Dialog {
             
             // 主标题
             Text {
-                text: "导入额定载荷表"
+                text: tr.t("dialog.importRatedLoad")
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.bold: true
@@ -77,7 +80,7 @@ Dialog {
             
             // 副标题
             Text {
-                text: "请输入 CSV 文件路径"
+                text: tr.t("dialog.importRatedLoadDesc")
                 font.pixelSize: Theme.fontSizeSmall
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
@@ -110,7 +113,7 @@ Dialog {
             }
             
             Text {
-                text: "提示：可以使用相对路径或绝对路径"
+                text: tr.t("dialog.importHint")
                 font.pixelSize: Theme.fontSizeSmall
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
@@ -138,7 +141,7 @@ Dialog {
                 }
                 
                 contentItem: Text {
-                    text: "取消"
+                    text: tr.t("dialog.cancel")
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textPrimary
                     horizontalAlignment: Text.AlignHCenter
@@ -158,7 +161,7 @@ Dialog {
                 }
                 
                 contentItem: Text {
-                    text: "确定"
+                    text: tr.t("dialog.confirm")
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textPrimary
                     horizontalAlignment: Text.AlignHCenter

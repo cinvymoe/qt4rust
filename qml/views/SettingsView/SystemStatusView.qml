@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Controls
 import "../../styles"
 import "../../components/controls"
+import "../../i18n"
 
 Flickable {
     id: systemStatusView
@@ -10,6 +11,8 @@ Flickable {
     height: parent.height
     contentHeight: systemStatusColumn.height
     clip: true
+
+    Tr { id: tr }
     
     Column {
         id: systemStatusColumn
@@ -57,7 +60,7 @@ Flickable {
                             }
                             
                             Text {
-                                text: "传感器连接状态"
+                                text: tr.t("systemStatus.sensorConnection")
                                 font.pixelSize: Theme.fontSizeLarge
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -125,7 +128,7 @@ Flickable {
                             }
                             
                             Text {
-                                text: "系统信息"
+                                text: tr.t("systemStatus.systemInfo")
                                 font.pixelSize: Theme.fontSizeLarge
                                 color: Theme.textPrimary
                                 anchors.verticalCenter: parent.verticalCenter
@@ -210,7 +213,7 @@ Flickable {
                             }
                             
                             Text {
-                                text: "网络与通信"
+                                text: tr.t("systemStatus.network")
                                 font.pixelSize: Theme.fontSizeLarge
                                 color: Theme.textPrimary
                                 anchors.verticalCenter: parent.verticalCenter

@@ -1,9 +1,12 @@
 // MultiParamChart.qml - 多参数对比分析图组件
 import QtQuick
 import "../../styles"
+import "../../i18n"
 
 Rectangle {
     id: root
+    
+    Tr { id: tr }
     
     // 公开属性
     property var timeLabels: []
@@ -33,7 +36,7 @@ Rectangle {
             }
             
             Text {
-                text: "多参数对比分析"
+                text: tr.t("chart.multiParam")
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.weight: Font.Medium
@@ -157,7 +160,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: "工作半径 (m)"
+                    text: tr.t("chart.workingRadius")
                     font.pixelSize: Theme.fontSizeSmall
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textSecondary
@@ -177,7 +180,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: "吊臂角度 (°)"
+                    text: tr.t("chart.boomAngle")
                     font.pixelSize: Theme.fontSizeSmall
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textSecondary
