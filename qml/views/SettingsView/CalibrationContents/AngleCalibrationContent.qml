@@ -5,9 +5,12 @@ import QtQuick.Layouts
 import qt.rust.demo
 import "../../../styles"
 import "../../../components/controls"
+import "../../../i18n"
 
 Item {
     id: root
+
+    Tr { id: tr }
     
     // 暴露保存和重置函数给外部调用
     function saveCalibration() {
@@ -65,7 +68,7 @@ Item {
                         }
                         
                         Text {
-                            text: "两点标定设置"
+                            text: tr.t("calibration.angleTitle") || "两点标定设置"
                             font.pixelSize: Theme.fontSizeLarge
                             font.weight: Font.Medium
                             color: Theme.textPrimary
@@ -148,41 +151,41 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: "角度传感器标定说明"
+                            text: tr.t("calibration.angleNote1")
                             font.pixelSize: Theme.fontSizeMedium
                             color: Theme.warningColor
                         }
-                        
+
                         Column {
                             width: parent.width
                             spacing: 4
-                            
+
                             Text {
-                                text: "• 至少需要2个标定点，建议在0°和最大角度处标定"
+                                text: "• " + tr.t("calibration.angleNote1")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
-                            
+
                             Text {
-                                text: "• 使用精密角度测量仪器进行标定"
+                                text: "• " + tr.t("calibration.angleNote2")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
-                            
+
                             Text {
-                                text: "• 标定时确保臂架处于稳定状态"
+                                text: "• " + tr.t("calibration.angleNote3")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
-                            
+
                             Text {
-                                text: "• 角度传感器对温度敏感，建议在工作温度下标定"
+                                text: "• " + tr.t("calibration.angleNote4")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
-                            
+
                             Text {
-                                text: "• 系统使用线性插值算法计算两点之间的角度值"
+                                text: "• " + tr.t("calibration.angleNote5")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
@@ -240,7 +243,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: "AD值"
+                        text: tr.t("calibration.adValue")
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }
@@ -272,7 +275,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: "角度（°）"
+                        text: tr.t("calibration.angleValue")
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }

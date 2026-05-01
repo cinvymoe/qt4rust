@@ -152,9 +152,6 @@ Item {
                 
                 // Tab 4: 语言设置
                 LanguageView {}
-                
-                // Tab 4: 语言设置
-                LanguageView {}
             }
         }
     }

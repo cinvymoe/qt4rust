@@ -7,15 +7,15 @@ import "../../i18n"
 
 Dialog {
     id: root
-    
+
+    Tr { id: tr }
+
     // 对外属性
     property string selectedFilePath: ""
-    
+
     // 信号
     signal fileSelected(string filePath)
-    
-    Tr { id: tr }
-    
+
     modal: true
     closePolicy: Popup.CloseOnEscape
     width: 600
@@ -52,13 +52,13 @@ Dialog {
                 radius: Theme.radiusSmall
             }
             
-            contentItem: Text {
-                text: "✕"
-                font.pixelSize: Theme.fontSizeLarge
-                color: Theme.textSecondary
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-            }
+                contentItem: Text {
+                    text: tr.t("dialog.cancel")
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.textPrimary
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
             
             onClicked: root.close()
         }
@@ -76,6 +76,14 @@ Dialog {
                 font.family: Theme.fontFamilyDefault
                 font.bold: true
                 color: Theme.textPrimary
+            }
+
+            // 副标题
+            Text {
+                text: tr.t("dialog.importRatedLoadDesc")
+                font.pixelSize: Theme.fontSizeSmall
+                font.family: Theme.fontFamilyDefault
+                color: Theme.textSecondary
             }
             
             // 副标题

@@ -7,9 +7,9 @@ import "../../i18n"
 
 Dialog {
     id: root
-    
+
     Tr { id: tr }
-    
+
     // 对外暴露的属性
     property string startTime: ""
     property string endTime: ""
@@ -78,6 +78,14 @@ Dialog {
                 font.family: Theme.fontFamilyDefault
                 font.bold: true
                 color: Theme.textPrimary
+            }
+
+            // 副标题
+            Text {
+                text: tr.t("dialog.timeRangeDesc")
+                font.pixelSize: Theme.fontSizeSmall
+                font.family: Theme.fontFamilyDefault
+                color: Theme.textSecondary
             }
             
             // 副标题
@@ -486,7 +494,7 @@ Dialog {
             Column {
                 width: parent.width
                 spacing: Theme.spacingSmall
-                
+
                 Text {
                     text: tr.t("dialog.endTime")
                     font.pixelSize: Theme.fontSizeMedium

@@ -5,12 +5,12 @@ import "../../i18n"
 
 Dialog {
     id: infoDialog
-    
-    property string message: ""
-    
+
     Tr { id: tr }
-    
-    title: tr.t("dialog.info")
+
+    property string message: ""
+
+    title: tr.t("dialog.info") || "信息"
     modal: true
     standardButtons: Dialog.Ok
     

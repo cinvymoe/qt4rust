@@ -12,9 +12,6 @@ Item {
 
     Tr { id: tr }
 
-Item {
-    id: root
-    
     // 暴露保存和重置函数给外部调用
     function saveCalibration() {
         return alarmViewModel.save_thresholds()
@@ -71,7 +68,7 @@ Item {
                         }
                         
                         Text {
-                            text: "力矩报警阈值"
+                            text: tr.t("alarmThreshold.momentTitle")
                             font.pixelSize: Theme.fontSizeLarge
                             color: Theme.textPrimary
                             anchors.verticalCenter: parent.verticalCenter
@@ -82,11 +79,11 @@ Item {
                         width: parent.width
                         spacing: Theme.spacingSmall
                         
-                        Text {
-                            text: "设置力矩百分比报警阈值"
-                            font.pixelSize: Theme.fontSizeSmall
-                            color: Theme.textSecondary
-                        }
+                                Text {
+                                    text: tr.t("alarmThreshold.mode")
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    color: Theme.textSecondary
+                                }
                         
                         Row {
                             width: parent.width
@@ -97,7 +94,7 @@ Item {
                                 spacing: Theme.spacingSmall
                                 
                                 Text {
-                                    text: "预警阈值（%）"
+                                    text: tr.t("alarmThreshold.warningPercent")
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textSecondary
                                 }
@@ -132,7 +129,7 @@ Item {
                                 spacing: Theme.spacingSmall
                                 
                                 Text {
-                                    text: "危险阈值（%）"
+                                    text: tr.t("alarmThreshold.dangerPercent")
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textSecondary
                                 }
@@ -164,7 +161,7 @@ Item {
                         }
                         
                         Text {
-                            text: "当力矩百分比超过预警阈值时显示黄色警告，超过危险阈值时显示红色报警"
+                            text: tr.t("alarmThreshold.momentNote")
                             font.pixelSize: Theme.fontSizeTiny
                             color: "#62748e"
                             wrapMode: Text.WordWrap
@@ -202,7 +199,7 @@ Item {
                         }
                         
                         Text {
-                            text: "角度报警阈值"
+                            text: tr.t("alarmThreshold.angleTitle")
                             font.pixelSize: Theme.fontSizeLarge
                             color: Theme.textPrimary
                             anchors.verticalCenter: parent.verticalCenter
@@ -214,7 +211,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: "设置吊臂角度报警范围"
+                            text: tr.t("alarmThreshold.angleDesc")
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.textSecondary
                         }
@@ -228,7 +225,7 @@ Item {
                                 spacing: Theme.spacingSmall
                                 
                                 Text {
-                                    text: "角度下限（度）"
+                                    text: tr.t("alarmThreshold.angleLower")
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textSecondary
                                 }
@@ -263,7 +260,7 @@ Item {
                                 spacing: Theme.spacingSmall
                                 
                                 Text {
-                                    text: "角度上限（度）"
+                                    text: tr.t("alarmThreshold.angleUpper")
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textSecondary
                                 }
@@ -295,7 +292,7 @@ Item {
                         }
                         
                         Text {
-                            text: "当吊臂角度低于下限或高于上限时，系统将发出报警"
+                            text: tr.t("alarmThreshold.angleNote")
                             font.pixelSize: Theme.fontSizeTiny
                             color: "#62748e"
                             wrapMode: Text.WordWrap
@@ -333,7 +330,7 @@ Item {
                         }
                         
                         Text {
-                            text: "主钩勾头开关报警"
+                            text: tr.t("alarmThreshold.mainHook")
                             font.pixelSize: Theme.fontSizeLarge
                             color: Theme.textPrimary
                             anchors.verticalCenter: parent.verticalCenter
@@ -345,7 +342,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: "设置主钩勾头开关状态报警触发条件"
+                            text: tr.t("alarmThreshold.mainHookDesc")
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.textSecondary
                         }
@@ -371,7 +368,7 @@ Item {
                                     // 常开
                                     RadioButton {
                                         id: mainHookNormallyOpenRadio
-                                        text: "常开"
+                                        text: tr.t("alarmThreshold.modeNO")
                                         checked: alarmViewModel.main_hook_mode === 1
                                         font.pixelSize: Theme.fontSizeMedium
                                         indicator: Rectangle {
@@ -404,7 +401,7 @@ Item {
                                     // 常闭
                                     RadioButton {
                                         id: mainHookNormallyClosedRadio
-                                        text: "常闭"
+                                        text: tr.t("alarmThreshold.modeNC")
                                         checked: alarmViewModel.main_hook_mode === 2
                                         font.pixelSize: Theme.fontSizeMedium
                                         indicator: Rectangle {
@@ -438,7 +435,7 @@ Item {
                         }
                         
                         Text {
-                            text: "选择主钩勾头开关报警触发条件：常开或常闭（二者只能选其一）"
+                            text: tr.t("alarmThreshold.mainHookNote")
                             font.pixelSize: Theme.fontSizeTiny
                             color: "#62748e"
                             wrapMode: Text.WordWrap
@@ -476,7 +473,7 @@ Item {
                         }
                         
                         Text {
-                            text: "副钩勾头开关报警"
+                            text: tr.t("alarmThreshold.subHook")
                             font.pixelSize: Theme.fontSizeLarge
                             color: Theme.textPrimary
                             anchors.verticalCenter: parent.verticalCenter
@@ -488,7 +485,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: "设置副钩勾头开关状态报警触发条件"
+                            text: tr.t("alarmThreshold.subHookDesc")
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.textSecondary
                         }
@@ -514,7 +511,7 @@ Item {
                                     // 常开
                                     RadioButton {
                                         id: auxHookNormallyOpenRadio
-                                        text: "常开"
+                                        text: tr.t("alarmThreshold.modeNO")
                                         checked: alarmViewModel.aux_hook_mode === 1
                                         font.pixelSize: Theme.fontSizeMedium
                                         indicator: Rectangle {
@@ -547,7 +544,7 @@ Item {
                                     // 常闭
                                     RadioButton {
                                         id: auxHookNormallyClosedRadio
-                                        text: "常闭"
+                                        text: tr.t("alarmThreshold.modeNC")
                                         checked: alarmViewModel.aux_hook_mode === 2
                                         font.pixelSize: Theme.fontSizeMedium
                                         indicator: Rectangle {
@@ -581,7 +578,7 @@ Item {
                         }
                         
                         Text {
-                            text: "选择副钩勾头开关报警触发条件：常开或常闭（二者只能选其一）"
+                            text: tr.t("alarmThreshold.subHookNote")
                             font.pixelSize: Theme.fontSizeTiny
                             color: "#62748e"
                             wrapMode: Text.WordWrap
@@ -618,7 +615,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: "报警阈值设置说明"
+                            text: tr.t("alarmThreshold.notes")
                             font.pixelSize: Theme.fontSizeMedium
                             color: Theme.dangerLight
                         }
@@ -628,25 +625,25 @@ Item {
                             spacing: 4
                             
                             Text {
-                                text: "• 力矩报警是最重要的安全保护，建议预警阈值设为80%"
+                                text: "• " + tr.t("alarmThreshold.note1")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
-                            
+
                             Text {
-                                text: "• 危险阈值达到100%时系统将强制停止作业"
+                                text: "• " + tr.t("alarmThreshold.note2")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
-                            
+
                             Text {
-                                text: "• 报警触发后会记录到报警记录中，可在报警记录页面查看"
+                                text: "• " + tr.t("alarmThreshold.note3")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
-                            
+
                             Text {
-                                text: "• 修改阈值后需要保存设置才能生效"
+                                text: "• " + tr.t("alarmThreshold.note4")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }

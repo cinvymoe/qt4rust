@@ -2,13 +2,16 @@
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
+import "../../i18n"
 
 Rectangle {
     id: sensorCard
-    
+
+    Tr { id: tr }
+
     // 公开属性
-    property string sensorName: "传感器"
-    property string statusText: "在线 - 正常"
+    property string sensorName: tr.t("systemStatus.sensorName") || "传感器"
+    property string statusText: tr.t("systemStatus.online") || "在线 - 正常"
     property bool isOnline: true
     
     // 卡片样式

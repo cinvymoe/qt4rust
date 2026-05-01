@@ -5,9 +5,12 @@ import QtQuick.Layouts
 import qt.rust.demo
 import "../../../styles"
 import "../../../components/controls"
+import "../../../i18n"
 
 Item {
     id: root
+
+    Tr { id: tr }
     
     // 暴露保存和重置函数给外部调用
     function saveCalibration() {
@@ -65,7 +68,7 @@ Item {
                         }
                         
                         Text {
-                            text: "两点标定设置"
+                            text: tr.t("calibration.radiusTitle") || "两点标定设置"
                             font.pixelSize: Theme.fontSizeLarge
                             font.weight: Font.Medium
                             color: Theme.textPrimary
@@ -148,41 +151,41 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: "长度传感器标定说明"
+                            text: tr.t("calibration.radiusNote1")
                             font.pixelSize: Theme.fontSizeMedium
                             color: Theme.successColor
                         }
-                        
+
                         Column {
                             width: parent.width
                             spacing: 4
-                            
+
                             Text {
-                                text: "• 至少需要2个标定点，建议在最小和最大工作长度处标定"
+                                text: "• " + tr.t("calibration.radiusNote1")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
-                            
+
                             Text {
-                                text: "• 使用精确测量工具确定实际工作长度"
+                                text: "• " + tr.t("calibration.radiusNote2")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
-                            
+
                             Text {
-                                text: "• 标定时确保臂架完全伸展或收缩到位"
+                                text: "• " + tr.t("calibration.radiusNote3")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
-                            
+
                             Text {
-                                text: "• 长度传感器通常为拉绳式或角度换算，需定期检查"
+                                text: "• " + tr.t("calibration.radiusNote4")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
-                            
+
                             Text {
-                                text: "• 系统使用线性插值算法计算两点之间的长度值"
+                                text: "• " + tr.t("calibration.radiusNote5")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
@@ -240,7 +243,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: "AD值"
+                        text: tr.t("calibration.adValue")
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }
@@ -272,7 +275,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: "长度（m）"
+                        text: tr.t("calibration.radiusValue")
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }
