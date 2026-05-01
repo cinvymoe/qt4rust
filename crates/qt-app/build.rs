@@ -17,6 +17,7 @@ fn main() {
             .qml_file("qml/views/SettingsView/CalibrationView.qml")
             .qml_file("qml/views/SettingsView/MomentCurveView.qml")
             .qml_file("qml/views/SettingsView/AboutSystemView.qml")
+            .qml_file("qml/views/SettingsView/LanguageView.qml")
             // 校准内容组件
             .qml_file("qml/views/SettingsView/CalibrationContents/LoadCalibrationContent.qml")
             .qml_file("qml/views/SettingsView/CalibrationContents/AngleCalibrationContent.qml")
