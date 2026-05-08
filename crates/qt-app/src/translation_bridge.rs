@@ -23,6 +23,7 @@ pub mod translation_bridge {
     unsafe extern "RustQt" {
         #[qobject]
         #[qml_element]
+        #[qml_singleton]
         #[qproperty(QString, current_locale)]
         type TranslationBridge = super::TranslationBridgeRust;
 
