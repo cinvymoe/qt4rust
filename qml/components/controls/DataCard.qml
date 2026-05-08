@@ -14,7 +14,7 @@ Rectangle {
     property bool showProgress: false
     property real progress: 0.0
     
-    color: Theme.darkSurface
+    color: Qt.rgba(Theme.darkSurface.r, Theme.darkSurface.g, Theme.darkSurface.b, 0.75)
     border.color: Theme.darkBorder
     border.width: Theme.borderThin
     radius: Theme.radiusMedium
@@ -24,7 +24,6 @@ Rectangle {
         anchors.margins: Theme.spacingLarge
         spacing: Theme.spacingSmall
         
-        // 标签行
         Row {
             spacing: Theme.spacingSmall
             width: parent.width
@@ -45,7 +44,6 @@ Rectangle {
             }
         }
         
-        // 数值行
         Row {
             spacing: 8
             
@@ -66,7 +64,6 @@ Rectangle {
             }
         }
         
-        // 描述文本
         Text {
             text: dataCard.description
             font.pixelSize: Theme.fontSizeTiny
@@ -75,7 +72,6 @@ Rectangle {
             width: parent.width
         }
         
-        // 进度条
         Rectangle {
             visible: dataCard.showProgress
             width: parent.width

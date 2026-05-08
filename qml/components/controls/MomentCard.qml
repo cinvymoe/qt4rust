@@ -10,7 +10,7 @@ Rectangle {
     property real warningThreshold: 90.0
     property real dangerThreshold: 100.0
     
-    color: Theme.darkSurface
+    color: Qt.rgba(Theme.darkSurface.r, Theme.darkSurface.g, Theme.darkSurface.b, 0.75)
     border.color: Theme.darkBorder
     border.width: Theme.borderThick
     radius: Theme.radiusMedium
@@ -20,7 +20,6 @@ Rectangle {
         anchors.margins: Theme.spacingLarge
         spacing: Theme.spacingMedium
         
-        // 标题行
         Item {
             width: parent.width
             height: Theme.buttonHeightSmall
@@ -68,7 +67,6 @@ Rectangle {
             }
         }
         
-        // 数值显示
         Row {
             spacing: 4
             
@@ -89,12 +87,10 @@ Rectangle {
             }
         }
         
-        // 进度条和标记
         Column {
             width: parent.width
             spacing: Theme.spacingSmall
             
-            // 进度条
             Rectangle {
                 width: parent.width
                 height: 16
@@ -111,14 +107,14 @@ Rectangle {
                 }
             }
             
-            // 标记行
             Item {
                 width: parent.width
                 height: Theme.fontSizeSmall + 4
                 
                 Row {
-                    anchors.fill: parent
-                    spacing: 0
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
                     
                     Text {
                         text: "0%"
@@ -128,31 +124,7 @@ Rectangle {
                     }
                     
                     Item { 
-                        width: parent.width * 0.25
-                        height: 1 
-                    }
-                    
-                    Text {
-                        text: "预警 " + momentCard.warningThreshold.toFixed(0) + "%"
-                        font.pixelSize: Theme.fontSizeSmall
-                        font.family: Theme.fontFamilyDefault
-                        color: Theme.warningColor
-                    }
-                    
-                    Item { 
-                        width: parent.width * 0.15
-                        height: 1 
-                    }
-                    
-                    Text {
-                        text: "危险 " + momentCard.dangerThreshold.toFixed(0) + "%"
-                        font.pixelSize: Theme.fontSizeSmall
-                        font.family: Theme.fontFamilyDefault
-                        color: Theme.dangerLight
-                    }
-                    
-                    Item { 
-                        width: parent.width * 0.1
+                        width: parent.width - 0.35 * parent.width
                         height: 1 
                     }
                     

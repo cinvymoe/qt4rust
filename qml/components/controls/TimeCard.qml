@@ -6,19 +6,15 @@ import "../../styles"
 Rectangle {
     id: root
     
-    width: parent.width
-    height: 96
-    color: Theme.darkSurface
-    border.color: Theme.darkBorder
-    border.width: Theme.borderThin
-    radius: Theme.radiusMedium
-    
-    // 当前时间属性
     property string currentTime: Qt.formatDateTime(new Date(), "hh:mm:ss")
     property string currentDate: Qt.formatDateTime(new Date(), "yyyy年MM月dd日")
     property string weekDay: Qt.formatDateTime(new Date(), "dddd")
     
-    // 定时器更新时间
+    color: Qt.rgba(Theme.darkSurface.r, Theme.darkSurface.g, Theme.darkSurface.b, 0.75)
+    border.color: Theme.darkBorder
+    border.width: Theme.borderThin
+    radius: Theme.radiusMedium
+    
     Timer {
         interval: 1000
         running: true
@@ -35,7 +31,6 @@ Rectangle {
         anchors.centerIn: parent
         spacing: Theme.spacingLarge
         
-        // 时钟图标
         Rectangle {
             width: Theme.iconSizeLarge
             height: Theme.iconSizeLarge
@@ -55,7 +50,6 @@ Rectangle {
             spacing: Theme.spacingTiny
             anchors.verticalCenter: parent.verticalCenter
             
-            // 时间显示
             Text {
                 text: root.currentTime
                 font.pixelSize: Theme.fontSizeXLarge
@@ -64,7 +58,6 @@ Rectangle {
                 color: Theme.textPrimary
             }
             
-            // 日期显示
             Text {
                 text: root.currentDate + " " + root.weekDay
                 font.pixelSize: Theme.fontSizeMedium

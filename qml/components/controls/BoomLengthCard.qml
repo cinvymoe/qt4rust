@@ -9,8 +9,8 @@ Rectangle {
     // 公开属性
     property real boomLength: 0.0    // 臂长（米）
     
-    // 样式
-    color: Theme.darkSurface
+    // 半透明背景 - 叠加在背景图片上
+    color: Qt.rgba(Theme.darkSurface.r, Theme.darkSurface.g, Theme.darkSurface.b, 0.75)
     border.color: Theme.darkBorder
     border.width: Theme.borderThin
     radius: Theme.radiusMedium

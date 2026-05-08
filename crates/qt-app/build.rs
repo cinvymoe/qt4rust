@@ -87,6 +87,7 @@ fn main() {
         "qml/assets/images/icon-email.svg",
         "qml/assets/images/icon-location.svg",
         "qml/assets/images/icon-boom-length.svg",
+        "qml/assets/images/background-monitoring.png",
     ])
     .qt_module("Network")
     .file("src/monitoring_viewmodel.rs")
