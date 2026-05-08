@@ -7,7 +7,7 @@ import "../../styles"
 Rectangle {
     id: root
 
-    Tr { id: tr }
+    TranslationBridge { id: tr }
 
     width: parent.width
     height: 96
@@ -19,8 +19,8 @@ Rectangle {
     // 可配置属性
     property bool isWarning: false  // true=预警(黄色), false=危险(红色)
     property bool isAngleAlarm: false
-    property string title: tr.t("danger.title.danger")
-    property string message: tr.t("danger.message.danger")
+    property string title: tr.translate("danger.title.danger")
+    property string message: tr.translate("danger.message.danger")
     // 根据状态自动选择图标：预警使用黄色感叹号，危险使用红色危险图标
     property string iconSource: isWarning ?
         "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-alert.png" :

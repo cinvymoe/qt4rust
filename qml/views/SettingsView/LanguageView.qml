@@ -7,7 +7,7 @@ import "../../styles"
 Item {
     id: languageView
     
-    Tr { id: tr }
+    TranslationBridge { id: tr }
     
     Column {
         anchors.fill: parent
@@ -26,7 +26,7 @@ Item {
             }
             
             Text {
-                text: tr.t("settings.language")
+                text: tr.translate("settings.language")
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.weight: Font.Medium
@@ -56,7 +56,7 @@ Item {
                     radius: Theme.radiusSmall
                     
                     Text {
-                        text: tr.t("settings.language.zhCN")
+                        text: tr.translate("settings.language.zhCN")
                         font.pixelSize: Theme.fontSizeMedium
                         color: Theme.textPrimary
                         font.family: Theme.fontFamilyDefault
@@ -79,7 +79,7 @@ Item {
                     radius: Theme.radiusSmall
                     
                     Text {
-                        text: tr.t("settings.language.enUS")
+                        text: tr.translate("settings.language.enUS")
                         font.pixelSize: Theme.fontSizeMedium
                         color: Theme.textPrimary
                         font.family: Theme.fontFamilyDefault

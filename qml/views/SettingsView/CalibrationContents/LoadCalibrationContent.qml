@@ -10,7 +10,7 @@ import "../../../components/dialogs"
 Item {
     id: root
 
-    Tr { id: tr }
+    TranslationBridge { id: tr }
     
     // 暴露保存和重置函数给外部调用
     function saveCalibration() {
@@ -68,7 +68,7 @@ Item {
                         }
                         
                         Text {
-                            text: tr.t("calibration.multiplier")
+                            text: tr.translate("calibration.multiplier")
                             font.pixelSize: Theme.fontSizeLarge
                             color: Theme.textPrimary
                             anchors.verticalCenter: parent.verticalCenter
@@ -80,7 +80,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: tr.t("calibration.selectMultiplier")
+                            text: tr.translate("calibration.selectMultiplier")
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.textSecondary
                         }
@@ -189,7 +189,7 @@ Item {
                         }
                         
                         Text {
-                            text: tr.t("calibration.multiplierDesc")
+                            text: tr.translate("calibration.multiplierDesc")
                             font.pixelSize: Theme.fontSizeTiny
                             color: "#62748e"
                             wrapMode: Text.WordWrap
@@ -227,7 +227,7 @@ Item {
                         }
                         
                         Text {
-                            text: tr.t("calibration.loadTitle") || "两点标定设置"
+                            text: tr.translate("calibration.loadTitle") || "两点标定设置"
                             font.pixelSize: Theme.fontSizeLarge
                             font.weight: Font.Medium
                             color: Theme.textPrimary
@@ -310,7 +310,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: tr.t("calibration.loadNote1")
+                            text: tr.translate("calibration.loadNote1")
                             font.pixelSize: Theme.fontSizeMedium
                             color: Theme.textAccent
                         }
@@ -320,37 +320,37 @@ Item {
                             spacing: 4
 
                             Text {
-                                text: "• " + tr.t("calibration.loadNote1")
+                                text: "• " + tr.translate("calibration.loadNote1")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + tr.t("calibration.loadNote2")
+                                text: "• " + tr.translate("calibration.loadNote2")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + tr.t("calibration.loadNote3")
+                                text: "• " + tr.translate("calibration.loadNote3")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + tr.t("calibration.loadNote4")
+                                text: "• " + tr.translate("calibration.loadNote4")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + tr.t("calibration.loadNote5")
+                                text: "• " + tr.translate("calibration.loadNote5")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + tr.t("calibration.loadNote6")
+                                text: "• " + tr.translate("calibration.loadNote6")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
@@ -418,7 +418,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: tr.t("calibration.adValue")
+                        text: tr.translate("calibration.adValue")
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }
@@ -450,7 +450,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: tr.t("calibration.physicalValue")
+                        text: tr.translate("calibration.physicalValue")
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }

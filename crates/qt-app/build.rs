@@ -52,8 +52,7 @@ fn main() {
             .qml_file("qml/components/dialogs/CustomMultiplierDialog.qml")
             .qml_file("qml/components/dialogs/FileSelectDialog.qml")
             // 样式系统
-            .qml_file("qml/styles/Theme.qml")
-            .qml_file("qml/i18n/Tr.qml"),
+            .qml_file("qml/styles/Theme.qml"),
     )
     // 添加图片资源到 Qt 资源系统
     .qrc_resources(vec![

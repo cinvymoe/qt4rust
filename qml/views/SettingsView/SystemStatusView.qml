@@ -12,7 +12,7 @@ Flickable {
     contentHeight: systemStatusColumn.height
     clip: true
 
-    Tr { id: tr }
+    TranslationBridge { id: tr }
     
     Column {
         id: systemStatusColumn
@@ -60,7 +60,7 @@ Flickable {
                             }
                             
                             Text {
-                                text: tr.t("systemStatus.sensorConnection")
+                                text: tr.translate("systemStatus.sensorConnection")
                                 font.pixelSize: Theme.fontSizeLarge
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -128,7 +128,7 @@ Flickable {
                             }
                             
                             Text {
-                                text: tr.t("systemStatus.systemInfo")
+                                text: tr.translate("systemStatus.systemInfo")
                                 font.pixelSize: Theme.fontSizeLarge
                                 color: Theme.textPrimary
                                 anchors.verticalCenter: parent.verticalCenter
@@ -213,7 +213,7 @@ Flickable {
                             }
                             
                             Text {
-                                text: tr.t("systemStatus.network")
+                                text: tr.translate("systemStatus.network")
                                 font.pixelSize: Theme.fontSizeLarge
                                 color: Theme.textPrimary
                                 anchors.verticalCenter: parent.verticalCenter

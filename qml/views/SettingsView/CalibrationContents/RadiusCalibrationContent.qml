@@ -9,7 +9,7 @@ import "../../../components/controls"
 Item {
     id: root
 
-    Tr { id: tr }
+    TranslationBridge { id: tr }
     
     // 暴露保存和重置函数给外部调用
     function saveCalibration() {
@@ -67,7 +67,7 @@ Item {
                         }
                         
                         Text {
-                            text: tr.t("calibration.radiusTitle") || "两点标定设置"
+                            text: tr.translate("calibration.radiusTitle") || "两点标定设置"
                             font.pixelSize: Theme.fontSizeLarge
                             font.weight: Font.Medium
                             color: Theme.textPrimary
@@ -150,7 +150,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: tr.t("calibration.radiusNote1")
+                            text: tr.translate("calibration.radiusNote1")
                             font.pixelSize: Theme.fontSizeMedium
                             color: Theme.successColor
                         }
@@ -160,31 +160,31 @@ Item {
                             spacing: 4
 
                             Text {
-                                text: "• " + tr.t("calibration.radiusNote1")
+                                text: "• " + tr.translate("calibration.radiusNote1")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + tr.t("calibration.radiusNote2")
+                                text: "• " + tr.translate("calibration.radiusNote2")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + tr.t("calibration.radiusNote3")
+                                text: "• " + tr.translate("calibration.radiusNote3")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + tr.t("calibration.radiusNote4")
+                                text: "• " + tr.translate("calibration.radiusNote4")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + tr.t("calibration.radiusNote5")
+                                text: "• " + tr.translate("calibration.radiusNote5")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
@@ -242,7 +242,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: tr.t("calibration.adValue")
+                        text: tr.translate("calibration.adValue")
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }
@@ -274,7 +274,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: tr.t("calibration.radiusValue")
+                        text: tr.translate("calibration.radiusValue")
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }

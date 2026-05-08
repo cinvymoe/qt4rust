@@ -9,7 +9,7 @@ import "../dialogs"
 RowLayout {
     id: timeRangeFilter
     
-    Tr { id: tr }
+    TranslationBridge { id: tr }
     
     spacing: Theme.spacingSmall
     
@@ -24,7 +24,7 @@ RowLayout {
     signal customRangeChanged(string startTime, string endTime)
     
     Text {
-        text: tr.t("timeRange.label")
+        text: tr.translate("timeRange.label")
         font.pixelSize: Theme.fontSizeMedium
         font.family: Theme.fontFamilyDefault
         color: Theme.textSecondary
@@ -32,7 +32,7 @@ RowLayout {
     
     Button {
         id: oneHourButton
-        text: tr.t("timeRange.1hour")
+        text: tr.translate("timeRange.1hour")
         background: Rectangle {
             color: timeRangeFilter.selectedRange === "1h" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -55,7 +55,7 @@ RowLayout {
     
     Button {
         id: twoHoursButton
-        text: tr.t("timeRange.2hours")
+        text: tr.translate("timeRange.2hours")
         background: Rectangle {
             color: timeRangeFilter.selectedRange === "2h" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -78,7 +78,7 @@ RowLayout {
     
     Button {
         id: fiveHoursButton
-        text: tr.t("timeRange.5hours")
+        text: tr.translate("timeRange.5hours")
         background: Rectangle {
             color: timeRangeFilter.selectedRange === "5h" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -101,7 +101,7 @@ RowLayout {
     
     Button {
         id: customButton
-        text: tr.t("timeRange.custom")
+        text: tr.translate("timeRange.custom")
         background: Rectangle {
             color: timeRangeFilter.selectedRange === "custom" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium

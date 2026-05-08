@@ -11,7 +11,7 @@ Item {
     
     property int currentSensorTab: 0  // 0: 载荷, 1: 角度, 2: 长度, 3: 报警阈值
     
-    Tr { id: tr }
+    TranslationBridge { id: tr }
     
     // 绑定 CalibrationViewModel
     CalibrationViewModel {
@@ -61,17 +61,17 @@ Item {
                     // 重量传感器卡片
                     SensorDataCard {
                         width: parent.width - parent.leftPadding - parent.rightPadding
-                        sensorName: tr.t("calibration.loadSensor")
+                        sensorName: tr.translate("calibration.loadSensor")
                         adValue: (viewModel.ad1_load || 0).toFixed(2)
                         calculatedValue: (viewModel.calculated_load || 0).toFixed(2)
-                        unit: tr.t("monitoring.unit.ton")
+                        unit: tr.translate("monitoring.unit.ton")
                         isOnline: viewModel.sensor_connected
                     }
                     
                     // 角度传感器卡片
                     SensorDataCard {
                         width: parent.width - parent.leftPadding - parent.rightPadding
-                        sensorName: tr.t("calibration.angleSensor")
+                        sensorName: tr.translate("calibration.angleSensor")
                         adValue: (viewModel.ad3_angle || 0).toFixed(2)
                         calculatedValue: (viewModel.calculated_angle || 0).toFixed(1)
                         unit: "°"
@@ -81,7 +81,7 @@ Item {
                     // 侧长传感器卡片
                     SensorDataCard {
                         width: parent.width - parent.leftPadding - parent.rightPadding
-                        sensorName: tr.t("calibration.radiusSensor")
+                        sensorName: tr.translate("calibration.radiusSensor")
                         adValue: (viewModel.ad2_radius || 0).toFixed(2)
                         calculatedValue: (viewModel.calculated_radius || 0).toFixed(2)
                         unit: "m"
@@ -115,10 +115,10 @@ Item {
                         
                         Repeater {
                             model: [
-                                {text: tr.t("calibration.loadSensor")},
-                                {text: tr.t("calibration.angleSensor")},
-                                {text: tr.t("calibration.radiusSensor")},
-                                {text: tr.t("calibration.alarmThreshold")}
+                                {text: tr.translate("calibration.loadSensor")},
+                                {text: tr.translate("calibration.angleSensor")},
+                                {text: tr.translate("calibration.radiusSensor")},
+                                {text: tr.translate("calibration.alarmThreshold")}
                             ]
                             
                             Rectangle {
@@ -225,7 +225,7 @@ Item {
                                 }
                                 
                                 Text {
-                                    text: tr.t("calibration.restoreDefault")
+                                    text: tr.translate("calibration.restoreDefault")
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textPrimary
                                     anchors.verticalCenter: parent.verticalCenter
@@ -281,7 +281,7 @@ Item {
                                 }
                                 
                                 Text {
-                                    text: tr.t("settings.save")
+                                    text: tr.translate("settings.save")
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textPrimary
                                     anchors.verticalCenter: parent.verticalCenter
@@ -346,7 +346,7 @@ Item {
         property string unit: ""
         property bool isOnline: true
         
-        Tr { id: sensorTr }
+        TranslationBridge { id: sensorTr }
         
         height: Math.max(140, Math.min(180, 203))
         color: Theme.darkBackground

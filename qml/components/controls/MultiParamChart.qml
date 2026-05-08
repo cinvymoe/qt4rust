@@ -6,7 +6,7 @@ import "../../styles"
 Rectangle {
     id: root
     
-    Tr { id: tr }
+    TranslationBridge { id: tr }
     
     // 公开属性
     property var timeLabels: []
@@ -36,7 +36,7 @@ Rectangle {
             }
             
             Text {
-                text: tr.t("chart.multiParam")
+                text: tr.translate("chart.multiParam")
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.weight: Font.Medium
@@ -160,7 +160,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: tr.t("chart.workingRadius")
+                    text: tr.translate("chart.workingRadius")
                     font.pixelSize: Theme.fontSizeSmall
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textSecondary
@@ -180,7 +180,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: tr.t("chart.boomAngle")
+                    text: tr.translate("chart.boomAngle")
                     font.pixelSize: Theme.fontSizeSmall
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textSecondary

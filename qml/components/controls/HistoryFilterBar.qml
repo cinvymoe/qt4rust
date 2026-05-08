@@ -9,7 +9,7 @@ import "../dialogs"
 RowLayout {
     id: historyFilterBar
     
-    Tr { id: tr }
+    TranslationBridge { id: tr }
     
     spacing: Theme.spacingSmall
     
@@ -21,7 +21,7 @@ RowLayout {
     signal customTimeRangeChanged(int startTimestamp, int endTimestamp)
     
     Text {
-        text: tr.t("filter.history")
+        text: tr.translate("filter.history")
         font.pixelSize: Theme.fontSizeMedium
         font.family: Theme.fontFamilyDefault
         color: Theme.textSecondary
@@ -29,7 +29,7 @@ RowLayout {
     
     Button {
         id: allButton
-        text: tr.t("filter.all")
+        text: tr.translate("filter.all")
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "all" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -52,7 +52,7 @@ RowLayout {
     
     Button {
         id: todayButton
-        text: tr.t("filter.today")
+        text: tr.translate("filter.today")
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "today" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -75,7 +75,7 @@ RowLayout {
     
     Button {
         id: weekButton
-        text: tr.t("filter.last7days")
+        text: tr.translate("filter.last7days")
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "week" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -98,7 +98,7 @@ RowLayout {
     
     Button {
         id: monthButton
-        text: tr.t("filter.last30days")
+        text: tr.translate("filter.last30days")
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "month" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -121,7 +121,7 @@ RowLayout {
     
     Button {
         id: customButton
-        text: tr.t("filter.custom")
+        text: tr.translate("filter.custom")
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "custom" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium

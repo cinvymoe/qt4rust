@@ -6,7 +6,7 @@ import "../../styles"
 Rectangle {
     id: root
     
-    Tr { id: tr }
+    TranslationBridge { id: tr }
     
     // 公开属性
     property var timeLabels: []
@@ -34,7 +34,7 @@ Rectangle {
             }
             
             Text {
-                text: tr.t("chart.momentTrend")
+                text: tr.translate("chart.momentTrend")
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.weight: Font.Medium
@@ -168,7 +168,7 @@ Rectangle {
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: parent.height * 0.25
-                text: tr.t("moment.warning") + " 75%"
+                text: tr.translate("moment.warning") + " 75%"
                 font.pixelSize: Theme.fontSizeTiny
                 font.family: Theme.fontFamilyDefault
                 color: Theme.warningColor
@@ -178,7 +178,7 @@ Rectangle {
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: parent.height * 0.1
-                text: tr.t("moment.danger") + " 90%"
+                text: tr.translate("moment.danger") + " 90%"
                 font.pixelSize: Theme.fontSizeTiny
                 font.family: Theme.fontFamilyDefault
                 color: Theme.dangerColor

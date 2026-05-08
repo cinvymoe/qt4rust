@@ -7,7 +7,7 @@ import "../../styles"
 Rectangle {
     id: momentCard
     
-    Tr { id: tr }
+    TranslationBridge { id: tr }
     
     property real percentage: 94.8
     property real warningThreshold: 90.0
@@ -41,7 +41,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: tr.t("moment.percentage")
+                    text: tr.translate("moment.percentage")
                     font.pixelSize: Theme.fontSizeNormal
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textSecondary
@@ -60,9 +60,9 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 
                 Text {
-                    text: momentCard.percentage >= momentCard.dangerThreshold ? tr.t("moment.danger") : 
-                          momentCard.percentage >= momentCard.warningThreshold ? tr.t("moment.warning") : 
-                          tr.t("alarm.level.normal")
+                    text: momentCard.percentage >= momentCard.dangerThreshold ? tr.translate("moment.danger") : 
+                          momentCard.percentage >= momentCard.warningThreshold ? tr.translate("moment.warning") : 
+                          tr.translate("alarm.level.normal")
                     font.pixelSize: Theme.fontSizeSmall
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textPrimary
@@ -136,7 +136,7 @@ Rectangle {
                     }
                     
                     Text {
-                        text: tr.t("moment.warning") + " " + momentCard.warningThreshold.toFixed(0) + "%"
+                        text: tr.translate("moment.warning") + " " + momentCard.warningThreshold.toFixed(0) + "%"
                         font.pixelSize: Theme.fontSizeSmall
                         font.family: Theme.fontFamilyDefault
                         color: Theme.warningColor
@@ -148,7 +148,7 @@ Rectangle {
                     }
                     
                     Text {
-                        text: tr.t("moment.danger") + " " + momentCard.dangerThreshold.toFixed(0) + "%"
+                        text: tr.translate("moment.danger") + " " + momentCard.dangerThreshold.toFixed(0) + "%"
                         font.pixelSize: Theme.fontSizeSmall
                         font.family: Theme.fontFamilyDefault
                         color: Theme.dangerLight

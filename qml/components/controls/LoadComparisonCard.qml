@@ -6,7 +6,7 @@ import "../../styles"
 Rectangle {
     id: root
     
-    Tr { id: tr }
+    TranslationBridge { id: tr }
     
     // 公开属性
     property real currentLoad: 0.0    // 当前载荷（吨）
@@ -28,7 +28,7 @@ Rectangle {
         
         // 标题
         Text {
-            text: tr.t("loadComparison.title")
+            text: tr.translate("loadComparison.title")
             font.pixelSize: Theme.fontSizeSmall
             font.family: Theme.fontFamilyDefault
             color: Theme.textSecondary
@@ -61,7 +61,7 @@ Rectangle {
                 spacing: 0
                 
                 Text {
-                    text: tr.t("loadComparison.actual") + " " + root.currentLoad.toFixed(1) + "t"
+                    text: tr.translate("loadComparison.actual") + " " + root.currentLoad.toFixed(1) + "t"
                     font.pixelSize: Theme.fontSizeTiny
                     font.family: Theme.fontFamilyMono
                     color: Theme.textPrimary
@@ -69,7 +69,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: tr.t("loadComparison.rated") + " " + root.ratedLoad.toFixed(1) + "t"
+                    text: tr.translate("loadComparison.rated") + " " + root.ratedLoad.toFixed(1) + "t"
                     font.pixelSize: Theme.fontSizeTiny
                     font.family: Theme.fontFamilyMono
                     color: Theme.textSecondary

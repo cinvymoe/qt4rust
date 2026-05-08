@@ -6,11 +6,11 @@ import QtQuick.Controls
 Dialog {
     id: infoDialog
 
-    Tr { id: tr }
+    TranslationBridge { id: tr }
 
     property string message: ""
 
-    title: tr.t("dialog.info") || "信息"
+    title: tr.translate("dialog.info") || "信息"
     modal: true
     standardButtons: Dialog.Ok
     

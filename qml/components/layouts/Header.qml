@@ -9,11 +9,11 @@ Rectangle {
     height: Theme.headerHeight
     
     // i18n 翻译对象
-    Tr { id: tr }
+    TranslationBridge { id: tr }
     
     // 状态属性
-    property string title: tr.t("header.title")
-    property string subtitle: tr.t("header.subtitle")
+    property string title: tr.translate("header.title")
+    property string subtitle: tr.translate("header.subtitle")
     property bool alertActive: false
     property bool isWarning: false  // 预警状态
     property bool isDanger: false   // 报警状态
@@ -29,9 +29,9 @@ Rectangle {
     
     // 报警文本根据状态动态变化
     readonly property string alertText: {
-        if (isDanger && isAngleAlarm) return tr.t("danger.title.angleAlarm")
-        if (isDanger) return tr.t("danger.title.danger")
-        if (isWarning) return tr.t("danger.title.warning")
+        if (isDanger && isAngleAlarm) return tr.translate("danger.title.angleAlarm")
+        if (isDanger) return tr.translate("danger.title.danger")
+        if (isWarning) return tr.translate("danger.title.warning")
         return ""
     }
     

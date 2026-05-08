@@ -7,7 +7,7 @@ import "../components/controls"
 Item {
     id: homeView
     
-    Tr { id: tr }
+    TranslationBridge { id: tr }
     
     property alias counter: counter
     
@@ -49,7 +49,7 @@ Item {
             id: textField
             anchors.horizontalCenter: parent.horizontalCenter
             width: 400
-            placeholderText: tr.t("home.placeholder")
+            placeholderText: tr.translate("home.placeholder")
             font.pixelSize: 20
             
             onActiveFocusChanged: {
@@ -61,7 +61,7 @@ Item {
         
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: tr.t("home.inputContent") + ": " + textField.text
+            text: tr.translate("home.inputContent") + ": " + textField.text
             font.pixelSize: 16
             color: "#666"
         }
