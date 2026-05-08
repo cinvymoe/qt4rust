@@ -1,7 +1,7 @@
 import QtQuick
 import qt.rust.demo
 
-QtObject {
+Item {
     id: root
 
     property TranslationBridge _bridge: TranslationBridge {}

@@ -61,7 +61,11 @@ impl Translate for FluentBackend {
             return key.to_string();
         };
         
-        let Some(message) = bundle.get_message(key) else {
+        // Convert dot-separated key to Fluent hyphen format
+        // e.g. "monitoring.unit.ton" -> "monitoring-unit-ton"
+        let fluent_key = key.replace('.', "-");
+        
+        let Some(message) = bundle.get_message(&fluent_key) else {
             tracing::warn!("Translation key not found: {}", key);
             return key.to_string();
         };
