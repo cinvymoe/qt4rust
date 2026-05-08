@@ -386,7 +386,7 @@ Item {
                     }
                     
                     Text {
-                        text: sensorTr.t("calibration.calibrating")
+                        text: sensorTr.translate("calibration.calibrating")
                         font.pixelSize: Theme.fontSizeTiny
                         color: "#62748e"
                         anchors.verticalCenter: parent.verticalCenter
@@ -404,7 +404,7 @@ Item {
                     spacing: 4
                     
                     Text {
-                        text: sensorTr.t("calibration.adValue")
+                        text: sensorTr.translate("calibration.adValue")
                         font.pixelSize: Theme.fontSizeTiny
                         color: "#62748e"
                     }
@@ -429,7 +429,7 @@ Item {
                     spacing: 4
                     
                     Text {
-                        text: unit === sensorTr.t("monitoring.unit.ton") ? sensorTr.t("calibration.physicalValue") : (unit === "°" ? sensorTr.t("calibration.angleValue") : sensorTr.t("calibration.radiusValue"))
+                        text: unit === sensorTr.translate("monitoring.unit.ton") ? sensorTr.translate("calibration.physicalValue") : (unit === "°" ? sensorTr.translate("calibration.angleValue") : sensorTr.translate("calibration.radiusValue"))
                         font.pixelSize: Theme.fontSizeTiny
                         color: "#62748e"
                     }

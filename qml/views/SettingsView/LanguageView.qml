@@ -52,7 +52,7 @@ Item {
                 Rectangle {
                     width: parent.width
                     height: 60
-                    color: tr.getLocale() === "zh-CN" ? Theme.darkAccent : Theme.darkBackground
+                    color: tr.currentLocale === "zh-CN" ? Theme.darkAccent : Theme.darkBackground
                     radius: Theme.radiusSmall
                     
                     Text {
@@ -75,7 +75,7 @@ Item {
                 Rectangle {
                     width: parent.width
                     height: 60
-                    color: tr.getLocale() === "en-US" ? Theme.darkAccent : Theme.darkBackground
+                    color: tr.currentLocale === "en-US" ? Theme.darkAccent : Theme.darkBackground
                     radius: Theme.radiusSmall
                     
                     Text {

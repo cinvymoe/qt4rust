@@ -88,6 +88,7 @@ fn main() {
         "qml/assets/images/icon-email.svg",
         "qml/assets/images/icon-location.svg",
         "qml/assets/images/icon-boom-length.svg",
+        "qml/assets/images/icon-language.svg",
         "qml/assets/translations/zh-CN.ftl",
         "qml/assets/translations/en-US.ftl",
     ])

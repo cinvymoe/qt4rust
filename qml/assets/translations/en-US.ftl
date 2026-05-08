@@ -215,3 +215,20 @@ systemStatus-network = Network & Communication
 ## Common
 common-version = v1.0.0
 common-rated = Rated
+
+## Missing keys
+common-loading = Loading...
+common-noData = No Data
+dialog-importError = Import Failed
+dialog-importSuccess = Import Successful
+calibration-radiusTitle = Radius Sensor Calibration
+calibration-angleTitle = Angle Sensor Calibration
+calibration-loadTitle = Load Sensor Calibration
+header-title = Crane Moment Monitoring
+header-subtitle = Real-time Safety Monitoring System
+timeUnit-minute = minute
+timeUnit-hour = hour
+timeUnit-day = day
+timeUnit-month = month
+timeUnit-year = year
+monitoring-angleWithHorizontal = Angle with horizontal

@@ -215,3 +215,20 @@ systemStatus-network = 网络与通信
 ## Common
 common-version = v1.0.0
 common-rated = 额定
+
+## Missing keys
+common-loading = 正在加载...
+common-noData = 无数据
+dialog-importError = 导入失败
+dialog-importSuccess = 导入成功
+calibration-radiusTitle = 长度传感器标定
+calibration-angleTitle = 角度传感器标定
+calibration-loadTitle = 载荷传感器标定
+header-title = 起重机力矩监测
+header-subtitle = 实时安全监控系统
+timeUnit-minute = 分钟
+timeUnit-hour = 小时
+timeUnit-day = 天
+timeUnit-month = 月
+timeUnit-year = 年
+monitoring-angleWithHorizontal = 与水平面夹角
