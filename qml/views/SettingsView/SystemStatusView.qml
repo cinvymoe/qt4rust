@@ -1,9 +1,9 @@
 // SystemStatusView.qml - 系统状态子页面
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
 import "../../components/controls"
-import "../../i18n"
 
 Flickable {
     id: systemStatusView

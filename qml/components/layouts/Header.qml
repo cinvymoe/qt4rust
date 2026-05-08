@@ -1,8 +1,8 @@
 // Header.qml - 顶部栏组件
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
-import "../../i18n"
 
 Rectangle {
     id: header
@@ -12,8 +12,8 @@ Rectangle {
     Tr { id: tr }
     
     // 状态属性
-    property string title: Tr.t("header.title")
-    property string subtitle: Tr.t("header.subtitle")
+    property string title: tr.t("header.title")
+    property string subtitle: tr.t("header.subtitle")
     property bool alertActive: false
     property bool isWarning: false  // 预警状态
     property bool isDanger: false   // 报警状态
@@ -29,9 +29,9 @@ Rectangle {
     
     // 报警文本根据状态动态变化
     readonly property string alertText: {
-        if (isDanger && isAngleAlarm) return Tr.t("danger.title.angleAlarm")
-        if (isDanger) return Tr.t("danger.title.danger")
-        if (isWarning) return Tr.t("danger.title.warning")
+        if (isDanger && isAngleAlarm) return tr.t("danger.title.angleAlarm")
+        if (isDanger) return tr.t("danger.title.danger")
+        if (isWarning) return tr.t("danger.title.warning")
         return ""
     }
     

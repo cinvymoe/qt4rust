@@ -1,10 +1,10 @@
 // SettingsView.qml - 设置页面视图
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../styles"
 import "SettingsView"
-import "../../i18n"
 
 Item {
     id: settingsView

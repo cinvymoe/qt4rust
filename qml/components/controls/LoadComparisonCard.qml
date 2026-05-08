@@ -1,7 +1,7 @@
 // LoadComparisonCard.qml - 载荷对比卡片组件
+import qt.rust.demo
 import QtQuick
 import "../../styles"
-import "../../i18n"
 
 Rectangle {
     id: root

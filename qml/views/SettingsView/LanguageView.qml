@@ -1,8 +1,8 @@
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../../styles"
-import "../../i18n"
 
 Item {
     id: languageView

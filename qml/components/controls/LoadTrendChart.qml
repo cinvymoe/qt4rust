@@ -1,7 +1,7 @@
 // LoadTrendChart.qml - 载荷变化曲线组件
+import qt.rust.demo
 import QtQuick
 import "../../styles"
-import "../../i18n"
 
 Rectangle {
     id: root

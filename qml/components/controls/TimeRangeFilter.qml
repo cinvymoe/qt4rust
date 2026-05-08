@@ -1,10 +1,10 @@
 // TimeRangeFilter.qml - 时间范围筛选组件
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../../styles"
 import "../dialogs"
-import "../../i18n"
 
 RowLayout {
     id: timeRangeFilter

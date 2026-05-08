@@ -1,9 +1,9 @@
 // CustomMultiplierDialog.qml - 自定义倍率选择对话框
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../../styles"
-import "../../i18n"
 
 Dialog {
     id: root

@@ -1,6 +1,7 @@
 // Qt Rust Demo - 主界面 QML 文件
 // 起重机力矩监测系统
 
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Window
@@ -9,7 +10,6 @@ import QtQuick.VirtualKeyboard
 import "views"
 import "components/layouts"
 import "styles"
-import "i18n"
 
 Window {
     id: root
@@ -167,7 +167,7 @@ Window {
             
             // 应用标题
             Text {
-                text: Tr.t("main.title")
+                text: tr.t("main.title")
                 font.pixelSize: Theme.fontSizeXXLarge
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textPrimary
@@ -185,7 +185,7 @@ Window {
             
             // 副标题
             Text {
-                text: Tr.t("main.subtitle")
+                text: tr.t("main.subtitle")
                 font.pixelSize: Theme.fontSizeMedium
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary

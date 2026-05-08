@@ -4,7 +4,6 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import qt.rust.demo
 import "../../styles"
-import "../../i18n"
 import "CalibrationContents"
 
 Item {

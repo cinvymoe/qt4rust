@@ -1,8 +1,8 @@
 // MomentCard.qml - 力矩百分比卡片组件
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
-import "../../i18n"
 
 Rectangle {
     id: momentCard

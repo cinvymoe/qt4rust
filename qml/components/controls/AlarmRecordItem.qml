@@ -1,8 +1,8 @@
 // AlarmRecordItem.qml - 报警记录项组件
+import qt.rust.demo
 import QtQuick
 import QtQuick.Layouts
 import "../../styles"
-import "../../i18n"
 
 Rectangle {
     id: root

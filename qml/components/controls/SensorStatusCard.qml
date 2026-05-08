@@ -1,8 +1,8 @@
 // SensorStatusCard.qml - 传感器状态卡片组件
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
-import "../../i18n"
 
 Rectangle {
     id: sensorCard

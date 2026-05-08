@@ -1,9 +1,9 @@
 // Navigation.qml - 底部导航组件
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
 import "../controls"
-import "../../i18n"
 
 Rectangle {
     id: navigation
@@ -27,7 +27,7 @@ Rectangle {
             width: parent.width / 4
             height: parent.height
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-home.svg"
-            text: Tr.t("nav.monitoring")
+            text: tr.t("nav.monitoring")
             active: navigation.currentIndex === 0
             onClicked: {
                 navigation.currentIndex = 0
@@ -40,7 +40,7 @@ Rectangle {
             width: parent.width / 4
             height: parent.height
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-chart.svg"
-            text: Tr.t("nav.charts")
+            text: tr.t("nav.charts")
             active: navigation.currentIndex === 1
             onClicked: {
                 navigation.currentIndex = 1
@@ -53,7 +53,7 @@ Rectangle {
             width: parent.width / 4
             height: parent.height
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-alarm-record.svg"
-            text: Tr.t("nav.alarms")
+            text: tr.t("nav.alarms")
             active: navigation.currentIndex === 2
             showBadge: true
             onClicked: {
@@ -67,7 +67,7 @@ Rectangle {
             width: parent.width / 4
             height: parent.height
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-settings.svg"
-            text: Tr.t("nav.settings")
+            text: tr.t("nav.settings")
             active: navigation.currentIndex === 3
             onClicked: {
                 navigation.currentIndex = 3

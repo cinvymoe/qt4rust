@@ -1,7 +1,7 @@
 // MultiParamChart.qml - 多参数对比分析图组件
+import qt.rust.demo
 import QtQuick
 import "../../styles"
-import "../../i18n"
 
 Rectangle {
     id: root

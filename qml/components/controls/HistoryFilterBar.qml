@@ -1,10 +1,10 @@
 // HistoryFilterBar.qml - 历史记录筛选栏组件
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../../styles"
 import "../dialogs"
-import "../../i18n"
 
 RowLayout {
     id: historyFilterBar

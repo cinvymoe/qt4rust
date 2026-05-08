@@ -3,7 +3,6 @@ import QtQuick
 import QtQuick.Controls
 import qt.rust.demo
 import "../components/controls"
-import "../i18n"
 
 Item {
     id: homeView

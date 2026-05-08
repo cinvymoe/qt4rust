@@ -1,7 +1,7 @@
 // MomentTrendChart.qml - 力矩百分比趋势图组件
+import qt.rust.demo
 import QtQuick
 import "../../styles"
-import "../../i18n"
 
 Rectangle {
     id: root

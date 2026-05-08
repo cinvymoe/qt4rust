@@ -1,7 +1,7 @@
 // LoadCurveChart.qml - 额定载荷曲线图表组件（使用 Canvas 绘制）
+import qt.rust.demo
 import QtQuick
 import "../../styles"
-import "../../i18n"
 
 Item {
     id: chartContainer

@@ -1,9 +1,9 @@
 // FileSelectDialog.qml - 文件路径输入对话框
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
 import "../controls"
-import "../../i18n"
 
 Dialog {
     id: root

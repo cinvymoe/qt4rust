@@ -1,7 +1,7 @@
 // InfoDialog.qml - 信息对话框组件
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
-import "../../i18n"
 
 Dialog {
     id: infoDialog

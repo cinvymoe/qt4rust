@@ -1,8 +1,8 @@
 // AboutSystemView.qml - 关于系统子页面
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
-import "../../i18n"
 
 Flickable {
     id: aboutSystemView

@@ -4,7 +4,6 @@ import QtQuick.Controls
 import "../../styles"
 import "../../components/controls"
 import "../../components/dialogs"
-import "../../i18n"
 import qt.rust.demo
 
 Flickable {

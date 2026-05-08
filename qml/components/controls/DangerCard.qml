@@ -1,8 +1,8 @@
 // DangerCard.qml - 危险/预警状态卡片组件
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
-import "../../i18n"
 
 Rectangle {
     id: root

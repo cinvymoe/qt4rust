@@ -6,7 +6,6 @@ import qt.rust.demo
 import "../../../styles"
 import "../../../components/controls"
 import "../../../components/dialogs"
-import "../../../i18n"
 
 Item {
     id: root

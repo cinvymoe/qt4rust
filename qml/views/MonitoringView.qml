@@ -7,7 +7,6 @@ import "../components/controls"
 import "../components/layouts"
 import "../components/dialogs"  // 导入对话框组件
 import "../styles"
-import "../i18n"
 
 Item {
     id: monitoringView
