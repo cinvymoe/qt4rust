@@ -10,7 +10,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 /// Create translation provider with default configuration
-/// Loads the saved locale preference and the fallback locale (zh-CN)
+/// Loads ALL available locales from translations directory
 pub fn create_translation_provider(
     config_dir: PathBuf,
     translations_dir: PathBuf,
@@ -18,11 +18,24 @@ pub fn create_translation_provider(
     let locale_manager = Arc::new(LocaleManager::new(config_dir));
     let backend = Arc::new(FluentBackend::new(locale_manager.clone()));
     
-    backend.load_locale("zh-CN", &translations_dir)?;
-    
-    let saved_locale = locale_manager.get_locale();
-    if saved_locale != "zh-CN" {
-        backend.load_locale(&saved_locale, &translations_dir)?;
+    // Load ALL available locales from translations directory
+    // This allows runtime switching without requiring restart
+    if translations_dir.exists() {
+        for entry in std::fs::read_dir(&translations_dir)
+            .map_err(|e| format!("Failed to read translations dir: {}", e))? {
+            if let Ok(entry) = entry {
+                let path = entry.path();
+                if path.extension().map_or(false, |ext| ext == "ftl") {
+                    // Extract locale name from filename (e.g., "en-US.ftl" -> "en-US")
+                    if let Some(locale_name) = path.file_stem().and_then(|s| s.to_str()) {
+                        backend.load_locale(locale_name, &translations_dir)?;
+                    }
+                }
+            }
+        }
+    } else {
+        // Fallback: load zh-CN if translations dir doesn't exist
+        backend.load_locale("zh-CN", &translations_dir)?;
     }
     
     Ok(backend)
