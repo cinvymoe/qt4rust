@@ -1,0 +1,2 @@
+module TranslationManager
+singleton TranslationManager 1.0 TranslationManager.qml

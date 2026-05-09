@@ -9,7 +9,7 @@ Dialog {
 
     property string message: ""
 
-    title: TranslationBridge.translate("dialog.info") || "信息"
+    title: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.info") || "信息" }
     modal: true
     standardButtons: Dialog.Ok
     

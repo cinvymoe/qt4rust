@@ -66,7 +66,7 @@ Item {
                         }
                         
                         Text {
-                            text: TranslationBridge.translate("alarmThreshold.momentTitle")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.momentTitle") }
                             font.pixelSize: Theme.fontSizeLarge
                             color: Theme.textPrimary
                             anchors.verticalCenter: parent.verticalCenter
@@ -78,7 +78,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                                 Text {
-                                    text: TranslationBridge.translate("alarmThreshold.mode")
+                                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.mode") }
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textSecondary
                                 }
@@ -92,7 +92,7 @@ Item {
                                 spacing: Theme.spacingSmall
                                 
                                 Text {
-                                    text: TranslationBridge.translate("alarmThreshold.warningPercent")
+                                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.warningPercent") }
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textSecondary
                                 }
@@ -127,7 +127,7 @@ Item {
                                 spacing: Theme.spacingSmall
                                 
                                 Text {
-                                    text: TranslationBridge.translate("alarmThreshold.dangerPercent")
+                                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.dangerPercent") }
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textSecondary
                                 }
@@ -159,7 +159,7 @@ Item {
                         }
                         
                         Text {
-                            text: TranslationBridge.translate("alarmThreshold.momentNote")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.momentNote") }
                             font.pixelSize: Theme.fontSizeTiny
                             color: "#62748e"
                             wrapMode: Text.WordWrap
@@ -197,7 +197,7 @@ Item {
                         }
                         
                         Text {
-                            text: TranslationBridge.translate("alarmThreshold.angleTitle")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.angleTitle") }
                             font.pixelSize: Theme.fontSizeLarge
                             color: Theme.textPrimary
                             anchors.verticalCenter: parent.verticalCenter
@@ -209,7 +209,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: TranslationBridge.translate("alarmThreshold.angleDesc")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.angleDesc") }
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.textSecondary
                         }
@@ -223,7 +223,7 @@ Item {
                                 spacing: Theme.spacingSmall
                                 
                                 Text {
-                                    text: TranslationBridge.translate("alarmThreshold.angleLower")
+                                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.angleLower") }
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textSecondary
                                 }
@@ -258,7 +258,7 @@ Item {
                                 spacing: Theme.spacingSmall
                                 
                                 Text {
-                                    text: TranslationBridge.translate("alarmThreshold.angleUpper")
+                                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.angleUpper") }
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textSecondary
                                 }
@@ -290,7 +290,7 @@ Item {
                         }
                         
                         Text {
-                            text: TranslationBridge.translate("alarmThreshold.angleNote")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.angleNote") }
                             font.pixelSize: Theme.fontSizeTiny
                             color: "#62748e"
                             wrapMode: Text.WordWrap
@@ -328,7 +328,7 @@ Item {
                         }
                         
                         Text {
-                            text: TranslationBridge.translate("alarmThreshold.mainHook")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.mainHook") }
                             font.pixelSize: Theme.fontSizeLarge
                             color: Theme.textPrimary
                             anchors.verticalCenter: parent.verticalCenter
@@ -340,7 +340,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: TranslationBridge.translate("alarmThreshold.mainHookDesc")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.mainHookDesc") }
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.textSecondary
                         }
@@ -355,7 +355,7 @@ Item {
                                 spacing: Theme.spacingSmall
                                 
                                 Text {
-                                    text: TranslationBridge.translate("alarmThreshold.mode")
+                                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.mode") }
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textSecondary
                                 }
@@ -367,7 +367,7 @@ Item {
                                     // 常开
                                     RadioButton {
                                         id: mainHookNormallyOpenRadio
-                                        text: TranslationBridge.translate("alarmThreshold.modeNO")
+                                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.modeNO") }
                                         checked: alarmViewModel.main_hook_mode === 1
                                         font.pixelSize: Theme.fontSizeMedium
                                         indicator: Rectangle {
@@ -400,7 +400,7 @@ Item {
                                     // 常闭
                                     RadioButton {
                                         id: mainHookNormallyClosedRadio
-                                        text: TranslationBridge.translate("alarmThreshold.modeNC")
+                                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.modeNC") }
                                         checked: alarmViewModel.main_hook_mode === 2
                                         font.pixelSize: Theme.fontSizeMedium
                                         indicator: Rectangle {
@@ -434,7 +434,7 @@ Item {
                         }
                         
                         Text {
-                            text: TranslationBridge.translate("alarmThreshold.mainHookNote")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.mainHookNote") }
                             font.pixelSize: Theme.fontSizeTiny
                             color: "#62748e"
                             wrapMode: Text.WordWrap
@@ -472,7 +472,7 @@ Item {
                         }
                         
                         Text {
-                            text: TranslationBridge.translate("alarmThreshold.subHook")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.subHook") }
                             font.pixelSize: Theme.fontSizeLarge
                             color: Theme.textPrimary
                             anchors.verticalCenter: parent.verticalCenter
@@ -484,7 +484,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: TranslationBridge.translate("alarmThreshold.subHookDesc")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.subHookDesc") }
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.textSecondary
                         }
@@ -499,7 +499,7 @@ Item {
                                 spacing: Theme.spacingSmall
                                 
                                 Text {
-                                    text: TranslationBridge.translate("alarmThreshold.mode")
+                                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.mode") }
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textSecondary
                                 }
@@ -511,7 +511,7 @@ Item {
                                     // 常开
                                     RadioButton {
                                         id: auxHookNormallyOpenRadio
-                                        text: TranslationBridge.translate("alarmThreshold.modeNO")
+                                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.modeNO") }
                                         checked: alarmViewModel.aux_hook_mode === 1
                                         font.pixelSize: Theme.fontSizeMedium
                                         indicator: Rectangle {
@@ -544,7 +544,7 @@ Item {
                                     // 常闭
                                     RadioButton {
                                         id: auxHookNormallyClosedRadio
-                                        text: TranslationBridge.translate("alarmThreshold.modeNC")
+                                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.modeNC") }
                                         checked: alarmViewModel.aux_hook_mode === 2
                                         font.pixelSize: Theme.fontSizeMedium
                                         indicator: Rectangle {
@@ -578,7 +578,7 @@ Item {
                         }
                         
                         Text {
-                            text: TranslationBridge.translate("alarmThreshold.subHookNote")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.subHookNote") }
                             font.pixelSize: Theme.fontSizeTiny
                             color: "#62748e"
                             wrapMode: Text.WordWrap
@@ -615,7 +615,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: TranslationBridge.translate("alarmThreshold.notes")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarmThreshold.notes") }
                             font.pixelSize: Theme.fontSizeMedium
                             color: Theme.dangerLight
                         }
@@ -625,25 +625,25 @@ Item {
                             spacing: 4
                             
                             Text {
-                                text: "• " + TranslationBridge.translate("alarmThreshold.note1")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("alarmThreshold.note1") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + TranslationBridge.translate("alarmThreshold.note2")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("alarmThreshold.note2") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + TranslationBridge.translate("alarmThreshold.note3")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("alarmThreshold.note3") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + TranslationBridge.translate("alarmThreshold.note4")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("alarmThreshold.note4") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }

@@ -66,7 +66,7 @@ Item {
                         }
                         
                         Text {
-                            text: TranslationBridge.translate("calibration.angleTitle") || "两点标定设置"
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.angleTitle") || "两点标定设置" }
                             font.pixelSize: Theme.fontSizeLarge
                             font.weight: Font.Medium
                             color: Theme.textPrimary
@@ -149,7 +149,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: TranslationBridge.translate("calibration.angleNote1")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.angleNote1") }
                             font.pixelSize: Theme.fontSizeMedium
                             color: Theme.warningColor
                         }
@@ -159,31 +159,31 @@ Item {
                             spacing: 4
 
                             Text {
-                                text: "• " + TranslationBridge.translate("calibration.angleNote1")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.angleNote1") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + TranslationBridge.translate("calibration.angleNote2")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.angleNote2") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + TranslationBridge.translate("calibration.angleNote3")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.angleNote3") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + TranslationBridge.translate("calibration.angleNote4")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.angleNote4") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + TranslationBridge.translate("calibration.angleNote5")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.angleNote5") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
@@ -241,7 +241,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: TranslationBridge.translate("calibration.adValue")
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.adValue") }
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }
@@ -273,7 +273,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: TranslationBridge.translate("calibration.angleValue")
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.angleValue") }
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }

@@ -48,7 +48,7 @@ Item {
             id: textField
             anchors.horizontalCenter: parent.horizontalCenter
             width: 400
-            placeholderText: TranslationBridge.translate("home.placeholder")
+            placeholderText: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("home.placeholder") }
             font.pixelSize: 20
             
             onActiveFocusChanged: {
@@ -60,7 +60,7 @@ Item {
         
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: TranslationBridge.translate("home.inputContent") + ": " + textField.text
+            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("home.inputContent") + ": " + textField.text }
             font.pixelSize: 16
             color: "#666"
         }

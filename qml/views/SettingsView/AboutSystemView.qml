@@ -59,7 +59,7 @@ Flickable {
                         spacing: 0
                         
                         Text {
-                            text: TranslationBridge.translate("about.title")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.title") }
                             font.pixelSize: Theme.fontSizeXLarge
                             font.family: Theme.fontFamilyDefault
                             font.weight: Font.Medium
@@ -96,7 +96,7 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: TranslationBridge.translate("about.version")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.version") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -124,7 +124,7 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: TranslationBridge.translate("about.releaseDate")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.releaseDate") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -151,7 +151,7 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: TranslationBridge.translate("about.firmware")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.firmware") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -179,7 +179,7 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: TranslationBridge.translate("about.hardware")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.hardware") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -223,7 +223,7 @@ Flickable {
                     }
                     
                     Text {
-                        text: TranslationBridge.translate("about.features")
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.features") }
                         font.pixelSize: Theme.fontSizeLarge
                         color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
@@ -262,13 +262,13 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: TranslationBridge.translate("about.feature.realtime")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.feature.realtime") }
                                 font.pixelSize: Theme.fontSizeMedium
                                 color: "#e2e8f0"
                             }
                             
                             Text {
-                                text: TranslationBridge.translate("about.feature.realtimeDesc")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.feature.realtimeDesc") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                                 wrapMode: Text.WordWrap
@@ -303,13 +303,13 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: TranslationBridge.translate("about.feature.warning")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.feature.warning") }
                                 font.pixelSize: Theme.fontSizeMedium
                                 color: "#e2e8f0"
                             }
                             
                             Text {
-                                text: TranslationBridge.translate("about.feature.warningDesc")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.feature.warningDesc") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                                 wrapMode: Text.WordWrap
@@ -344,13 +344,13 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: TranslationBridge.translate("about.feature.sensor")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.feature.sensor") }
                                 font.pixelSize: Theme.fontSizeMedium
                                 color: "#e2e8f0"
                             }
                             
                             Text {
-                                text: TranslationBridge.translate("about.feature.sensorDesc")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.feature.sensorDesc") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                                 wrapMode: Text.WordWrap
@@ -388,7 +388,7 @@ Flickable {
                     }
                     
                     Text {
-                        text: TranslationBridge.translate("about.techSpecs")
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.techSpecs") }
                         font.pixelSize: Theme.fontSizeLarge
                         color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
@@ -462,7 +462,7 @@ Flickable {
                     }
                     
                     Text {
-                        text: TranslationBridge.translate("about.certifications")
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.certifications") }
                         font.pixelSize: Theme.fontSizeLarge
                         color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
@@ -544,7 +544,7 @@ Flickable {
                     }
                     
                     Text {
-                        text: TranslationBridge.translate("about.techSupport")
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.techSupport") }
                         font.pixelSize: Theme.fontSizeLarge
                         color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
@@ -574,7 +574,7 @@ Flickable {
                             spacing: 0
                             
                             Text {
-                                text: TranslationBridge.translate("about.hotline")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.hotline") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -605,7 +605,7 @@ Flickable {
                             spacing: 0
                             
                             Text {
-                                text: TranslationBridge.translate("about.email")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.email") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -636,13 +636,13 @@ Flickable {
                             spacing: 0
                             
                             Text {
-                                text: TranslationBridge.translate("about.address")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.address") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
                             
                             Text {
-                                text: TranslationBridge.translate("about.addressValue")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.addressValue") }
                                 font.pixelSize: Theme.fontSizeMedium
                                 color: "#e2e8f0"
                             }
@@ -667,7 +667,7 @@ Flickable {
                 spacing: Theme.spacingSmall
                 
                 Text {
-                    text: TranslationBridge.translate("about.copyright")
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.copyright") }
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textTertiary
                     horizontalAlignment: Text.AlignHCenter
@@ -675,7 +675,7 @@ Flickable {
                 }
                 
                 Text {
-                    text: TranslationBridge.translate("about.copyrightNotice")
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.copyrightNotice") }
                     font.pixelSize: Theme.fontSizeTiny
                     color: "#62748e"
                     horizontalAlignment: Text.AlignHCenter

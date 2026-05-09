@@ -59,7 +59,7 @@ Flickable {
                             }
                             
                             Text {
-                                text: TranslationBridge.translate("systemStatus.sensorConnection")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("systemStatus.sensorConnection") }
                                 font.pixelSize: Theme.fontSizeLarge
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -127,7 +127,7 @@ Flickable {
                             }
                             
                             Text {
-                                text: TranslationBridge.translate("systemStatus.systemInfo")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("systemStatus.systemInfo") }
                                 font.pixelSize: Theme.fontSizeLarge
                                 color: Theme.textPrimary
                                 anchors.verticalCenter: parent.verticalCenter
@@ -212,7 +212,7 @@ Flickable {
                             }
                             
                             Text {
-                                text: TranslationBridge.translate("systemStatus.network")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("systemStatus.network") }
                                 font.pixelSize: Theme.fontSizeLarge
                                 color: Theme.textPrimary
                                 anchors.verticalCenter: parent.verticalCenter

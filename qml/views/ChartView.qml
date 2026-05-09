@@ -72,14 +72,14 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: TranslationBridge.translate("chart.title")
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("chart.title") }
                         font.pixelSize: Theme.fontSizeXLarge
                         font.family: Theme.fontFamilyDefault
                         color: Theme.textPrimary
                     }
                     
                     Text {
-                        text: TranslationBridge.translate("chart.subtitle")
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("chart.subtitle") }
                         font.pixelSize: Theme.fontSizeSmall
                         font.family: Theme.fontFamilyDefault
                         color: Theme.textTertiary
@@ -94,7 +94,7 @@ Item {
                     
                     // 刷新按钮
                     Button {
-                        text: TranslationBridge.translate("chart.refresh")
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("chart.refresh") }
                         implicitWidth: 60
                         implicitHeight: 32
                         

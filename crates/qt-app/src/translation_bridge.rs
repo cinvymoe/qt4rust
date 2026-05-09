@@ -25,7 +25,11 @@ pub mod translation_bridge {
         #[qml_element]
         #[qml_singleton]
         #[qproperty(QString, current_locale)]
+        #[qproperty(i32, locale_version)]
         type TranslationBridge = super::TranslationBridgeRust;
+
+        #[qsignal]
+        fn locale_changed(self: Pin<&mut TranslationBridge>);
 
         #[qinvokable]
         fn translate(self: &TranslationBridge, key: &QString) -> QString;
@@ -47,6 +51,7 @@ use crate::translation_bridge::translation_bridge::QVector_QString;
 
 pub struct TranslationBridgeRust {
     current_locale: QString,
+    locale_version: i32,
 }
 
 impl Default for TranslationBridgeRust {
@@ -56,6 +61,7 @@ impl Default for TranslationBridgeRust {
             .unwrap_or_else(|| "zh-CN".to_string());
         Self {
             current_locale: QString::from(&locale),
+            locale_version: 0,
         }
     }
 }
@@ -113,6 +119,9 @@ impl translation_bridge::TranslationBridge {
                 match provider.set_locale(&locale_str) {
                     Ok(()) => {
                         self.as_mut().set_current_locale(QString::from(&locale_str));
+                        let current_version = self.locale_version;
+                        self.as_mut().set_locale_version(current_version + 1);
+                        self.as_mut().locale_changed();
                         tracing::info!("Locale switched to: {}", locale_str);
                         true
                     }

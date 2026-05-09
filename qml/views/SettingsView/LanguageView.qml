@@ -25,7 +25,7 @@ Item {
             }
             
             Text {
-                text: TranslationBridge.translate("settings.language")
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("settings.language") }
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.weight: Font.Medium
@@ -55,7 +55,7 @@ Item {
                     radius: Theme.radiusSmall
                     
                     Text {
-                        text: TranslationBridge.translate("settings.language.zhCN")
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("settings.language.zhCN") }
                         font.pixelSize: Theme.fontSizeMedium
                         color: Theme.textPrimary
                         font.family: Theme.fontFamilyDefault
@@ -78,7 +78,7 @@ Item {
                     radius: Theme.radiusSmall
                     
                     Text {
-                        text: TranslationBridge.translate("settings.language.enUS")
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("settings.language.enUS") }
                         font.pixelSize: Theme.fontSizeMedium
                         color: Theme.textPrimary
                         font.family: Theme.fontFamilyDefault

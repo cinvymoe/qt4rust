@@ -42,7 +42,7 @@ Rectangle {
             }
             
             Text {
-                text: TranslationBridge.translate("boomLength.title")
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("boomLength.title") }
                 font.pixelSize: Theme.fontSizeSmall
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
@@ -62,7 +62,7 @@ Rectangle {
             }
             
             Text {
-                text: TranslationBridge.translate("boomLength.unit")
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("boomLength.unit") }
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textTertiary
@@ -73,7 +73,7 @@ Rectangle {
         
         // 描述文本
         Text {
-            text: TranslationBridge.translate("boomLength.description")
+            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("boomLength.description") }
             font.pixelSize: Theme.fontSizeTiny
             font.family: Theme.fontFamilyDefault
             color: Theme.textTertiary

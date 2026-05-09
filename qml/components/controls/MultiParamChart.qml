@@ -35,7 +35,7 @@ Rectangle {
             }
             
             Text {
-                text: TranslationBridge.translate("chart.multiParam")
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("chart.multiParam") }
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.weight: Font.Medium
@@ -159,7 +159,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: TranslationBridge.translate("chart.workingRadius")
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("chart.workingRadius") }
                     font.pixelSize: Theme.fontSizeSmall
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textSecondary
@@ -179,7 +179,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: TranslationBridge.translate("chart.boomAngle")
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("chart.boomAngle") }
                     font.pixelSize: Theme.fontSizeSmall
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textSecondary

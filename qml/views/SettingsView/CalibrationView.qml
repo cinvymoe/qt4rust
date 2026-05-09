@@ -60,17 +60,17 @@ Item {
                     // 重量传感器卡片
                     SensorDataCard {
                         width: parent.width - parent.leftPadding - parent.rightPadding
-                        sensorName: TranslationBridge.translate("calibration.loadSensor")
+                        sensorName: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.loadSensor") }
                         adValue: (viewModel.ad1_load || 0).toFixed(2)
                         calculatedValue: (viewModel.calculated_load || 0).toFixed(2)
-                        unit: TranslationBridge.translate("monitoring.unit.ton")
+                        unit: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("monitoring.unit.ton") }
                         isOnline: viewModel.sensor_connected
                     }
                     
                     // 角度传感器卡片
                     SensorDataCard {
                         width: parent.width - parent.leftPadding - parent.rightPadding
-                        sensorName: TranslationBridge.translate("calibration.angleSensor")
+                        sensorName: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.angleSensor") }
                         adValue: (viewModel.ad3_angle || 0).toFixed(2)
                         calculatedValue: (viewModel.calculated_angle || 0).toFixed(1)
                         unit: "°"
@@ -80,7 +80,7 @@ Item {
                     // 侧长传感器卡片
                     SensorDataCard {
                         width: parent.width - parent.leftPadding - parent.rightPadding
-                        sensorName: TranslationBridge.translate("calibration.radiusSensor")
+                        sensorName: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.radiusSensor") }
                         adValue: (viewModel.ad2_radius || 0).toFixed(2)
                         calculatedValue: (viewModel.calculated_radius || 0).toFixed(2)
                         unit: "m"
@@ -113,12 +113,7 @@ Item {
                         spacing: 0
                         
                         Repeater {
-                            model: [
-                                {text: TranslationBridge.translate("calibration.loadSensor")},
-                                {text: TranslationBridge.translate("calibration.angleSensor")},
-                                {text: TranslationBridge.translate("calibration.radiusSensor")},
-                                {text: TranslationBridge.translate("calibration.alarmThreshold")}
-                            ]
+                            model: getCalibrationTabModel()
                             
                             Rectangle {
                                 width: parent.width / 4
@@ -224,7 +219,7 @@ Item {
                                 }
                                 
                                 Text {
-                                    text: TranslationBridge.translate("calibration.restoreDefault")
+                                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.restoreDefault") }
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textPrimary
                                     anchors.verticalCenter: parent.verticalCenter
@@ -280,7 +275,7 @@ Item {
                                 }
                                 
                                 Text {
-                                    text: TranslationBridge.translate("settings.save")
+                                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("settings.save") }
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textPrimary
                                     anchors.verticalCenter: parent.verticalCenter
@@ -384,7 +379,7 @@ Item {
                     }
                     
                     Text {
-                        text: TranslationBridge.translate("calibration.calibrating")
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.calibrating") }
                         font.pixelSize: Theme.fontSizeTiny
                         color: "#62748e"
                         anchors.verticalCenter: parent.verticalCenter
@@ -402,7 +397,7 @@ Item {
                     spacing: 4
                     
                     Text {
-                        text: TranslationBridge.translate("calibration.adValue")
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.adValue") }
                         font.pixelSize: Theme.fontSizeTiny
                         color: "#62748e"
                     }
@@ -427,7 +422,12 @@ Item {
                     spacing: 4
                     
                     Text {
-                        text: unit === TranslationBridge.translate("monitoring.unit.ton") ? TranslationBridge.translate("calibration.physicalValue") : (unit === "°" ? TranslationBridge.translate("calibration.angleValue") : TranslationBridge.translate("calibration.radiusValue"))
+                        text: {
+                            const _ = calibrationView._localeVersion
+                            if (unit === TranslationBridge.translate("monitoring.unit.ton")) return TranslationBridge.translate("calibration.physicalValue")
+                            if (unit === "°") return TranslationBridge.translate("calibration.angleValue")
+                            return TranslationBridge.translate("calibration.radiusValue")
+                        }
                         font.pixelSize: Theme.fontSizeTiny
                         color: "#62748e"
                     }
@@ -453,5 +453,16 @@ Item {
                 }
             }
         }
+    }
+    
+    // 获取标定 Tab 模型
+    function getCalibrationTabModel() {
+        const _ = TranslationBridge.locale_version
+        return [
+            {text: TranslationBridge.translate("calibration.loadSensor")},
+            {text: TranslationBridge.translate("calibration.angleSensor")},
+            {text: TranslationBridge.translate("calibration.radiusSensor")},
+            {text: TranslationBridge.translate("calibration.alarmThreshold")}
+        ]
     }
 }

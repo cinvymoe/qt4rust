@@ -10,6 +10,7 @@ Item {
     id: settingsView
     
     property int currentTabIndex: 0
+    property int _localeVersion: TranslationBridge.locale_version
     
     
     Rectangle {
@@ -46,14 +47,14 @@ Item {
                         width: Math.min(300, parent.width * 0.3)
                         
                         Text {
-                            text: getCurrentTabTitle()
+                            text: { const _ = settingsView._localeVersion; return getCurrentTabTitle() }
                             font.pixelSize: Theme.fontSizeLarge
                             color: Theme.textPrimary
                             font.family: Theme.fontFamilyDefault
                         }
                         
                         Text {
-                            text: getCurrentTabDescription()
+                            text: { const _ = settingsView._localeVersion; return getCurrentTabDescription() }
                             font.pixelSize: Theme.fontSizeTiny
                             color: Theme.textTertiary
                             font.family: Theme.fontFamilyDefault
@@ -69,13 +70,7 @@ Item {
                         spacing: 0
                         
                         Repeater {
-                            model: [
-                                {text: TranslationBridge.translate("settings.systemStatus"), icon: "icon-system-status.svg"},
-                                {text: TranslationBridge.translate("settings.calibration"), icon: "icon-calibration.svg"},
-                                {text: TranslationBridge.translate("settings.momentCurve"), icon: "icon-moment-curve.svg"},
-                                {text: TranslationBridge.translate("settings.about"), icon: "icon-about-system.svg"},
-                                {text: TranslationBridge.translate("settings.language"), icon: "icon-language.svg"}
-                            ]
+                            model: getTabModel()
                             
                             Rectangle {
                                 width: parent.width / 5
@@ -157,6 +152,7 @@ Item {
     
     // 获取当前 Tab 的标题
     function getCurrentTabTitle() {
+        const _ = TranslationBridge.locale_version
         switch(currentTabIndex) {
             case 0: return TranslationBridge.translate("settings.systemStatus")
             case 1: return TranslationBridge.translate("settings.calibration")
@@ -169,6 +165,7 @@ Item {
     
     // 获取当前 Tab 的描述文本
     function getCurrentTabDescription() {
+        const _ = TranslationBridge.locale_version
         switch(currentTabIndex) {
             case 0: return TranslationBridge.translate("systemStatus.sensorConnection")
             case 1: return TranslationBridge.translate("calibration.multiplierDesc")
@@ -177,5 +174,17 @@ Item {
             case 4: return TranslationBridge.translate("settings.language")
             default: return ""
         }
+    }
+    
+    // 获取 Tab 模型数据
+    function getTabModel() {
+        const _ = TranslationBridge.locale_version
+        return [
+            {text: TranslationBridge.translate("settings.systemStatus"), icon: "icon-system-status.svg"},
+            {text: TranslationBridge.translate("settings.calibration"), icon: "icon-calibration.svg"},
+            {text: TranslationBridge.translate("settings.momentCurve"), icon: "icon-moment-curve.svg"},
+            {text: TranslationBridge.translate("settings.about"), icon: "icon-about-system.svg"},
+            {text: TranslationBridge.translate("settings.language"), icon: "icon-language.svg"}
+        ]
     }
 }

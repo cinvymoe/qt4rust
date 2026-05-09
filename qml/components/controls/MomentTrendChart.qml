@@ -33,7 +33,7 @@ Rectangle {
             }
             
             Text {
-                text: TranslationBridge.translate("chart.momentTrend")
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("chart.momentTrend") }
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.weight: Font.Medium
@@ -167,7 +167,7 @@ Rectangle {
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: parent.height * 0.25
-                text: TranslationBridge.translate("moment.warning") + " 75%"
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("moment.warning") + " 75%" }
                 font.pixelSize: Theme.fontSizeTiny
                 font.family: Theme.fontFamilyDefault
                 color: Theme.warningColor
@@ -177,7 +177,7 @@ Rectangle {
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: parent.height * 0.1
-                text: TranslationBridge.translate("moment.danger") + " 90%"
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("moment.danger") + " 90%" }
                 font.pixelSize: Theme.fontSizeTiny
                 font.family: Theme.fontFamilyDefault
                 color: Theme.dangerColor

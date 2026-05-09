@@ -166,7 +166,7 @@ Window {
             
             // 应用标题
             Text {
-                text: TranslationBridge.translate("main.title")
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("main.title") }
                 font.pixelSize: Theme.fontSizeXXLarge
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textPrimary
@@ -184,7 +184,7 @@ Window {
             
             // 副标题
             Text {
-                text: TranslationBridge.translate("main.subtitle")
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("main.subtitle") }
                 font.pixelSize: Theme.fontSizeMedium
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary

@@ -10,8 +10,8 @@ Item {
 
 
     // Translated strings for canvas (canvas doesn't have direct QML access)
-    property string loadingText: TranslationBridge.translate("common.loading") || "正在加载数据..."
-    property string noDataText: TranslationBridge.translate("common.noData") || "无数据"
+    property string loadingText: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("common.loading") || "正在加载数据..." }
+    property string noDataText: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("common.noData") || "无数据" }
 
     property var viewModel: null
     

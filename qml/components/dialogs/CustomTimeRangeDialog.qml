@@ -72,7 +72,7 @@ Dialog {
             
             // 主标题
             Text {
-                text: TranslationBridge.translate("dialog.timeRange")
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.timeRange") }
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.bold: true
@@ -81,7 +81,7 @@ Dialog {
 
             // 副标题
             Text {
-                text: TranslationBridge.translate("dialog.timeRangeDesc")
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.timeRangeDesc") }
                 font.pixelSize: Theme.fontSizeSmall
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
@@ -89,7 +89,7 @@ Dialog {
             
             // 副标题
             Text {
-                text: TranslationBridge.translate("dialog.timeRangeDesc")
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.timeRangeDesc") }
                 font.pixelSize: Theme.fontSizeSmall
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
@@ -110,7 +110,7 @@ Dialog {
                 spacing: Theme.spacingSmall
                 
                 Text {
-                    text: TranslationBridge.translate("dialog.startTime")
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.startTime") }
                     font.pixelSize: Theme.fontSizeMedium
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textSecondary
@@ -143,7 +143,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: startYearCombo.displayText + TranslationBridge.translate("timeUnit.year")
+                            text: { const _ = TranslationBridge.locale_version; return startYearCombo.displayText + TranslationBridge.translate("timeUnit.year") }
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -160,7 +160,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: modelData + TranslationBridge.translate("timeUnit.year")
+                                text: { const _ = TranslationBridge.locale_version; return modelData + TranslationBridge.translate("timeUnit.year") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -210,7 +210,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: startMonthCombo.displayText + TranslationBridge.translate("timeUnit.month")
+                            text: { const _ = TranslationBridge.locale_version; return startMonthCombo.displayText + TranslationBridge.translate("timeUnit.month") }
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -227,7 +227,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: modelData + TranslationBridge.translate("timeUnit.month")
+                                text: { const _ = TranslationBridge.locale_version; return modelData + TranslationBridge.translate("timeUnit.month") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -283,7 +283,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: startDayCombo.displayText + TranslationBridge.translate("timeUnit.day")
+                            text: { const _ = TranslationBridge.locale_version; return startDayCombo.displayText + TranslationBridge.translate("timeUnit.day") }
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -300,7 +300,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: modelData + TranslationBridge.translate("timeUnit.day")
+                                text: { const _ = TranslationBridge.locale_version; return modelData + TranslationBridge.translate("timeUnit.day") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -356,7 +356,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: (startHourCombo.displayText < 10 ? "0" : "") + startHourCombo.displayText + TranslationBridge.translate("timeUnit.hour")
+                            text: { const _ = TranslationBridge.locale_version; return (startHourCombo.displayText < 10 ? "0" : "") + startHourCombo.displayText + TranslationBridge.translate("timeUnit.hour") }
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -373,7 +373,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: (modelData < 10 ? "0" : "") + modelData + TranslationBridge.translate("timeUnit.hour")
+                                text: { const _ = TranslationBridge.locale_version; return (modelData < 10 ? "0" : "") + modelData + TranslationBridge.translate("timeUnit.hour") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -429,7 +429,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: (startMinuteCombo.displayText < 10 ? "0" : "") + startMinuteCombo.displayText + TranslationBridge.translate("timeUnit.minute")
+                            text: { const _ = TranslationBridge.locale_version; return (startMinuteCombo.displayText < 10 ? "0" : "") + startMinuteCombo.displayText + TranslationBridge.translate("timeUnit.minute") }
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -446,7 +446,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: (modelData < 10 ? "0" : "") + modelData + TranslationBridge.translate("timeUnit.minute")
+                                text: { const _ = TranslationBridge.locale_version; return (modelData < 10 ? "0" : "") + modelData + TranslationBridge.translate("timeUnit.minute") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -495,7 +495,7 @@ Dialog {
                 spacing: Theme.spacingSmall
 
                 Text {
-                    text: TranslationBridge.translate("dialog.endTime")
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.endTime") }
                     font.pixelSize: Theme.fontSizeMedium
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textSecondary
@@ -528,7 +528,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: endYearCombo.displayText + TranslationBridge.translate("timeUnit.year")
+                            text: { const _ = TranslationBridge.locale_version; return endYearCombo.displayText + TranslationBridge.translate("timeUnit.year") }
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -545,7 +545,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: modelData + TranslationBridge.translate("timeUnit.year")
+                                text: { const _ = TranslationBridge.locale_version; return modelData + TranslationBridge.translate("timeUnit.year") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -595,7 +595,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: endMonthCombo.displayText + TranslationBridge.translate("timeUnit.month")
+                            text: { const _ = TranslationBridge.locale_version; return endMonthCombo.displayText + TranslationBridge.translate("timeUnit.month") }
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -612,7 +612,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: modelData + TranslationBridge.translate("timeUnit.month")
+                                text: { const _ = TranslationBridge.locale_version; return modelData + TranslationBridge.translate("timeUnit.month") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -668,7 +668,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: endDayCombo.displayText + TranslationBridge.translate("timeUnit.day")
+                            text: { const _ = TranslationBridge.locale_version; return endDayCombo.displayText + TranslationBridge.translate("timeUnit.day") }
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -685,7 +685,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: modelData + TranslationBridge.translate("timeUnit.day")
+                                text: { const _ = TranslationBridge.locale_version; return modelData + TranslationBridge.translate("timeUnit.day") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -741,7 +741,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: (endHourCombo.displayText < 10 ? "0" : "") + endHourCombo.displayText + TranslationBridge.translate("timeUnit.hour")
+                            text: { const _ = TranslationBridge.locale_version; return (endHourCombo.displayText < 10 ? "0" : "") + endHourCombo.displayText + TranslationBridge.translate("timeUnit.hour") }
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -758,7 +758,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: (modelData < 10 ? "0" : "") + modelData + TranslationBridge.translate("timeUnit.hour")
+                                text: { const _ = TranslationBridge.locale_version; return (modelData < 10 ? "0" : "") + modelData + TranslationBridge.translate("timeUnit.hour") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -814,7 +814,7 @@ Dialog {
                         }
                         
                         contentItem: Text {
-                            text: (endMinuteCombo.displayText < 10 ? "0" : "") + endMinuteCombo.displayText + TranslationBridge.translate("timeUnit.minute")
+                            text: { const _ = TranslationBridge.locale_version; return (endMinuteCombo.displayText < 10 ? "0" : "") + endMinuteCombo.displayText + TranslationBridge.translate("timeUnit.minute") }
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
@@ -831,7 +831,7 @@ Dialog {
                             }
                             
                             contentItem: Text {
-                                text: (modelData < 10 ? "0" : "") + modelData + TranslationBridge.translate("timeUnit.minute")
+                                text: { const _ = TranslationBridge.locale_version; return (modelData < 10 ? "0" : "") + modelData + TranslationBridge.translate("timeUnit.minute") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -881,7 +881,7 @@ Dialog {
             // 重置筛选按钮
             Button {
                 id: resetButton
-                text: TranslationBridge.translate("dialog.resetFilter")
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.resetFilter") }
                 implicitWidth: 120
                 implicitHeight: 44
                 
@@ -928,7 +928,7 @@ Dialog {
             // 应用筛选按钮
             Button {
                 id: applyButton
-                text: TranslationBridge.translate("dialog.applyFilter")
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.applyFilter") }
                 implicitWidth: 120
                 implicitHeight: 44
                 

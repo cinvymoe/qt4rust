@@ -26,7 +26,7 @@ Rectangle {
             width: parent.width / 4
             height: parent.height
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-home.svg"
-            text: TranslationBridge.translate("nav.monitoring")
+            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("nav.monitoring") }
             active: navigation.currentIndex === 0
             onClicked: {
                 navigation.currentIndex = 0
@@ -39,7 +39,7 @@ Rectangle {
             width: parent.width / 4
             height: parent.height
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-chart.svg"
-            text: TranslationBridge.translate("nav.charts")
+            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("nav.charts") }
             active: navigation.currentIndex === 1
             onClicked: {
                 navigation.currentIndex = 1
@@ -52,7 +52,7 @@ Rectangle {
             width: parent.width / 4
             height: parent.height
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-alarm-record.svg"
-            text: TranslationBridge.translate("nav.alarms")
+            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("nav.alarms") }
             active: navigation.currentIndex === 2
             showBadge: true
             onClicked: {
@@ -66,7 +66,7 @@ Rectangle {
             width: parent.width / 4
             height: parent.height
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-settings.svg"
-            text: TranslationBridge.translate("nav.settings")
+            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("nav.settings") }
             active: navigation.currentIndex === 3
             onClicked: {
                 navigation.currentIndex = 3

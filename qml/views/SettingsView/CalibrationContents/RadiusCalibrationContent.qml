@@ -66,7 +66,7 @@ Item {
                         }
                         
                         Text {
-                            text: TranslationBridge.translate("calibration.radiusTitle") || "两点标定设置"
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.radiusTitle") || "两点标定设置" }
                             font.pixelSize: Theme.fontSizeLarge
                             font.weight: Font.Medium
                             color: Theme.textPrimary
@@ -149,7 +149,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: TranslationBridge.translate("calibration.radiusNote1")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.radiusNote1") }
                             font.pixelSize: Theme.fontSizeMedium
                             color: Theme.successColor
                         }
@@ -159,31 +159,31 @@ Item {
                             spacing: 4
 
                             Text {
-                                text: "• " + TranslationBridge.translate("calibration.radiusNote1")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.radiusNote1") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + TranslationBridge.translate("calibration.radiusNote2")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.radiusNote2") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + TranslationBridge.translate("calibration.radiusNote3")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.radiusNote3") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + TranslationBridge.translate("calibration.radiusNote4")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.radiusNote4") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + TranslationBridge.translate("calibration.radiusNote5")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.radiusNote5") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
@@ -241,7 +241,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: TranslationBridge.translate("calibration.adValue")
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.adValue") }
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }
@@ -273,7 +273,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: TranslationBridge.translate("calibration.radiusValue")
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.radiusValue") }
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }

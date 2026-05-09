@@ -70,7 +70,7 @@ Dialog {
             
             // 主标题
             Text {
-                text: TranslationBridge.translate("dialog.selectMultiplier")
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.selectMultiplier") }
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.bold: true
@@ -79,7 +79,7 @@ Dialog {
             
             // 副标题
             Text {
-                text: TranslationBridge.translate("dialog.selectMultiplierDesc")
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.selectMultiplierDesc") }
                 font.pixelSize: Theme.fontSizeSmall
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
@@ -160,7 +160,7 @@ Dialog {
                 }
                 
                 contentItem: Text {
-                    text: TranslationBridge.translate("dialog.cancel")
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.cancel") }
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textPrimary
                     horizontalAlignment: Text.AlignHCenter
@@ -180,7 +180,7 @@ Dialog {
                 }
                 
                 contentItem: Text {
-                    text: TranslationBridge.translate("dialog.confirm")
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.confirm") }
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textPrimary
                     horizontalAlignment: Text.AlignHCenter

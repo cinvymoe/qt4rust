@@ -80,14 +80,14 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: TranslationBridge.translate("alarm.title")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarm.title") }
                             font.pixelSize: Theme.fontSizeXLarge
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
                         }
                         
                         Text {
-                            text: TranslationBridge.translate("alarm.subtitle")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarm.subtitle") }
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textTertiary
@@ -114,7 +114,7 @@ Item {
                         
                         // 刷新按钮
                         Button {
-                            text: TranslationBridge.translate("chart.refresh")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("chart.refresh") }
                             implicitWidth: 60
                             implicitHeight: 32
                             
@@ -188,7 +188,7 @@ Item {
                                     }
                                     
                                     Text {
-                                        text: TranslationBridge.translate("alarm.totalCount")
+                                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarm.totalCount") }
                                         font.pixelSize: Theme.fontSizeMedium
                                         font.family: Theme.fontFamilyDefault
                                         color: Theme.textTertiary
@@ -229,7 +229,7 @@ Item {
                                     }
                                     
                                     Text {
-                                        text: TranslationBridge.translate("alarm.warningCount")
+                                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarm.warningCount") }
                                         font.pixelSize: Theme.fontSizeMedium
                                         font.family: Theme.fontFamilyDefault
                                         color: Theme.textTertiary
@@ -270,7 +270,7 @@ Item {
                                     }
                                     
                                     Text {
-                                        text: TranslationBridge.translate("alarm.dangerCount")
+                                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarm.dangerCount") }
                                         font.pixelSize: Theme.fontSizeMedium
                                         font.family: Theme.fontFamilyDefault
                                         color: Theme.textTertiary
@@ -304,7 +304,7 @@ Item {
                             spacing: Theme.spacingMedium - 4
                             
                             Text {
-                                text: TranslationBridge.translate("alarm.levels")
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarm.levels") }
                                 font.pixelSize: Theme.fontSizeNormal
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -339,14 +339,14 @@ Item {
                                             spacing: 0
                                             
                                             Text {
-                                                text: TranslationBridge.translate("alarm.level.normal")
+                                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarm.level.normal") }
                                                 font.pixelSize: Theme.fontSizeMedium
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.successColor
                                             }
                                             
                                             Text {
-                                                text: TranslationBridge.translate("alarm.level.normalDesc")
+                                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarm.level.normalDesc") }
                                                 font.pixelSize: Theme.fontSizeSmall
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.textTertiary
@@ -380,14 +380,14 @@ Item {
                                             spacing: 0
                                             
                                             Text {
-                                                text: TranslationBridge.translate("alarm.level.warning")
+                                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarm.level.warning") }
                                                 font.pixelSize: Theme.fontSizeMedium
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.warningColor
                                             }
                                             
                                             Text {
-                                                text: TranslationBridge.translate("alarm.level.warningDesc")
+                                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarm.level.warningDesc") }
                                                 font.pixelSize: Theme.fontSizeSmall
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.textTertiary
@@ -421,14 +421,14 @@ Item {
                                             spacing: 0
                                             
                                             Text {
-                                                text: TranslationBridge.translate("alarm.level.danger")
+                                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarm.level.danger") }
                                                 font.pixelSize: Theme.fontSizeMedium
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.dangerLight
                                             }
                                             
                                             Text {
-                                                text: TranslationBridge.translate("alarm.level.dangerDesc")
+                                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarm.level.dangerDesc") }
                                                 font.pixelSize: Theme.fontSizeSmall
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.textTertiary

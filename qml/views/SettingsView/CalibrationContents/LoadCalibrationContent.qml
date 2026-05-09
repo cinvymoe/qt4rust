@@ -67,7 +67,7 @@ Item {
                         }
                         
                         Text {
-                            text: TranslationBridge.translate("calibration.multiplier")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.multiplier") }
                             font.pixelSize: Theme.fontSizeLarge
                             color: Theme.textPrimary
                             anchors.verticalCenter: parent.verticalCenter
@@ -79,7 +79,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: TranslationBridge.translate("calibration.selectMultiplier")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.selectMultiplier") }
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.textSecondary
                         }
@@ -188,7 +188,7 @@ Item {
                         }
                         
                         Text {
-                            text: TranslationBridge.translate("calibration.multiplierDesc")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.multiplierDesc") }
                             font.pixelSize: Theme.fontSizeTiny
                             color: "#62748e"
                             wrapMode: Text.WordWrap
@@ -226,7 +226,7 @@ Item {
                         }
                         
                         Text {
-                            text: TranslationBridge.translate("calibration.loadTitle") || "两点标定设置"
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.loadTitle") || "两点标定设置" }
                             font.pixelSize: Theme.fontSizeLarge
                             font.weight: Font.Medium
                             color: Theme.textPrimary
@@ -309,7 +309,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: TranslationBridge.translate("calibration.loadNote1")
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.loadNote1") }
                             font.pixelSize: Theme.fontSizeMedium
                             color: Theme.textAccent
                         }
@@ -319,37 +319,37 @@ Item {
                             spacing: 4
 
                             Text {
-                                text: "• " + TranslationBridge.translate("calibration.loadNote1")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.loadNote1") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + TranslationBridge.translate("calibration.loadNote2")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.loadNote2") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + TranslationBridge.translate("calibration.loadNote3")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.loadNote3") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + TranslationBridge.translate("calibration.loadNote4")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.loadNote4") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + TranslationBridge.translate("calibration.loadNote5")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.loadNote5") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + TranslationBridge.translate("calibration.loadNote6")
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.loadNote6") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
@@ -417,7 +417,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: TranslationBridge.translate("calibration.adValue")
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.adValue") }
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }
@@ -449,7 +449,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: TranslationBridge.translate("calibration.physicalValue")
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.physicalValue") }
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }

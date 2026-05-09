@@ -34,7 +34,7 @@ Rectangle {
             }
             
             Text {
-                text: TranslationBridge.translate("chart.loadTrend")
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("chart.loadTrend") }
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.weight: Font.Medium

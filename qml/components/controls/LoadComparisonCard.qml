@@ -27,7 +27,7 @@ Rectangle {
         
         // 标题
         Text {
-            text: TranslationBridge.translate("loadComparison.title")
+            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("loadComparison.title") }
             font.pixelSize: Theme.fontSizeSmall
             font.family: Theme.fontFamilyDefault
             color: Theme.textSecondary
@@ -60,7 +60,7 @@ Rectangle {
                 spacing: 0
                 
                 Text {
-                    text: TranslationBridge.translate("loadComparison.actual") + " " + root.currentLoad.toFixed(1) + "t"
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("loadComparison.actual") + " " + root.currentLoad.toFixed(1) + "t" }
                     font.pixelSize: Theme.fontSizeTiny
                     font.family: Theme.fontFamilyMono
                     color: Theme.textPrimary
@@ -68,7 +68,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: TranslationBridge.translate("loadComparison.rated") + " " + root.ratedLoad.toFixed(1) + "t"
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("loadComparison.rated") + " " + root.ratedLoad.toFixed(1) + "t" }
                     font.pixelSize: Theme.fontSizeTiny
                     font.family: Theme.fontFamilyMono
                     color: Theme.textSecondary

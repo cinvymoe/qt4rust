@@ -100,8 +100,15 @@ Item {
         function onBoom_lengthChanged() { updateDataModel() }
     }
     
+    // 监听语言切换，更新数据模型
+    Connections {
+        target: TranslationBridge
+        function onLocale_versionChanged() { updateDataModel() }
+    }
+    
     // 更新数据模型函数
     function updateDataModel() {
+        const _ = TranslationBridge.locale_version
         monitoringDataModel.clear()
 
         // 确保值不为 undefined（注意：属性名使用 snake_case）
@@ -181,7 +188,7 @@ Item {
                 }
                 
                 Text {
-                    text: TranslationBridge.translate("monitoring.sensorDisconnected")
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("monitoring.sensorDisconnected") }
                     font.pixelSize: Theme.fontSizeMedium
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textPrimary
@@ -242,10 +249,12 @@ Item {
                     isAngleAlarm: viewModel.is_angle_alarm
                     // 根据状态显示不同的消息：角度报警、危险报警或力矩预警
                     title: {
+                        const _ = monitoringView._localeVersion
                         if (viewModel.is_angle_alarm) return TranslationBridge.translate("danger.title.angleAlarm")
                         return viewModel.is_danger ? TranslationBridge.translate("danger.title.danger") : TranslationBridge.translate("danger.title.warning")
                     }
                     message: {
+                        const _ = monitoringView._localeVersion
                         if (viewModel.is_angle_alarm) return TranslationBridge.translate("danger.message.angleAlarm")
                         return viewModel.is_danger ?
                             TranslationBridge.translate("danger.message.danger") :
@@ -300,8 +309,8 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                             }
                             
-Text {
-                                 text: TranslationBridge.translate("danger.craneStatus")
+                            Text {
+                                 text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("danger.craneStatus") }
                                  font.pixelSize: Theme.fontSizeLarge
                                  font.family: Theme.fontFamilyDefault
                                  font.weight: Font.Medium

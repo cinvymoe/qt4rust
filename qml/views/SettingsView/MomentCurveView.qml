@@ -8,6 +8,8 @@ import qt.rust.demo
 
 Flickable {
     id: momentCurveView
+    
+    property int _localeVersion: TranslationBridge.locale_version
     width: parent.width
     height: parent.height
     contentHeight: contentColumn.height
@@ -54,7 +56,7 @@ Flickable {
     // 导入成功对话框
     InfoDialog {
         id: importSuccessDialog
-        title: TranslationBridge.translate("dialog.importSuccess") || "导入成功"
+        title: { const _ = momentCurveView._localeVersion; return TranslationBridge.translate("dialog.importSuccess") || "导入成功" }
         message: ""
 
         onAccepted: {
@@ -65,7 +67,7 @@ Flickable {
     // 导入失败对话框
     InfoDialog {
         id: importErrorDialog
-        title: TranslationBridge.translate("dialog.importError") || "导入失败"
+        title: { const _ = momentCurveView._localeVersion; return TranslationBridge.translate("dialog.importError") || "导入失败" }
         message: ""
 
         onAccepted: {
@@ -116,7 +118,7 @@ Flickable {
                             }
                             
                             Text {
-                                text: TranslationBridge.translate("momentCurve.title")
+                                text: { const _ = momentCurveView._localeVersion; return TranslationBridge.translate("momentCurve.title") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: "#dbeafe"
@@ -186,7 +188,7 @@ Flickable {
                                 }
                                 
                                 Text {
-                                    text: TranslationBridge.translate("momentCurve.ratedCurve")
+                                    text: { const _ = momentCurveView._localeVersion; return TranslationBridge.translate("momentCurve.ratedCurve") }
                                     font.pixelSize: 20
                                     font.family: Theme.fontFamilyDefault
                                     font.weight: Font.Bold
@@ -212,7 +214,7 @@ Flickable {
                                 }
                                 
                                 contentItem: Text {
-                                    text: TranslationBridge.translate("momentCurve.importCurve")
+                                    text: { const _ = momentCurveView._localeVersion; return TranslationBridge.translate("momentCurve.importCurve") }
                                     font.pixelSize: 14
                                     font.family: Theme.fontFamilyDefault
                                     color: "#ffffff"
@@ -289,7 +291,7 @@ Flickable {
                                             }
                                             
                                             Text {
-                                                text: TranslationBridge.translate("momentCurve.boomLength")
+                                                text: { const _ = momentCurveView._localeVersion; return TranslationBridge.translate("momentCurve.boomLength") }
                                                 font.pixelSize: 12
                                                 font.family: Theme.fontFamilyDefault
                                                 color: isSelected ? "#93c5fd" : Theme.textTertiary
@@ -350,7 +352,7 @@ Flickable {
                                                 anchors.verticalCenter: parent.verticalCenter
                                             }
                                             Text {
-                                                text: TranslationBridge.translate("momentCurve.currentLength")
+                                                text: { const _ = momentCurveView._localeVersion; return TranslationBridge.translate("momentCurve.currentLength") }
                                                 font.pixelSize: 12
                                                 color: "#94a3b8"
                                             }
@@ -373,7 +375,11 @@ Flickable {
                                         Row {
                                             spacing: 6
                                             Rectangle { width: 6; height: 6; radius: 3; color: "#22c55e"; anchors.verticalCenter: parent.verticalCenter }
-                                            Text { text: TranslationBridge.translate("momentCurve.maxLoad"); font.pixelSize: 12; color: "#94a3b8" }
+                                            Text { 
+                                                text: { const _ = momentCurveView._localeVersion; return TranslationBridge.translate("momentCurve.maxLoad") }
+                                                font.pixelSize: 12
+                                                color: "#94a3b8"
+                                            }
                                         }
                                         Text {
                                             text: viewModel.getMaxLoadForBoom(viewModel.current_boom_length || 0).toFixed(1) + " t"
@@ -393,7 +399,11 @@ Flickable {
                                         Row {
                                             spacing: 6
                                             Rectangle { width: 6; height: 6; radius: 3; color: "#f59e0b"; anchors.verticalCenter: parent.verticalCenter }
-                                            Text { text: TranslationBridge.translate("momentCurve.maxRadius"); font.pixelSize: 12; color: "#94a3b8" }
+                                            Text { 
+                                                text: { const _ = momentCurveView._localeVersion; return TranslationBridge.translate("momentCurve.maxRadius") }
+                                                font.pixelSize: 12
+                                                color: "#94a3b8"
+                                            }
                                         }
                                         Text {
                                             text: viewModel.getMaxRadiusForBoom(viewModel.current_boom_length || 0).toFixed(1) + " m"
@@ -413,7 +423,11 @@ Flickable {
                                         Row {
                                             spacing: 6
                                             Rectangle { width: 6; height: 6; radius: 3; color: "#8b5cf6"; anchors.verticalCenter: parent.verticalCenter }
-                                            Text { text: TranslationBridge.translate("momentCurve.dataPoints"); font.pixelSize: 12; color: "#94a3b8" }
+                                            Text { 
+                                                text: { const _ = momentCurveView._localeVersion; return TranslationBridge.translate("momentCurve.dataPoints") }
+                                                font.pixelSize: 12
+                                                color: "#94a3b8"
+                                            }
                                         }
                                         Text {
                                             text: viewModel.getDataPointCount(viewModel.current_boom_length || 0).toString()

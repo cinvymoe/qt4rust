@@ -40,7 +40,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: TranslationBridge.translate("moment.percentage")
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("moment.percentage") }
                     font.pixelSize: Theme.fontSizeNormal
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textSecondary
@@ -59,9 +59,9 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 
                 Text {
-                    text: momentCard.percentage >= momentCard.dangerThreshold ? TranslationBridge.translate("moment.danger") : 
+                    text: { const _ = TranslationBridge.locale_version; return momentCard.percentage >= momentCard.dangerThreshold ? TranslationBridge.translate("moment.danger") : 
                           momentCard.percentage >= momentCard.warningThreshold ? TranslationBridge.translate("moment.warning") : 
-                          TranslationBridge.translate("alarm.level.normal")
+                          TranslationBridge.translate("alarm.level.normal") }
                     font.pixelSize: Theme.fontSizeSmall
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textPrimary
@@ -135,7 +135,7 @@ Rectangle {
                     }
                     
                     Text {
-                        text: TranslationBridge.translate("moment.warning") + " " + momentCard.warningThreshold.toFixed(0) + "%"
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("moment.warning") + " " + momentCard.warningThreshold.toFixed(0) + "%" }
                         font.pixelSize: Theme.fontSizeSmall
                         font.family: Theme.fontFamilyDefault
                         color: Theme.warningColor
@@ -147,7 +147,7 @@ Rectangle {
                     }
                     
                     Text {
-                        text: TranslationBridge.translate("moment.danger") + " " + momentCard.dangerThreshold.toFixed(0) + "%"
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("moment.danger") + " " + momentCard.dangerThreshold.toFixed(0) + "%" }
                         font.pixelSize: Theme.fontSizeSmall
                         font.family: Theme.fontFamilyDefault
                         color: Theme.dangerLight

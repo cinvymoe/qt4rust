@@ -9,8 +9,8 @@ Rectangle {
 
 
     // 公开属性
-    property string sensorName: TranslationBridge.translate("systemStatus.sensorName") || "传感器"
-    property string statusText: TranslationBridge.translate("systemStatus.online") || "在线 - 正常"
+    property string sensorName: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("systemStatus.sensorName") || "传感器" }
+    property string statusText: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("systemStatus.online") || "在线 - 正常" }
     property bool isOnline: true
     
     // 卡片样式

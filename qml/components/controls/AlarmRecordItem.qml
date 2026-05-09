@@ -102,7 +102,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: TranslationBridge.translate("alarm.momentValue") + ": " + root.momentValue
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarm.momentValue") + ": " + root.momentValue }
                     font.pixelSize: Theme.fontSizeSmall
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textTertiary

@@ -20,7 +20,7 @@ RowLayout {
     signal customTimeRangeChanged(int startTimestamp, int endTimestamp)
     
     Text {
-        text: TranslationBridge.translate("filter.history")
+        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("filter.history") }
         font.pixelSize: Theme.fontSizeMedium
         font.family: Theme.fontFamilyDefault
         color: Theme.textSecondary
@@ -28,7 +28,7 @@ RowLayout {
     
     Button {
         id: allButton
-        text: TranslationBridge.translate("filter.all")
+        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("filter.all") }
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "all" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -51,7 +51,7 @@ RowLayout {
     
     Button {
         id: todayButton
-        text: TranslationBridge.translate("filter.today")
+        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("filter.today") }
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "today" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -74,7 +74,7 @@ RowLayout {
     
     Button {
         id: weekButton
-        text: TranslationBridge.translate("filter.last7days")
+        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("filter.last7days") }
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "week" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -97,7 +97,7 @@ RowLayout {
     
     Button {
         id: monthButton
-        text: TranslationBridge.translate("filter.last30days")
+        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("filter.last30days") }
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "month" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -120,7 +120,7 @@ RowLayout {
     
     Button {
         id: customButton
-        text: TranslationBridge.translate("filter.custom")
+        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("filter.custom") }
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "custom" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
