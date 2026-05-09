@@ -7,6 +7,7 @@ import "../components/controls"
 Item {
     id: homeView
     
+    
     property alias counter: counter
     
     Counter {
@@ -47,7 +48,7 @@ Item {
             id: textField
             anchors.horizontalCenter: parent.horizontalCenter
             width: 400
-            placeholderText: "点击测试虚拟键盘..."
+            placeholderText: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("home.placeholder") }
             font.pixelSize: 20
             
             onActiveFocusChanged: {
@@ -59,7 +60,7 @@ Item {
         
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: "输入内容: " + textField.text
+            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("home.inputContent") + ": " + textField.text }
             font.pixelSize: 16
             color: "#666"
         }

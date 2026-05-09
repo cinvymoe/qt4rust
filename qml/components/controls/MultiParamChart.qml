@@ -1,9 +1,11 @@
 // MultiParamChart.qml - 多参数对比分析图组件
+import qt.rust.demo
 import QtQuick
 import "../../styles"
 
 Rectangle {
     id: root
+    
     
     // 公开属性
     property var timeLabels: []
@@ -33,7 +35,7 @@ Rectangle {
             }
             
             Text {
-                text: "多参数对比分析"
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("chart.multiParam") }
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.weight: Font.Medium
@@ -157,7 +159,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: "工作半径 (m)"
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("chart.workingRadius") }
                     font.pixelSize: Theme.fontSizeSmall
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textSecondary
@@ -177,7 +179,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: "吊臂角度 (°)"
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("chart.boomAngle") }
                     font.pixelSize: Theme.fontSizeSmall
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textSecondary

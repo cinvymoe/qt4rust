@@ -1,6 +1,7 @@
 // Qt Rust Demo - 主界面 QML 文件
 // 起重机力矩监测系统
 
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Window
@@ -17,6 +18,8 @@ Window {
     visible: true
     title: "Crane Monitoring System"
     color: Theme.darkBackground
+    
+    // i18n 翻译对象
     
     // 导航栏显示状态
     property bool navigationVisible: true
@@ -163,7 +166,7 @@ Window {
             
             // 应用标题
             Text {
-                text: "起重机力矩监测系统"
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("main.title") }
                 font.pixelSize: Theme.fontSizeXXLarge
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textPrimary
@@ -181,7 +184,7 @@ Window {
             
             // 副标题
             Text {
-                text: "Crane Monitoring System"
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("main.subtitle") }
                 font.pixelSize: Theme.fontSizeMedium
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary

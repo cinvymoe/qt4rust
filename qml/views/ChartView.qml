@@ -9,6 +9,7 @@ import "../components/controls"
 Item {
     id: chartView
     
+    
     // 动态数据属性（从 ViewModel 加载）
     property var timeLabels: []
     property var momentData: []
@@ -71,14 +72,14 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: "数据曲线分析"
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("chart.title") }
                         font.pixelSize: Theme.fontSizeXLarge
                         font.family: Theme.fontFamilyDefault
                         color: Theme.textPrimary
                     }
                     
                     Text {
-                        text: "实时监测数据变化趋势"
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("chart.subtitle") }
                         font.pixelSize: Theme.fontSizeSmall
                         font.family: Theme.fontFamilyDefault
                         color: Theme.textTertiary
@@ -93,7 +94,7 @@ Item {
                     
                     // 刷新按钮
                     Button {
-                        text: "刷新"
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("chart.refresh") }
                         implicitWidth: 60
                         implicitHeight: 32
                         

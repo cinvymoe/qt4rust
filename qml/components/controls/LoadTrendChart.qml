@@ -1,9 +1,11 @@
 // LoadTrendChart.qml - 载荷变化曲线组件
+import qt.rust.demo
 import QtQuick
 import "../../styles"
 
 Rectangle {
     id: root
+    
     
     // 公开属性
     property var timeLabels: []
@@ -32,7 +34,7 @@ Rectangle {
             }
             
             Text {
-                text: "载荷变化曲线"
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("chart.loadTrend") }
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.weight: Font.Medium

@@ -1,4 +1,5 @@
 // Header.qml - 顶部栏组件
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
@@ -8,8 +9,8 @@ Rectangle {
     height: Theme.headerHeight
     
     // 状态属性
-    property string title: "汽车吊力矩监测系统"
-    property string subtitle: "Crane Moment Monitoring System"
+    property string title: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("header.title") }
+    property string subtitle: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("header.subtitle") }
     property bool alertActive: false
     property bool isWarning: false  // 预警状态
     property bool isDanger: false   // 报警状态
@@ -25,9 +26,10 @@ Rectangle {
     
     // 报警文本根据状态动态变化
     readonly property string alertText: {
-        if (isDanger && isAngleAlarm) return "角度报警"
-        if (isDanger) return "危险报警"
-        if (isWarning) return "力矩预警"
+        const _ = TranslationBridge.locale_version
+        if (isDanger && isAngleAlarm) return TranslationBridge.translate("danger.title.angleAlarm")
+        if (isDanger) return TranslationBridge.translate("danger.title.danger")
+        if (isWarning) return TranslationBridge.translate("danger.title.warning")
         return ""
     }
     

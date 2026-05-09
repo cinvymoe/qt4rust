@@ -1,4 +1,5 @@
 // FileSelectDialog.qml - 文件路径输入对话框
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
@@ -6,13 +7,14 @@ import "../controls"
 
 Dialog {
     id: root
-    
+
+
     // 对外属性
     property string selectedFilePath: ""
-    
+
     // 信号
     signal fileSelected(string filePath)
-    
+
     modal: true
     closePolicy: Popup.CloseOnEscape
     width: 600
@@ -49,13 +51,13 @@ Dialog {
                 radius: Theme.radiusSmall
             }
             
-            contentItem: Text {
-                text: "✕"
-                font.pixelSize: Theme.fontSizeLarge
-                color: Theme.textSecondary
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-            }
+                contentItem: Text {
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.cancel") }
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.textPrimary
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
             
             onClicked: root.close()
         }
@@ -68,16 +70,24 @@ Dialog {
             
             // 主标题
             Text {
-                text: "导入额定载荷表"
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.importRatedLoad") }
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.bold: true
                 color: Theme.textPrimary
             }
+
+            // 副标题
+            Text {
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.importRatedLoadDesc") }
+                font.pixelSize: Theme.fontSizeSmall
+                font.family: Theme.fontFamilyDefault
+                color: Theme.textSecondary
+            }
             
             // 副标题
             Text {
-                text: "请输入 CSV 文件路径"
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.importRatedLoadDesc") }
                 font.pixelSize: Theme.fontSizeSmall
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
@@ -110,7 +120,7 @@ Dialog {
             }
             
             Text {
-                text: "提示：可以使用相对路径或绝对路径"
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.importHint") }
                 font.pixelSize: Theme.fontSizeSmall
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
@@ -138,7 +148,7 @@ Dialog {
                 }
                 
                 contentItem: Text {
-                    text: "取消"
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.cancel") }
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textPrimary
                     horizontalAlignment: Text.AlignHCenter
@@ -158,7 +168,7 @@ Dialog {
                 }
                 
                 contentItem: Text {
-                    text: "确定"
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("dialog.confirm") }
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textPrimary
                     horizontalAlignment: Text.AlignHCenter

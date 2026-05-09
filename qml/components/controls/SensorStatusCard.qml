@@ -1,14 +1,16 @@
 // SensorStatusCard.qml - 传感器状态卡片组件
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
 
 Rectangle {
     id: sensorCard
-    
+
+
     // 公开属性
-    property string sensorName: "传感器"
-    property string statusText: "在线 - 正常"
+    property string sensorName: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("systemStatus.sensorName") || "传感器" }
+    property string statusText: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("systemStatus.online") || "在线 - 正常" }
     property bool isOnline: true
     
     // 卡片样式

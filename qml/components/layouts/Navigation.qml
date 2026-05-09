@@ -1,4 +1,5 @@
 // Navigation.qml - 底部导航组件
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
@@ -10,6 +11,8 @@ Rectangle {
     color: Theme.darkSurface
     border.color: "#000000"
     border.width: Theme.borderThin
+    
+    // i18n 翻译对象
     
     property int currentIndex: 0
     signal tabChanged(int index)
@@ -23,7 +26,7 @@ Rectangle {
             width: parent.width / 4
             height: parent.height
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-home.svg"
-            text: "主界面"
+            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("nav.monitoring") }
             active: navigation.currentIndex === 0
             onClicked: {
                 navigation.currentIndex = 0
@@ -36,7 +39,7 @@ Rectangle {
             width: parent.width / 4
             height: parent.height
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-chart.svg"
-            text: "数据曲线"
+            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("nav.charts") }
             active: navigation.currentIndex === 1
             onClicked: {
                 navigation.currentIndex = 1
@@ -49,7 +52,7 @@ Rectangle {
             width: parent.width / 4
             height: parent.height
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-alarm-record.svg"
-            text: "报警记录"
+            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("nav.alarms") }
             active: navigation.currentIndex === 2
             showBadge: true
             onClicked: {
@@ -63,7 +66,7 @@ Rectangle {
             width: parent.width / 4
             height: parent.height
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-settings.svg"
-            text: "设置"
+            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("nav.settings") }
             active: navigation.currentIndex === 3
             onClicked: {
                 navigation.currentIndex = 3

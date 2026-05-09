@@ -1,10 +1,12 @@
 // AlarmRecordItem.qml - 报警记录项组件
+import qt.rust.demo
 import QtQuick
 import QtQuick.Layouts
 import "../../styles"
 
 Rectangle {
     id: root
+    
     
     // 公开属性
     property string alarmType: "warning"  // "warning" 或 "danger"
@@ -100,7 +102,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: "力矩: " + root.momentValue
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("alarm.momentValue") + ": " + root.momentValue }
                     font.pixelSize: Theme.fontSizeSmall
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textTertiary

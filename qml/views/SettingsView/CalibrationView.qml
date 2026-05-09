@@ -11,6 +11,7 @@ Item {
     
     property int currentSensorTab: 0  // 0: 载荷, 1: 角度, 2: 长度, 3: 报警阈值
     
+    
     // 绑定 CalibrationViewModel
     CalibrationViewModel {
         id: viewModel
@@ -59,17 +60,17 @@ Item {
                     // 重量传感器卡片
                     SensorDataCard {
                         width: parent.width - parent.leftPadding - parent.rightPadding
-                        sensorName: "重量传感器"
+                        sensorName: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.loadSensor") }
                         adValue: (viewModel.ad1_load || 0).toFixed(2)
                         calculatedValue: (viewModel.calculated_load || 0).toFixed(2)
-                        unit: "吨"
+                        unit: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("monitoring.unit.ton") }
                         isOnline: viewModel.sensor_connected
                     }
                     
                     // 角度传感器卡片
                     SensorDataCard {
                         width: parent.width - parent.leftPadding - parent.rightPadding
-                        sensorName: "角度传感器"
+                        sensorName: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.angleSensor") }
                         adValue: (viewModel.ad3_angle || 0).toFixed(2)
                         calculatedValue: (viewModel.calculated_angle || 0).toFixed(1)
                         unit: "°"
@@ -79,7 +80,7 @@ Item {
                     // 侧长传感器卡片
                     SensorDataCard {
                         width: parent.width - parent.leftPadding - parent.rightPadding
-                        sensorName: "侧长传感器"
+                        sensorName: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.radiusSensor") }
                         adValue: (viewModel.ad2_radius || 0).toFixed(2)
                         calculatedValue: (viewModel.calculated_radius || 0).toFixed(2)
                         unit: "m"
@@ -112,12 +113,7 @@ Item {
                         spacing: 0
                         
                         Repeater {
-                            model: [
-                                {text: "载荷传感器"},
-                                {text: "角度传感器"},
-                                {text: "长度传感器"},
-                                {text: "报警阈值"}
-                            ]
+                            model: getCalibrationTabModel()
                             
                             Rectangle {
                                 width: parent.width / 4
@@ -223,7 +219,7 @@ Item {
                                 }
                                 
                                 Text {
-                                    text: "恢复默认"
+                                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.restoreDefault") }
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textPrimary
                                     anchors.verticalCenter: parent.verticalCenter
@@ -232,23 +228,23 @@ Item {
                             
                             onClicked: {
                                 switch(currentSensorTab) {
-                                    case 0: // 载荷传感器
+                                    case 0:
                                         loadCalibrationContent.resetToDefault()
                                         console.log("载荷传感器恢复默认")
                                         break
-                                    case 1: // 角度传感器
+                                    case 1:
                                         if (angleCalibrationContent.resetToDefault) {
                                             angleCalibrationContent.resetToDefault()
                                         }
                                         console.log("角度传感器恢复默认")
                                         break
-                                    case 2: // 长度传感器
+                                    case 2:
                                         if (radiusCalibrationContent.resetToDefault) {
                                             radiusCalibrationContent.resetToDefault()
                                         }
                                         console.log("长度传感器恢复默认")
                                         break
-                                    case 3: // 报警阈值
+                                    case 3:
                                         if (alarmThresholdContent.resetToDefault) {
                                             alarmThresholdContent.resetToDefault()
                                         }
@@ -279,7 +275,7 @@ Item {
                                 }
                                 
                                 Text {
-                                    text: "保存设置"
+                                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("settings.save") }
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textPrimary
                                     anchors.verticalCenter: parent.verticalCenter
@@ -289,7 +285,7 @@ Item {
                             onClicked: {
                                 var success = false
                                 switch(currentSensorTab) {
-                                    case 0: // 载荷传感器
+                                    case 0:
                                         success = loadCalibrationContent.saveCalibration()
                                         if (success) {
                                             console.log("载荷传感器校准参数保存成功")
@@ -297,7 +293,7 @@ Item {
                                             console.error("载荷传感器校准参数保存失败")
                                         }
                                         break
-                                    case 1: // 角度传感器
+                                    case 1:
                                         if (angleCalibrationContent.saveCalibration) {
                                             success = angleCalibrationContent.saveCalibration()
                                             if (success) {
@@ -307,7 +303,7 @@ Item {
                                             }
                                         }
                                         break
-                                    case 2: // 长度传感器
+                                    case 2:
                                         if (radiusCalibrationContent.saveCalibration) {
                                             success = radiusCalibrationContent.saveCalibration()
                                             if (success) {
@@ -317,7 +313,7 @@ Item {
                                             }
                                         }
                                         break
-                                    case 3: // 报警阈值
+                                    case 3:
                                         if (alarmThresholdContent.saveCalibration) {
                                             success = alarmThresholdContent.saveCalibration()
                                             if (success) {
@@ -343,6 +339,7 @@ Item {
         property string calculatedValue: "0"
         property string unit: ""
         property bool isOnline: true
+        
         
         height: Math.max(140, Math.min(180, 203))
         color: Theme.darkBackground
@@ -382,7 +379,7 @@ Item {
                     }
                     
                     Text {
-                        text: "实时采集中"
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.calibrating") }
                         font.pixelSize: Theme.fontSizeTiny
                         color: "#62748e"
                         anchors.verticalCenter: parent.verticalCenter
@@ -400,7 +397,7 @@ Item {
                     spacing: 4
                     
                     Text {
-                        text: "AD值"
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.adValue") }
                         font.pixelSize: Theme.fontSizeTiny
                         color: "#62748e"
                     }
@@ -425,7 +422,12 @@ Item {
                     spacing: 4
                     
                     Text {
-                        text: unit === "吨" ? "计算重量值" : (unit === "°" ? "计算角度值" : "计算长度值")
+                        text: {
+                            const _ = calibrationView._localeVersion
+                            if (unit === TranslationBridge.translate("monitoring.unit.ton")) return TranslationBridge.translate("calibration.physicalValue")
+                            if (unit === "°") return TranslationBridge.translate("calibration.angleValue")
+                            return TranslationBridge.translate("calibration.radiusValue")
+                        }
                         font.pixelSize: Theme.fontSizeTiny
                         color: "#62748e"
                     }
@@ -451,5 +453,16 @@ Item {
                 }
             }
         }
+    }
+    
+    // 获取标定 Tab 模型
+    function getCalibrationTabModel() {
+        const _ = TranslationBridge.locale_version
+        return [
+            {text: TranslationBridge.translate("calibration.loadSensor")},
+            {text: TranslationBridge.translate("calibration.angleSensor")},
+            {text: TranslationBridge.translate("calibration.radiusSensor")},
+            {text: TranslationBridge.translate("calibration.alarmThreshold")}
+        ]
     }
 }

@@ -1,4 +1,5 @@
 // HistoryFilterBar.qml - 历史记录筛选栏组件
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -7,6 +8,8 @@ import "../dialogs"
 
 RowLayout {
     id: historyFilterBar
+    
+    
     spacing: Theme.spacingSmall
     
     // 对外暴露的属性
@@ -17,7 +20,7 @@ RowLayout {
     signal customTimeRangeChanged(int startTimestamp, int endTimestamp)
     
     Text {
-        text: "历史记录:"
+        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("filter.history") }
         font.pixelSize: Theme.fontSizeMedium
         font.family: Theme.fontFamilyDefault
         color: Theme.textSecondary
@@ -25,7 +28,7 @@ RowLayout {
     
     Button {
         id: allButton
-        text: "全部"
+        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("filter.all") }
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "all" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -48,7 +51,7 @@ RowLayout {
     
     Button {
         id: todayButton
-        text: "今天"
+        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("filter.today") }
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "today" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -71,7 +74,7 @@ RowLayout {
     
     Button {
         id: weekButton
-        text: "最近7天"
+        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("filter.last7days") }
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "week" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -94,7 +97,7 @@ RowLayout {
     
     Button {
         id: monthButton
-        text: "最近30天"
+        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("filter.last30days") }
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "month" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium
@@ -117,7 +120,7 @@ RowLayout {
     
     Button {
         id: customButton
-        text: "自定义"
+        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("filter.custom") }
         background: Rectangle {
             color: historyFilterBar.selectedFilter === "custom" ? Theme.darkAccent : Theme.darkBorder
             radius: Theme.radiusMedium

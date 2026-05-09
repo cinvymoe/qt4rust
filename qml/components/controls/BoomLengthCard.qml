@@ -1,10 +1,12 @@
 // BoomLengthCard.qml - 臂长卡片组件
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
 
 Rectangle {
     id: root
+    
     
     // 公开属性
     property real boomLength: 0.0    // 臂长（米）
@@ -40,7 +42,7 @@ Rectangle {
             }
             
             Text {
-                text: "臂长"
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("boomLength.title") }
                 font.pixelSize: Theme.fontSizeSmall
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
@@ -60,7 +62,7 @@ Rectangle {
             }
             
             Text {
-                text: "米"
+                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("boomLength.unit") }
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textTertiary
@@ -71,7 +73,7 @@ Rectangle {
         
         // 描述文本
         Text {
-            text: "吊臂总长度"
+            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("boomLength.description") }
             font.pixelSize: Theme.fontSizeTiny
             font.family: Theme.fontFamilyDefault
             color: Theme.textTertiary

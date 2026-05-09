@@ -1,4 +1,5 @@
 // LoadCurveChart.qml - 额定载荷曲线图表组件（使用 Canvas 绘制）
+import qt.rust.demo
 import QtQuick
 import "../../styles"
 
@@ -6,7 +7,12 @@ Item {
     id: chartContainer
     width: parent.width
     height: 384
-    
+
+
+    // Translated strings for canvas (canvas doesn't have direct QML access)
+    property string loadingText: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("common.loading") || "正在加载数据..." }
+    property string noDataText: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("common.noData") || "无数据" }
+
     property var viewModel: null
     
     function updateChart() {

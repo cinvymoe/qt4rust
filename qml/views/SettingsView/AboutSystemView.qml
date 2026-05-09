@@ -1,4 +1,5 @@
 // AboutSystemView.qml - 关于系统子页面
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
@@ -58,7 +59,7 @@ Flickable {
                         spacing: 0
                         
                         Text {
-                            text: "汽车吊力矩监测系统"
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.title") }
                             font.pixelSize: Theme.fontSizeXLarge
                             font.family: Theme.fontFamilyDefault
                             font.weight: Font.Medium
@@ -95,7 +96,7 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: "系统版本"
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.version") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -123,7 +124,7 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: "发布日期"
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.releaseDate") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -150,7 +151,7 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: "固件版本"
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.firmware") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -178,7 +179,7 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: "硬件版本"
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.hardware") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -222,7 +223,7 @@ Flickable {
                     }
                     
                     Text {
-                        text: "系统特性"
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.features") }
                         font.pixelSize: Theme.fontSizeLarge
                         color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
@@ -261,13 +262,13 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: "实时安全监控"
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.feature.realtime") }
                                 font.pixelSize: Theme.fontSizeMedium
                                 color: "#e2e8f0"
                             }
                             
                             Text {
-                                text: "24/7不间断监测起重机力矩状态，确保作业安全"
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.feature.realtimeDesc") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                                 wrapMode: Text.WordWrap
@@ -302,13 +303,13 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: "三级预警系统"
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.feature.warning") }
                                 font.pixelSize: Theme.fontSizeMedium
                                 color: "#e2e8f0"
                             }
                             
                             Text {
-                                text: "正常、预警、危险三级报警，提前预防安全事故"
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.feature.warningDesc") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                                 wrapMode: Text.WordWrap
@@ -343,13 +344,13 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: "高精度传感器"
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.feature.sensor") }
                                 font.pixelSize: Theme.fontSizeMedium
                                 color: "#e2e8f0"
                             }
                             
                             Text {
-                                text: "采用工业级传感器，精度±0.5%，响应时间<50ms"
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.feature.sensorDesc") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                                 wrapMode: Text.WordWrap
@@ -387,7 +388,7 @@ Flickable {
                     }
                     
                     Text {
-                        text: "技术规格"
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.techSpecs") }
                         font.pixelSize: Theme.fontSizeLarge
                         color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
@@ -461,7 +462,7 @@ Flickable {
                     }
                     
                     Text {
-                        text: "认证与标准"
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.certifications") }
                         font.pixelSize: Theme.fontSizeLarge
                         color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
@@ -543,7 +544,7 @@ Flickable {
                     }
                     
                     Text {
-                        text: "技术支持"
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.techSupport") }
                         font.pixelSize: Theme.fontSizeLarge
                         color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
@@ -573,7 +574,7 @@ Flickable {
                             spacing: 0
                             
                             Text {
-                                text: "服务热线"
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.hotline") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -604,7 +605,7 @@ Flickable {
                             spacing: 0
                             
                             Text {
-                                text: "技术邮箱"
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.email") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -635,13 +636,13 @@ Flickable {
                             spacing: 0
                             
                             Text {
-                                text: "公司地址"
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.address") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
                             
                             Text {
-                                text: "北京市海淀区中关村科技园区"
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.addressValue") }
                                 font.pixelSize: Theme.fontSizeMedium
                                 color: "#e2e8f0"
                             }
@@ -666,7 +667,7 @@ Flickable {
                 spacing: Theme.spacingSmall
                 
                 Text {
-                    text: "© 2025 汽车吊力矩监测系统 版权所有"
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.copyright") }
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textTertiary
                     horizontalAlignment: Text.AlignHCenter
@@ -674,7 +675,7 @@ Flickable {
                 }
                 
                 Text {
-                    text: "未经授权禁止复制、传播或使用本系统的任何内容"
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("about.copyrightNotice") }
                     font.pixelSize: Theme.fontSizeTiny
                     color: "#62748e"
                     horizontalAlignment: Text.AlignHCenter

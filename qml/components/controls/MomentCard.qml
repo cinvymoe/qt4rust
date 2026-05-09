@@ -1,10 +1,12 @@
 // MomentCard.qml - 力矩百分比卡片组件
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
 
 Rectangle {
     id: momentCard
+    
     
     property real percentage: 94.8
     property real warningThreshold: 90.0
@@ -37,7 +39,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: "力矩百分比"
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("moment.percentage") }
                     font.pixelSize: Theme.fontSizeNormal
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textSecondary
@@ -56,9 +58,9 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 
                 Text {
-                    text: momentCard.percentage >= momentCard.dangerThreshold ? "超限危险" : 
-                          momentCard.percentage >= momentCard.warningThreshold ? "预警状态" : 
-                          "正常"
+                    text: { const _ = TranslationBridge.locale_version; return momentCard.percentage >= momentCard.dangerThreshold ? TranslationBridge.translate("moment.danger") : 
+                          momentCard.percentage >= momentCard.warningThreshold ? TranslationBridge.translate("moment.warning") : 
+                          TranslationBridge.translate("alarm.level.normal") }
                     font.pixelSize: Theme.fontSizeSmall
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textPrimary
@@ -124,7 +126,31 @@ Rectangle {
                     }
                     
                     Item { 
-                        width: parent.width - 0.35 * parent.width
+                        width: parent.width * 0.25
+                        height: 1 
+                    }
+                    
+                    Text {
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("moment.warning") + " " + momentCard.warningThreshold.toFixed(0) + "%" }
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.family: Theme.fontFamilyDefault
+                        color: Theme.warningColor
+                    }
+                    
+                    Item { 
+                        width: parent.width * 0.15
+                        height: 1 
+                    }
+                    
+                    Text {
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("moment.danger") + " " + momentCard.dangerThreshold.toFixed(0) + "%" }
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.family: Theme.fontFamilyDefault
+                        color: Theme.dangerLight
+                    }
+                    
+                    Item { 
+                        width: parent.width * 0.1
                         height: 1 
                     }
                     

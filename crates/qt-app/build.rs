@@ -17,6 +17,7 @@ fn main() {
             .qml_file("qml/views/SettingsView/CalibrationView.qml")
             .qml_file("qml/views/SettingsView/MomentCurveView.qml")
             .qml_file("qml/views/SettingsView/AboutSystemView.qml")
+            .qml_file("qml/views/SettingsView/LanguageView.qml")
             // 校准内容组件
             .qml_file("qml/views/SettingsView/CalibrationContents/LoadCalibrationContent.qml")
             .qml_file("qml/views/SettingsView/CalibrationContents/AngleCalibrationContent.qml")
@@ -88,6 +89,9 @@ fn main() {
         "qml/assets/images/icon-location.svg",
         "qml/assets/images/icon-boom-length.svg",
         "qml/assets/images/background-monitoring.png",
+        "qml/assets/images/icon-language.svg",
+        "qml/assets/translations/zh-CN.ftl",
+        "qml/assets/translations/en-US.ftl",
     ])
     .qt_module("Network")
     .file("src/monitoring_viewmodel.rs")
@@ -99,5 +103,6 @@ fn main() {
     .file("src/radius_calibration_viewmodel.rs")
     .file("src/alarm_threshold_viewmodel.rs")
     .file("src/moment_curve_viewmodel.rs")
+    .file("src/translation_bridge.rs")
     .build();
 }

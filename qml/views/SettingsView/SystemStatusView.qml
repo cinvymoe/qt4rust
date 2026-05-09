@@ -1,4 +1,5 @@
 // SystemStatusView.qml - 系统状态子页面
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
@@ -10,6 +11,7 @@ Flickable {
     height: parent.height
     contentHeight: systemStatusColumn.height
     clip: true
+
     
     Column {
         id: systemStatusColumn
@@ -57,7 +59,7 @@ Flickable {
                             }
                             
                             Text {
-                                text: "传感器连接状态"
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("systemStatus.sensorConnection") }
                                 font.pixelSize: Theme.fontSizeLarge
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -125,7 +127,7 @@ Flickable {
                             }
                             
                             Text {
-                                text: "系统信息"
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("systemStatus.systemInfo") }
                                 font.pixelSize: Theme.fontSizeLarge
                                 color: Theme.textPrimary
                                 anchors.verticalCenter: parent.verticalCenter
@@ -210,7 +212,7 @@ Flickable {
                             }
                             
                             Text {
-                                text: "网络与通信"
+                                text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("systemStatus.network") }
                                 font.pixelSize: Theme.fontSizeLarge
                                 color: Theme.textPrimary
                                 anchors.verticalCenter: parent.verticalCenter

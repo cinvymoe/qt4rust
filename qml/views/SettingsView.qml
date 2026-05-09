@@ -1,4 +1,5 @@
 // SettingsView.qml - 设置页面视图
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -9,6 +10,8 @@ Item {
     id: settingsView
     
     property int currentTabIndex: 0
+    property int _localeVersion: TranslationBridge.locale_version
+    
     
     Rectangle {
         anchors.fill: parent
@@ -44,14 +47,14 @@ Item {
                         width: Math.min(300, parent.width * 0.3)
                         
                         Text {
-                            text: getCurrentTabTitle()
+                            text: { const _ = settingsView._localeVersion; return getCurrentTabTitle() }
                             font.pixelSize: Theme.fontSizeLarge
                             color: Theme.textPrimary
                             font.family: Theme.fontFamilyDefault
                         }
                         
                         Text {
-                            text: getCurrentTabDescription()
+                            text: { const _ = settingsView._localeVersion; return getCurrentTabDescription() }
                             font.pixelSize: Theme.fontSizeTiny
                             color: Theme.textTertiary
                             font.family: Theme.fontFamilyDefault
@@ -67,15 +70,10 @@ Item {
                         spacing: 0
                         
                         Repeater {
-                            model: [
-                                {text: "系统状态", icon: "icon-system-status.svg"},
-                                {text: "参数校准", icon: "icon-calibration.svg"},
-                                {text: "力矩曲线", icon: "icon-moment-curve.svg"},
-                                {text: "关于系统", icon: "icon-about-system.svg"}
-                            ]
+                            model: getTabModel()
                             
                             Rectangle {
-                                width: parent.width / 4
+                                width: parent.width / 5
                                 height: Math.max(70, 92.667)
                                 color: currentTabIndex === index ? Theme.darkBackground : "transparent"
                                 
@@ -145,29 +143,48 @@ Item {
                 
                 // Tab 3: 关于系统
                 AboutSystemView {}
+                
+                // Tab 4: 语言设置
+                LanguageView {}
             }
         }
     }
     
     // 获取当前 Tab 的标题
     function getCurrentTabTitle() {
+        const _ = TranslationBridge.locale_version
         switch(currentTabIndex) {
-            case 0: return "系统状态"
-            case 1: return "参数校准"
-            case 2: return "力矩曲线"
-            case 3: return "关于系统"
+            case 0: return TranslationBridge.translate("settings.systemStatus")
+            case 1: return TranslationBridge.translate("settings.calibration")
+            case 2: return TranslationBridge.translate("settings.momentCurve")
+            case 3: return TranslationBridge.translate("settings.about")
+            case 4: return TranslationBridge.translate("settings.language")
             default: return ""
         }
     }
     
     // 获取当前 Tab 的描述文本
     function getCurrentTabDescription() {
+        const _ = TranslationBridge.locale_version
         switch(currentTabIndex) {
-            case 0: return "设备运行状态与传感器监控"
-            case 1: return "传感器参数校准与配置"
-            case 2: return "力矩曲线设置与管理"
-            case 3: return "系统版本与设备信息"
+            case 0: return TranslationBridge.translate("systemStatus.sensorConnection")
+            case 1: return TranslationBridge.translate("calibration.multiplierDesc")
+            case 2: return TranslationBridge.translate("momentCurve.title")
+            case 3: return TranslationBridge.translate("about.version")
+            case 4: return TranslationBridge.translate("settings.language")
             default: return ""
         }
+    }
+    
+    // 获取 Tab 模型数据
+    function getTabModel() {
+        const _ = TranslationBridge.locale_version
+        return [
+            {text: TranslationBridge.translate("settings.systemStatus"), icon: "icon-system-status.svg"},
+            {text: TranslationBridge.translate("settings.calibration"), icon: "icon-calibration.svg"},
+            {text: TranslationBridge.translate("settings.momentCurve"), icon: "icon-moment-curve.svg"},
+            {text: TranslationBridge.translate("settings.about"), icon: "icon-about-system.svg"},
+            {text: TranslationBridge.translate("settings.language"), icon: "icon-language.svg"}
+        ]
     }
 }

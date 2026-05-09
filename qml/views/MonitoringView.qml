@@ -11,11 +11,17 @@ import "../styles"
 Item {
     id: monitoringView
     
+    // i18n 翻译对象
+    
+    // 顶部栏显示状态（从父组件传递）
     property bool headerVisible: true
     property int pageIndex: 0
     property int currentIndex: 0
+    
+    // 是否为当前活动页面
     property bool isActivePage: currentIndex === pageIndex
     
+    // 当页面激活/失活时控制定时器
     onIsActivePageChanged: {
         if (isActivePage) {
             console.log("[QML] MonitoringView: Page activated, starting timer")
@@ -26,35 +32,50 @@ Item {
         }
     }
     
+    // 绑定 MonitoringViewModel
     MonitoringViewModel {
         id: viewModel
 
+        // 组件创建完成后初始化显示管道
         Component.onCompleted: {
             console.log("[QML] MonitoringViewModel created")
+
+            // 初始化显示管道（从全局共享缓冲区）
             viewModel.init_display_pipeline_from_global()
             console.log("[QML] Display pipeline initialization called")
+
+            // 注意：定时器由 isActivePage 控制，不在初始化时启动
+            console.log("[QML] Available methods:")
+            for (var prop in viewModel) {
+                if (typeof viewModel[prop] === "function") {
+                    console.log("[QML]   -", prop)
+                }
+            }
         }
 
         Component.onDestruction: {
             displayTimer.stop()
+            console.log("[QML] Display timer stopped (destruction)")
         }
     }
 
+    // 绑定 AlarmThresholdViewModel - 用于读取报警阈值配置
     AlarmThresholdViewModel {
         id: alarmThresholdViewModel
     }
 
+    // 显示更新定时器（管道三：主线程显示管道）
     Timer {
         id: displayTimer
-        interval: 500
+        interval: 500  // 100ms = 10Hz，与采集管道频率匹配
         running: false
         repeat: true
         onTriggered: {
+            // 调用 ViewModel 的 tick_display() 方法
+            // 从 DisplayPipeline 获取最新数据并更新 UI
             var updated = viewModel.tick_display()
         }
     }
-    
-
     
     Rectangle {
         anchors.fill: parent
@@ -123,7 +144,7 @@ Item {
                 }
                 
                 Text {
-                    text: "传感器连接断开"
+                    text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("monitoring.sensorDisconnected") }
                     font.pixelSize: Theme.fontSizeMedium
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textPrimary
@@ -176,14 +197,16 @@ Item {
                 isWarning: viewModel.is_warning && !viewModel.is_danger
                 isAngleAlarm: viewModel.is_angle_alarm
                 title: {
-                    if (viewModel.is_angle_alarm) return "角度报警"
-                    return viewModel.is_danger ? "危险报警" : "力矩预警"
+                    const _ = TranslationBridge.locale_version
+                    if (viewModel.is_angle_alarm) return TranslationBridge.translate("danger.title.angleAlarm")
+                    return viewModel.is_danger ? TranslationBridge.translate("danger.title.danger") : TranslationBridge.translate("danger.title.warning")
                 }
                 message: {
-                    if (viewModel.is_angle_alarm) return "吊臂角度超限！请立即调整角度"
+                    const _ = TranslationBridge.locale_version
+                    if (viewModel.is_angle_alarm) return TranslationBridge.translate("danger.message.angleAlarm")
                     return viewModel.is_danger ?
-                        "力矩严重超限！立即停止作业" :
-                        "力矩接近上限，请注意控制载荷"
+                        TranslationBridge.translate("danger.message.danger") :
+                        TranslationBridge.translate("danger.message.warning")
                 }
 
                 Behavior on visible {
@@ -232,10 +255,10 @@ Item {
                 height: 150
 
                 iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-weight.png"
-                label: "当前载荷"
+                label: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("monitoring.currentLoad") }
                 value: (viewModel.current_load || 0).toFixed(1)
-                unit: "吨"
-                description: "额定: " + (viewModel.rated_load || 25).toFixed(1) + "吨"
+                unit: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("monitoring.unit.ton") }
+                description: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("common.rated") + ": " + (viewModel.rated_load || 25).toFixed(1) + TranslationBridge.translate("monitoring.unit.ton") }
                 showProgress: true
                 progress: (viewModel.current_load || 0) / (viewModel.rated_load || 25)
             }
@@ -251,10 +274,10 @@ Item {
                 height: 150
 
                 iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-radius.png"
-                label: "工作半径"
+                label: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("monitoring.workingRadius") }
                 value: (viewModel.working_radius || 0).toFixed(1)
-                unit: "米"
-                description: "水平工作距离"
+                unit: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("monitoring.unit.meter") }
+                description: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("monitoring.horizontalDistance") }
                 showProgress: false
             }
 
@@ -267,10 +290,10 @@ Item {
                 height: 150
 
                 iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-angle.png"
-                label: "吊臂角度"
+                label: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("monitoring.boomAngle") }
                 value: (viewModel.boom_angle || 0).toFixed(1)
-                unit: "度"
-                description: "与水平面夹角"
+                unit: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("monitoring.unit.degree") }
+                description: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("monitoring.angleWithHorizontal") }
                 showProgress: false
             }
 

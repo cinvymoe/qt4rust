@@ -9,6 +9,7 @@ import "../../../components/dialogs"
 
 Item {
     id: root
+
     
     // 暴露保存和重置函数给外部调用
     function saveCalibration() {
@@ -66,7 +67,7 @@ Item {
                         }
                         
                         Text {
-                            text: "标定倍率设置"
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.multiplier") }
                             font.pixelSize: Theme.fontSizeLarge
                             color: Theme.textPrimary
                             anchors.verticalCenter: parent.verticalCenter
@@ -78,7 +79,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: "选择标定倍率"
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.selectMultiplier") }
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.textSecondary
                         }
@@ -187,7 +188,7 @@ Item {
                         }
                         
                         Text {
-                            text: "标定倍率用于调整传感器灵敏度，适用于不同测量范围的应用场景"
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.multiplierDesc") }
                             font.pixelSize: Theme.fontSizeTiny
                             color: "#62748e"
                             wrapMode: Text.WordWrap
@@ -225,7 +226,7 @@ Item {
                         }
                         
                         Text {
-                            text: "两点标定设置"
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.loadTitle") || "两点标定设置" }
                             font.pixelSize: Theme.fontSizeLarge
                             font.weight: Font.Medium
                             color: Theme.textPrimary
@@ -308,47 +309,47 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: "载荷传感器标定说明"
+                            text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.loadNote1") }
                             font.pixelSize: Theme.fontSizeMedium
                             color: Theme.textAccent
                         }
-                        
+
                         Column {
                             width: parent.width
                             spacing: 4
-                            
+
                             Text {
-                                text: "• 至少需要2个标定点，建议使用3-5个标定点"
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.loadNote1") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
-                            
+
                             Text {
-                                text: "• 标定点应均匀覆盖整个测量范围"
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.loadNote2") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
-                            
+
                             Text {
-                                text: "• AD值是传感器的原始输出值（模拟数字转换值）"
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.loadNote3") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
-                            
+
                             Text {
-                                text: "• 使用标准砝码进行标定，确保重量准确"
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.loadNote4") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
-                            
+
                             Text {
-                                text: "• 标定时应确保设备稳定，避免振动干扰"
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.loadNote5") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
-                            
+
                             Text {
-                                text: "• 系统使用线性插值算法计算两点之间的重量值"
+                                text: { const _ = TranslationBridge.locale_version; return "• " + TranslationBridge.translate("calibration.loadNote6") }
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
@@ -416,7 +417,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: "AD值"
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.adValue") }
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }
@@ -448,7 +449,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: "重量（吨）"
+                        text: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("calibration.physicalValue") }
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }

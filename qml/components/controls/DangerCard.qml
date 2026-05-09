@@ -1,4 +1,5 @@
 // DangerCard.qml - 危险/预警状态卡片组件
+import qt.rust.demo
 import QtQuick
 import QtQuick.Controls
 import "../../styles"
@@ -6,21 +7,27 @@ import "../../styles"
 Rectangle {
     id: root
 
-    property bool isWarning: false
-    property bool isAngleAlarm: false
-    property string title: "危险状态"
-    property string message: "力矩超限！立即减载或降低幅度"
-    property string iconSource: isWarning ?
-        "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-alert.png" :
-        "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-danger.png"
-
-    readonly property color backgroundColor: isWarning ? "#f0b100" : Theme.dangerBackground
-    
+    width: parent.width
+    height: 96
     color: "transparent"
     border.color: isWarning ? Theme.warningColor : Theme.dangerColor
     border.width: Theme.borderThick
     radius: Theme.radiusMedium
 
+    // 可配置属性
+    property bool isWarning: false  // true=预警(黄色), false=危险(红色)
+    property bool isAngleAlarm: false
+    property string title: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("danger.title.danger") }
+    property string message: { const _ = TranslationBridge.locale_version; return TranslationBridge.translate("danger.message.danger") }
+    // 根据状态自动选择图标：预警使用黄色感叹号，危险使用红色危险图标
+    property string iconSource: isWarning ?
+        "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-alert.png" :
+        "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-danger.png"
+
+    // 计算背景色：预警使用黄色半透明，危险使用红色半透明
+    readonly property color backgroundColor: isWarning ? "#f0b100" : Theme.dangerBackground
+
+    // 半透明背景
     Rectangle {
         anchors.fill: parent
         color: root.backgroundColor
