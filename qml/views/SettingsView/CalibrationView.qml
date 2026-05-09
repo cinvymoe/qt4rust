@@ -11,7 +11,6 @@ Item {
     
     property int currentSensorTab: 0  // 0: 载荷, 1: 角度, 2: 长度, 3: 报警阈值
     
-    TranslationBridge { id: tr }
     
     // 绑定 CalibrationViewModel
     CalibrationViewModel {
@@ -61,17 +60,17 @@ Item {
                     // 重量传感器卡片
                     SensorDataCard {
                         width: parent.width - parent.leftPadding - parent.rightPadding
-                        sensorName: tr.translate("calibration.loadSensor")
+                        sensorName: TranslationBridge.translate("calibration.loadSensor")
                         adValue: (viewModel.ad1_load || 0).toFixed(2)
                         calculatedValue: (viewModel.calculated_load || 0).toFixed(2)
-                        unit: tr.translate("monitoring.unit.ton")
+                        unit: TranslationBridge.translate("monitoring.unit.ton")
                         isOnline: viewModel.sensor_connected
                     }
                     
                     // 角度传感器卡片
                     SensorDataCard {
                         width: parent.width - parent.leftPadding - parent.rightPadding
-                        sensorName: tr.translate("calibration.angleSensor")
+                        sensorName: TranslationBridge.translate("calibration.angleSensor")
                         adValue: (viewModel.ad3_angle || 0).toFixed(2)
                         calculatedValue: (viewModel.calculated_angle || 0).toFixed(1)
                         unit: "°"
@@ -81,7 +80,7 @@ Item {
                     // 侧长传感器卡片
                     SensorDataCard {
                         width: parent.width - parent.leftPadding - parent.rightPadding
-                        sensorName: tr.translate("calibration.radiusSensor")
+                        sensorName: TranslationBridge.translate("calibration.radiusSensor")
                         adValue: (viewModel.ad2_radius || 0).toFixed(2)
                         calculatedValue: (viewModel.calculated_radius || 0).toFixed(2)
                         unit: "m"
@@ -115,10 +114,10 @@ Item {
                         
                         Repeater {
                             model: [
-                                {text: tr.translate("calibration.loadSensor")},
-                                {text: tr.translate("calibration.angleSensor")},
-                                {text: tr.translate("calibration.radiusSensor")},
-                                {text: tr.translate("calibration.alarmThreshold")}
+                                {text: TranslationBridge.translate("calibration.loadSensor")},
+                                {text: TranslationBridge.translate("calibration.angleSensor")},
+                                {text: TranslationBridge.translate("calibration.radiusSensor")},
+                                {text: TranslationBridge.translate("calibration.alarmThreshold")}
                             ]
                             
                             Rectangle {
@@ -225,7 +224,7 @@ Item {
                                 }
                                 
                                 Text {
-                                    text: tr.translate("calibration.restoreDefault")
+                                    text: TranslationBridge.translate("calibration.restoreDefault")
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textPrimary
                                     anchors.verticalCenter: parent.verticalCenter
@@ -281,7 +280,7 @@ Item {
                                 }
                                 
                                 Text {
-                                    text: tr.translate("settings.save")
+                                    text: TranslationBridge.translate("settings.save")
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.textPrimary
                                     anchors.verticalCenter: parent.verticalCenter
@@ -346,7 +345,6 @@ Item {
         property string unit: ""
         property bool isOnline: true
         
-        TranslationBridge { id: sensorTr }
         
         height: Math.max(140, Math.min(180, 203))
         color: Theme.darkBackground
@@ -386,7 +384,7 @@ Item {
                     }
                     
                     Text {
-                        text: sensorTr.translate("calibration.calibrating")
+                        text: TranslationBridge.translate("calibration.calibrating")
                         font.pixelSize: Theme.fontSizeTiny
                         color: "#62748e"
                         anchors.verticalCenter: parent.verticalCenter
@@ -404,7 +402,7 @@ Item {
                     spacing: 4
                     
                     Text {
-                        text: sensorTr.translate("calibration.adValue")
+                        text: TranslationBridge.translate("calibration.adValue")
                         font.pixelSize: Theme.fontSizeTiny
                         color: "#62748e"
                     }
@@ -429,7 +427,7 @@ Item {
                     spacing: 4
                     
                     Text {
-                        text: unit === sensorTr.translate("monitoring.unit.ton") ? sensorTr.translate("calibration.physicalValue") : (unit === "°" ? sensorTr.translate("calibration.angleValue") : sensorTr.translate("calibration.radiusValue"))
+                        text: unit === TranslationBridge.translate("monitoring.unit.ton") ? TranslationBridge.translate("calibration.physicalValue") : (unit === "°" ? TranslationBridge.translate("calibration.angleValue") : TranslationBridge.translate("calibration.radiusValue"))
                         font.pixelSize: Theme.fontSizeTiny
                         color: "#62748e"
                     }

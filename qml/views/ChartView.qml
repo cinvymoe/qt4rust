@@ -9,7 +9,6 @@ import "../components/controls"
 Item {
     id: chartView
     
-    TranslationBridge { id: tr }
     
     // 动态数据属性（从 ViewModel 加载）
     property var timeLabels: []
@@ -73,14 +72,14 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: tr.translate("chart.title")
+                        text: TranslationBridge.translate("chart.title")
                         font.pixelSize: Theme.fontSizeXLarge
                         font.family: Theme.fontFamilyDefault
                         color: Theme.textPrimary
                     }
                     
                     Text {
-                        text: tr.translate("chart.subtitle")
+                        text: TranslationBridge.translate("chart.subtitle")
                         font.pixelSize: Theme.fontSizeSmall
                         font.family: Theme.fontFamilyDefault
                         color: Theme.textTertiary
@@ -95,7 +94,7 @@ Item {
                     
                     // 刷新按钮
                     Button {
-                        text: tr.translate("chart.refresh")
+                        text: TranslationBridge.translate("chart.refresh")
                         implicitWidth: 60
                         implicitHeight: 32
                         

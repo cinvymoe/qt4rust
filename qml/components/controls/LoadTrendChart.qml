@@ -6,7 +6,6 @@ import "../../styles"
 Rectangle {
     id: root
     
-    TranslationBridge { id: tr }
     
     // 公开属性
     property var timeLabels: []
@@ -35,7 +34,7 @@ Rectangle {
             }
             
             Text {
-                text: tr.translate("chart.loadTrend")
+                text: TranslationBridge.translate("chart.loadTrend")
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.weight: Font.Medium

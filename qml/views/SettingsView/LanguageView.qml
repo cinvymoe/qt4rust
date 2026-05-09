@@ -7,7 +7,6 @@ import "../../styles"
 Item {
     id: languageView
     
-    TranslationBridge { id: tr }
     
     Column {
         anchors.fill: parent
@@ -26,7 +25,7 @@ Item {
             }
             
             Text {
-                text: tr.translate("settings.language")
+                text: TranslationBridge.translate("settings.language")
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.weight: Font.Medium
@@ -52,11 +51,11 @@ Item {
                 Rectangle {
                     width: parent.width
                     height: 60
-                    color: tr.currentLocale === "zh-CN" ? Theme.darkAccent : Theme.darkBackground
+                    color: TranslationBridge.current_locale === "zh-CN" ? Theme.darkAccent : Theme.darkBackground
                     radius: Theme.radiusSmall
                     
                     Text {
-                        text: tr.translate("settings.language.zhCN")
+                        text: TranslationBridge.translate("settings.language.zhCN")
                         font.pixelSize: Theme.fontSizeMedium
                         color: Theme.textPrimary
                         font.family: Theme.fontFamilyDefault
@@ -66,7 +65,7 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            tr.setLocale("zh-CN")
+                            TranslationBridge.set_locale("zh-CN")
                         }
                     }
                 }
@@ -75,11 +74,11 @@ Item {
                 Rectangle {
                     width: parent.width
                     height: 60
-                    color: tr.currentLocale === "en-US" ? Theme.darkAccent : Theme.darkBackground
+                    color: TranslationBridge.current_locale === "en-US" ? Theme.darkAccent : Theme.darkBackground
                     radius: Theme.radiusSmall
                     
                     Text {
-                        text: tr.translate("settings.language.enUS")
+                        text: TranslationBridge.translate("settings.language.enUS")
                         font.pixelSize: Theme.fontSizeMedium
                         color: Theme.textPrimary
                         font.family: Theme.fontFamilyDefault
@@ -89,7 +88,7 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            tr.setLocale("en-US")
+                            TranslationBridge.set_locale("en-US")
                         }
                     }
                 }

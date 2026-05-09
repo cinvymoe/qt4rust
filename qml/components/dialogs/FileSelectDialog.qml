@@ -8,7 +8,6 @@ import "../controls"
 Dialog {
     id: root
 
-    TranslationBridge { id: tr }
 
     // 对外属性
     property string selectedFilePath: ""
@@ -53,7 +52,7 @@ Dialog {
             }
             
                 contentItem: Text {
-                    text: tr.translate("dialog.cancel")
+                    text: TranslationBridge.translate("dialog.cancel")
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textPrimary
                     horizontalAlignment: Text.AlignHCenter
@@ -71,7 +70,7 @@ Dialog {
             
             // 主标题
             Text {
-                text: tr.translate("dialog.importRatedLoad")
+                text: TranslationBridge.translate("dialog.importRatedLoad")
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.bold: true
@@ -80,7 +79,7 @@ Dialog {
 
             // 副标题
             Text {
-                text: tr.translate("dialog.importRatedLoadDesc")
+                text: TranslationBridge.translate("dialog.importRatedLoadDesc")
                 font.pixelSize: Theme.fontSizeSmall
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
@@ -88,7 +87,7 @@ Dialog {
             
             // 副标题
             Text {
-                text: tr.translate("dialog.importRatedLoadDesc")
+                text: TranslationBridge.translate("dialog.importRatedLoadDesc")
                 font.pixelSize: Theme.fontSizeSmall
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
@@ -121,7 +120,7 @@ Dialog {
             }
             
             Text {
-                text: tr.translate("dialog.importHint")
+                text: TranslationBridge.translate("dialog.importHint")
                 font.pixelSize: Theme.fontSizeSmall
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
@@ -149,7 +148,7 @@ Dialog {
                 }
                 
                 contentItem: Text {
-                    text: tr.translate("dialog.cancel")
+                    text: TranslationBridge.translate("dialog.cancel")
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textPrimary
                     horizontalAlignment: Text.AlignHCenter
@@ -169,7 +168,7 @@ Dialog {
                 }
                 
                 contentItem: Text {
-                    text: tr.translate("dialog.confirm")
+                    text: TranslationBridge.translate("dialog.confirm")
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textPrimary
                     horizontalAlignment: Text.AlignHCenter

@@ -13,7 +13,6 @@ Flickable {
     contentHeight: contentColumn.height
     clip: true
 
-    TranslationBridge { id: tr }
 
     // ViewModel 实例
     MomentCurveViewModel {
@@ -55,7 +54,7 @@ Flickable {
     // 导入成功对话框
     InfoDialog {
         id: importSuccessDialog
-        title: tr.translate("dialog.importSuccess") || "导入成功"
+        title: TranslationBridge.translate("dialog.importSuccess") || "导入成功"
         message: ""
 
         onAccepted: {
@@ -66,7 +65,7 @@ Flickable {
     // 导入失败对话框
     InfoDialog {
         id: importErrorDialog
-        title: tr.translate("dialog.importError") || "导入失败"
+        title: TranslationBridge.translate("dialog.importError") || "导入失败"
         message: ""
 
         onAccepted: {
@@ -117,7 +116,7 @@ Flickable {
                             }
                             
                             Text {
-                                text: tr.translate("momentCurve.title")
+                                text: TranslationBridge.translate("momentCurve.title")
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamilyDefault
                                 color: "#dbeafe"
@@ -187,7 +186,7 @@ Flickable {
                                 }
                                 
                                 Text {
-                                    text: tr.translate("momentCurve.ratedCurve")
+                                    text: TranslationBridge.translate("momentCurve.ratedCurve")
                                     font.pixelSize: 20
                                     font.family: Theme.fontFamilyDefault
                                     font.weight: Font.Bold
@@ -213,7 +212,7 @@ Flickable {
                                 }
                                 
                                 contentItem: Text {
-                                    text: tr.translate("momentCurve.importCurve")
+                                    text: TranslationBridge.translate("momentCurve.importCurve")
                                     font.pixelSize: 14
                                     font.family: Theme.fontFamilyDefault
                                     color: "#ffffff"
@@ -290,7 +289,7 @@ Flickable {
                                             }
                                             
                                             Text {
-                                                text: tr.translate("momentCurve.boomLength")
+                                                text: TranslationBridge.translate("momentCurve.boomLength")
                                                 font.pixelSize: 12
                                                 font.family: Theme.fontFamilyDefault
                                                 color: isSelected ? "#93c5fd" : Theme.textTertiary
@@ -351,7 +350,7 @@ Flickable {
                                                 anchors.verticalCenter: parent.verticalCenter
                                             }
                                             Text {
-                                                text: tr.translate("momentCurve.currentLength")
+                                                text: TranslationBridge.translate("momentCurve.currentLength")
                                                 font.pixelSize: 12
                                                 color: "#94a3b8"
                                             }
@@ -374,7 +373,7 @@ Flickable {
                                         Row {
                                             spacing: 6
                                             Rectangle { width: 6; height: 6; radius: 3; color: "#22c55e"; anchors.verticalCenter: parent.verticalCenter }
-                                            Text { text: tr.translate("momentCurve.maxLoad"); font.pixelSize: 12; color: "#94a3b8" }
+                                            Text { text: TranslationBridge.translate("momentCurve.maxLoad"); font.pixelSize: 12; color: "#94a3b8" }
                                         }
                                         Text {
                                             text: viewModel.getMaxLoadForBoom(viewModel.current_boom_length || 0).toFixed(1) + " t"
@@ -394,7 +393,7 @@ Flickable {
                                         Row {
                                             spacing: 6
                                             Rectangle { width: 6; height: 6; radius: 3; color: "#f59e0b"; anchors.verticalCenter: parent.verticalCenter }
-                                            Text { text: tr.translate("momentCurve.maxRadius"); font.pixelSize: 12; color: "#94a3b8" }
+                                            Text { text: TranslationBridge.translate("momentCurve.maxRadius"); font.pixelSize: 12; color: "#94a3b8" }
                                         }
                                         Text {
                                             text: viewModel.getMaxRadiusForBoom(viewModel.current_boom_length || 0).toFixed(1) + " m"
@@ -414,7 +413,7 @@ Flickable {
                                         Row {
                                             spacing: 6
                                             Rectangle { width: 6; height: 6; radius: 3; color: "#8b5cf6"; anchors.verticalCenter: parent.verticalCenter }
-                                            Text { text: tr.translate("momentCurve.dataPoints"); font.pixelSize: 12; color: "#94a3b8" }
+                                            Text { text: TranslationBridge.translate("momentCurve.dataPoints"); font.pixelSize: 12; color: "#94a3b8" }
                                         }
                                         Text {
                                             text: viewModel.getDataPointCount(viewModel.current_boom_length || 0).toString()

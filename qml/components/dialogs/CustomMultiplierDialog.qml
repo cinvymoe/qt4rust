@@ -8,7 +8,6 @@ import "../../styles"
 Dialog {
     id: root
     
-    TranslationBridge { id: tr }
     
     // 对外属性
     property real currentMultiplier: 1.0
@@ -71,7 +70,7 @@ Dialog {
             
             // 主标题
             Text {
-                text: tr.translate("dialog.selectMultiplier")
+                text: TranslationBridge.translate("dialog.selectMultiplier")
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 font.bold: true
@@ -80,7 +79,7 @@ Dialog {
             
             // 副标题
             Text {
-                text: tr.translate("dialog.selectMultiplierDesc")
+                text: TranslationBridge.translate("dialog.selectMultiplierDesc")
                 font.pixelSize: Theme.fontSizeSmall
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
@@ -161,7 +160,7 @@ Dialog {
                 }
                 
                 contentItem: Text {
-                    text: tr.translate("dialog.cancel")
+                    text: TranslationBridge.translate("dialog.cancel")
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textPrimary
                     horizontalAlignment: Text.AlignHCenter
@@ -181,7 +180,7 @@ Dialog {
                 }
                 
                 contentItem: Text {
-                    text: tr.translate("dialog.confirm")
+                    text: TranslationBridge.translate("dialog.confirm")
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textPrimary
                     horizontalAlignment: Text.AlignHCenter

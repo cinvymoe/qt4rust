@@ -9,7 +9,6 @@ import "../components/controls"
 Item {
     id: alarmRecordView
     
-    TranslationBridge { id: tr }
     
     // HistoryViewModel 实例
     HistoryViewModel {
@@ -81,14 +80,14 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: tr.translate("alarm.title")
+                            text: TranslationBridge.translate("alarm.title")
                             font.pixelSize: Theme.fontSizeXLarge
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textPrimary
                         }
                         
                         Text {
-                            text: tr.translate("alarm.subtitle")
+                            text: TranslationBridge.translate("alarm.subtitle")
                             font.pixelSize: Theme.fontSizeSmall
                             font.family: Theme.fontFamilyDefault
                             color: Theme.textTertiary
@@ -115,7 +114,7 @@ Item {
                         
                         // 刷新按钮
                         Button {
-                            text: tr.translate("chart.refresh")
+                            text: TranslationBridge.translate("chart.refresh")
                             implicitWidth: 60
                             implicitHeight: 32
                             
@@ -189,7 +188,7 @@ Item {
                                     }
                                     
                                     Text {
-                                        text: tr.translate("alarm.totalCount")
+                                        text: TranslationBridge.translate("alarm.totalCount")
                                         font.pixelSize: Theme.fontSizeMedium
                                         font.family: Theme.fontFamilyDefault
                                         color: Theme.textTertiary
@@ -230,7 +229,7 @@ Item {
                                     }
                                     
                                     Text {
-                                        text: tr.translate("alarm.warningCount")
+                                        text: TranslationBridge.translate("alarm.warningCount")
                                         font.pixelSize: Theme.fontSizeMedium
                                         font.family: Theme.fontFamilyDefault
                                         color: Theme.textTertiary
@@ -271,7 +270,7 @@ Item {
                                     }
                                     
                                     Text {
-                                        text: tr.translate("alarm.dangerCount")
+                                        text: TranslationBridge.translate("alarm.dangerCount")
                                         font.pixelSize: Theme.fontSizeMedium
                                         font.family: Theme.fontFamilyDefault
                                         color: Theme.textTertiary
@@ -305,7 +304,7 @@ Item {
                             spacing: Theme.spacingMedium - 4
                             
                             Text {
-                                text: tr.translate("alarm.levels")
+                                text: TranslationBridge.translate("alarm.levels")
                                 font.pixelSize: Theme.fontSizeNormal
                                 font.family: Theme.fontFamilyDefault
                                 color: Theme.textPrimary
@@ -340,14 +339,14 @@ Item {
                                             spacing: 0
                                             
                                             Text {
-                                                text: tr.translate("alarm.level.normal")
+                                                text: TranslationBridge.translate("alarm.level.normal")
                                                 font.pixelSize: Theme.fontSizeMedium
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.successColor
                                             }
                                             
                                             Text {
-                                                text: tr.translate("alarm.level.normalDesc")
+                                                text: TranslationBridge.translate("alarm.level.normalDesc")
                                                 font.pixelSize: Theme.fontSizeSmall
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.textTertiary
@@ -381,14 +380,14 @@ Item {
                                             spacing: 0
                                             
                                             Text {
-                                                text: tr.translate("alarm.level.warning")
+                                                text: TranslationBridge.translate("alarm.level.warning")
                                                 font.pixelSize: Theme.fontSizeMedium
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.warningColor
                                             }
                                             
                                             Text {
-                                                text: tr.translate("alarm.level.warningDesc")
+                                                text: TranslationBridge.translate("alarm.level.warningDesc")
                                                 font.pixelSize: Theme.fontSizeSmall
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.textTertiary
@@ -422,14 +421,14 @@ Item {
                                             spacing: 0
                                             
                                             Text {
-                                                text: tr.translate("alarm.level.danger")
+                                                text: TranslationBridge.translate("alarm.level.danger")
                                                 font.pixelSize: Theme.fontSizeMedium
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.dangerLight
                                             }
                                             
                                             Text {
-                                                text: tr.translate("alarm.level.dangerDesc")
+                                                text: TranslationBridge.translate("alarm.level.dangerDesc")
                                                 font.pixelSize: Theme.fontSizeSmall
                                                 font.family: Theme.fontFamilyDefault
                                                 color: Theme.textTertiary

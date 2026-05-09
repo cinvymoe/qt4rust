@@ -9,7 +9,6 @@ import "../../../components/controls"
 Item {
     id: root
 
-    TranslationBridge { id: tr }
     
     // 暴露保存和重置函数给外部调用
     function saveCalibration() {
@@ -67,7 +66,7 @@ Item {
                         }
                         
                         Text {
-                            text: tr.translate("calibration.angleTitle") || "两点标定设置"
+                            text: TranslationBridge.translate("calibration.angleTitle") || "两点标定设置"
                             font.pixelSize: Theme.fontSizeLarge
                             font.weight: Font.Medium
                             color: Theme.textPrimary
@@ -150,7 +149,7 @@ Item {
                         spacing: Theme.spacingSmall
                         
                         Text {
-                            text: tr.translate("calibration.angleNote1")
+                            text: TranslationBridge.translate("calibration.angleNote1")
                             font.pixelSize: Theme.fontSizeMedium
                             color: Theme.warningColor
                         }
@@ -160,31 +159,31 @@ Item {
                             spacing: 4
 
                             Text {
-                                text: "• " + tr.translate("calibration.angleNote1")
+                                text: "• " + TranslationBridge.translate("calibration.angleNote1")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + tr.translate("calibration.angleNote2")
+                                text: "• " + TranslationBridge.translate("calibration.angleNote2")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + tr.translate("calibration.angleNote3")
+                                text: "• " + TranslationBridge.translate("calibration.angleNote3")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + tr.translate("calibration.angleNote4")
+                                text: "• " + TranslationBridge.translate("calibration.angleNote4")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
 
                             Text {
-                                text: "• " + tr.translate("calibration.angleNote5")
+                                text: "• " + TranslationBridge.translate("calibration.angleNote5")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textSecondary
                             }
@@ -242,7 +241,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: tr.translate("calibration.adValue")
+                        text: TranslationBridge.translate("calibration.adValue")
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }
@@ -274,7 +273,7 @@ Item {
                     spacing: Theme.spacingSmall
                     
                     Text {
-                        text: tr.translate("calibration.angleValue")
+                        text: TranslationBridge.translate("calibration.angleValue")
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.textSecondary
                     }

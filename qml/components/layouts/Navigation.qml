@@ -13,7 +13,6 @@ Rectangle {
     border.width: Theme.borderThin
     
     // i18n 翻译对象
-    TranslationBridge { id: tr }
     
     property int currentIndex: 0
     signal tabChanged(int index)
@@ -27,7 +26,7 @@ Rectangle {
             width: parent.width / 4
             height: parent.height
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-home.svg"
-            text: tr.translate("nav.monitoring")
+            text: TranslationBridge.translate("nav.monitoring")
             active: navigation.currentIndex === 0
             onClicked: {
                 navigation.currentIndex = 0
@@ -40,7 +39,7 @@ Rectangle {
             width: parent.width / 4
             height: parent.height
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-chart.svg"
-            text: tr.translate("nav.charts")
+            text: TranslationBridge.translate("nav.charts")
             active: navigation.currentIndex === 1
             onClicked: {
                 navigation.currentIndex = 1
@@ -53,7 +52,7 @@ Rectangle {
             width: parent.width / 4
             height: parent.height
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-alarm-record.svg"
-            text: tr.translate("nav.alarms")
+            text: TranslationBridge.translate("nav.alarms")
             active: navigation.currentIndex === 2
             showBadge: true
             onClicked: {
@@ -67,7 +66,7 @@ Rectangle {
             width: parent.width / 4
             height: parent.height
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-settings.svg"
-            text: tr.translate("nav.settings")
+            text: TranslationBridge.translate("nav.settings")
             active: navigation.currentIndex === 3
             onClicked: {
                 navigation.currentIndex = 3

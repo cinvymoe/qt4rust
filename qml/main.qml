@@ -20,7 +20,6 @@ Window {
     color: Theme.darkBackground
     
     // i18n 翻译对象
-    TranslationBridge { id: tr }
     
     // 导航栏显示状态
     property bool navigationVisible: true
@@ -167,7 +166,7 @@ Window {
             
             // 应用标题
             Text {
-                text: tr.translate("main.title")
+                text: TranslationBridge.translate("main.title")
                 font.pixelSize: Theme.fontSizeXXLarge
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textPrimary
@@ -185,7 +184,7 @@ Window {
             
             // 副标题
             Text {
-                text: tr.translate("main.subtitle")
+                text: TranslationBridge.translate("main.subtitle")
                 font.pixelSize: Theme.fontSizeMedium
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary

@@ -7,7 +7,6 @@ import "../../styles"
 Rectangle {
     id: root
     
-    TranslationBridge { id: tr }
     
     // 公开属性
     property string alarmType: "warning"  // "warning" 或 "danger"
@@ -103,7 +102,7 @@ Rectangle {
                 }
                 
                 Text {
-                    text: tr.translate("alarm.momentValue") + ": " + root.momentValue
+                    text: TranslationBridge.translate("alarm.momentValue") + ": " + root.momentValue
                     font.pixelSize: Theme.fontSizeSmall
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textTertiary

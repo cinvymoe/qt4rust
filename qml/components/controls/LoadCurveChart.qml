@@ -8,11 +8,10 @@ Item {
     width: parent.width
     height: 384
 
-    TranslationBridge { id: tr }
 
     // Translated strings for canvas (canvas doesn't have direct QML access)
-    property string loadingText: tr.translate("common.loading") || "正在加载数据..."
-    property string noDataText: tr.translate("common.noData") || "无数据"
+    property string loadingText: TranslationBridge.translate("common.loading") || "正在加载数据..."
+    property string noDataText: TranslationBridge.translate("common.noData") || "无数据"
 
     property var viewModel: null
     

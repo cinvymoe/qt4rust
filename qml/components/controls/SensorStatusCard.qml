@@ -7,11 +7,10 @@ import "../../styles"
 Rectangle {
     id: sensorCard
 
-    TranslationBridge { id: tr }
 
     // 公开属性
-    property string sensorName: tr.translate("systemStatus.sensorName") || "传感器"
-    property string statusText: tr.translate("systemStatus.online") || "在线 - 正常"
+    property string sensorName: TranslationBridge.translate("systemStatus.sensorName") || "传感器"
+    property string statusText: TranslationBridge.translate("systemStatus.online") || "在线 - 正常"
     property bool isOnline: true
     
     // 卡片样式

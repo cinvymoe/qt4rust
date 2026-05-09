@@ -12,7 +12,6 @@ Item {
     id: monitoringView
     
     // i18n 翻译对象
-    TranslationBridge { id: tr }
     
     // 顶部栏显示状态（从父组件传递）
     property bool headerVisible: true
@@ -115,9 +114,9 @@ Item {
         monitoringDataModel.append({
             type: "dataCard",
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-weight.png",
-            label: tr.translate("monitoring.currentLoad"),
-            unit: tr.translate("monitoring.unit.ton"),
-            description: tr.translate("monitoring.ratedLoad"),
+            label: TranslationBridge.translate("monitoring.currentLoad"),
+            unit: TranslationBridge.translate("monitoring.unit.ton"),
+            description: TranslationBridge.translate("monitoring.ratedLoad"),
             showProgress: true,
             value: currentLoad,
             maxValue: ratedLoad
@@ -126,9 +125,9 @@ Item {
         monitoringDataModel.append({
             type: "dataCard",
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-radius.png",
-            label: tr.translate("monitoring.workingRadius"),
-            unit: tr.translate("monitoring.unit.meter"),
-            description: tr.translate("monitoring.horizontalDistance"),
+            label: TranslationBridge.translate("monitoring.workingRadius"),
+            unit: TranslationBridge.translate("monitoring.unit.meter"),
+            description: TranslationBridge.translate("monitoring.horizontalDistance"),
             showProgress: false,
             value: workingRadius,
             maxValue: 0.0
@@ -137,9 +136,9 @@ Item {
         monitoringDataModel.append({
             type: "dataCard",
             iconSource: "qrc:/qt/qml/qt/rust/demo/qml/assets/images/icon-angle.png",
-            label: tr.translate("monitoring.boomAngle"),
-            unit: tr.translate("monitoring.unit.degree"),
-            description: tr.translate("monitoring.angleWithHorizontal"),
+            label: TranslationBridge.translate("monitoring.boomAngle"),
+            unit: TranslationBridge.translate("monitoring.unit.degree"),
+            description: TranslationBridge.translate("monitoring.angleWithHorizontal"),
             showProgress: false,
             value: boomAngle,
             maxValue: 0.0
@@ -147,7 +146,7 @@ Item {
 
         monitoringDataModel.append({
             type: "boomLength",
-            label: tr.translate("monitoring.boomLength"),
+            label: TranslationBridge.translate("monitoring.boomLength"),
             value: boomLength
         })
     }
@@ -182,7 +181,7 @@ Item {
                 }
                 
                 Text {
-                    text: tr.translate("monitoring.sensorDisconnected")
+                    text: TranslationBridge.translate("monitoring.sensorDisconnected")
                     font.pixelSize: Theme.fontSizeMedium
                     font.family: Theme.fontFamilyDefault
                     color: Theme.textPrimary
@@ -243,14 +242,14 @@ Item {
                     isAngleAlarm: viewModel.is_angle_alarm
                     // 根据状态显示不同的消息：角度报警、危险报警或力矩预警
                     title: {
-                        if (viewModel.is_angle_alarm) return tr.translate("danger.title.angleAlarm")
-                        return viewModel.is_danger ? tr.translate("danger.title.danger") : tr.translate("danger.title.warning")
+                        if (viewModel.is_angle_alarm) return TranslationBridge.translate("danger.title.angleAlarm")
+                        return viewModel.is_danger ? TranslationBridge.translate("danger.title.danger") : TranslationBridge.translate("danger.title.warning")
                     }
                     message: {
-                        if (viewModel.is_angle_alarm) return tr.translate("danger.message.angleAlarm")
+                        if (viewModel.is_angle_alarm) return TranslationBridge.translate("danger.message.angleAlarm")
                         return viewModel.is_danger ?
-                            tr.translate("danger.message.danger") :
-                            tr.translate("danger.message.warning")
+                            TranslationBridge.translate("danger.message.danger") :
+                            TranslationBridge.translate("danger.message.warning")
                     }
 
                     Behavior on visible {
@@ -302,7 +301,7 @@ Item {
                             }
                             
 Text {
-                                 text: tr.translate("danger.craneStatus")
+                                 text: TranslationBridge.translate("danger.craneStatus")
                                  font.pixelSize: Theme.fontSizeLarge
                                  font.family: Theme.fontFamilyDefault
                                  font.weight: Font.Medium
@@ -374,7 +373,7 @@ Text {
                             unit: model.unit || ""
                             description: {
                                 if (model.showProgress) {
-                                    return tr.translate("common.rated") + ": " + (model.maxValue || 0).toFixed(1) + (model.unit || "")
+                                    return TranslationBridge.translate("common.rated") + ": " + (model.maxValue || 0).toFixed(1) + (model.unit || "")
                                 }
                                 return model.description || ""
                             }

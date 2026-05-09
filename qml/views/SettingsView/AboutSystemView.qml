@@ -6,7 +6,6 @@ import "../../styles"
 
 Flickable {
     id: aboutSystemView
-    TranslationBridge { id: tr }
     width: parent.width
     height: parent.height
     contentHeight: contentColumn.height + Theme.spacingMedium * 2
@@ -60,7 +59,7 @@ Flickable {
                         spacing: 0
                         
                         Text {
-                            text: tr.translate("about.title")
+                            text: TranslationBridge.translate("about.title")
                             font.pixelSize: Theme.fontSizeXLarge
                             font.family: Theme.fontFamilyDefault
                             font.weight: Font.Medium
@@ -97,7 +96,7 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: tr.translate("about.version")
+                                text: TranslationBridge.translate("about.version")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -125,7 +124,7 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: tr.translate("about.releaseDate")
+                                text: TranslationBridge.translate("about.releaseDate")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -152,7 +151,7 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: tr.translate("about.firmware")
+                                text: TranslationBridge.translate("about.firmware")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -180,7 +179,7 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: tr.translate("about.hardware")
+                                text: TranslationBridge.translate("about.hardware")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -224,7 +223,7 @@ Flickable {
                     }
                     
                     Text {
-                        text: tr.translate("about.features")
+                        text: TranslationBridge.translate("about.features")
                         font.pixelSize: Theme.fontSizeLarge
                         color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
@@ -263,13 +262,13 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: tr.translate("about.feature.realtime")
+                                text: TranslationBridge.translate("about.feature.realtime")
                                 font.pixelSize: Theme.fontSizeMedium
                                 color: "#e2e8f0"
                             }
                             
                             Text {
-                                text: tr.translate("about.feature.realtimeDesc")
+                                text: TranslationBridge.translate("about.feature.realtimeDesc")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                                 wrapMode: Text.WordWrap
@@ -304,13 +303,13 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: tr.translate("about.feature.warning")
+                                text: TranslationBridge.translate("about.feature.warning")
                                 font.pixelSize: Theme.fontSizeMedium
                                 color: "#e2e8f0"
                             }
                             
                             Text {
-                                text: tr.translate("about.feature.warningDesc")
+                                text: TranslationBridge.translate("about.feature.warningDesc")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                                 wrapMode: Text.WordWrap
@@ -345,13 +344,13 @@ Flickable {
                             spacing: Theme.spacingTiny
                             
                             Text {
-                                text: tr.translate("about.feature.sensor")
+                                text: TranslationBridge.translate("about.feature.sensor")
                                 font.pixelSize: Theme.fontSizeMedium
                                 color: "#e2e8f0"
                             }
                             
                             Text {
-                                text: tr.translate("about.feature.sensorDesc")
+                                text: TranslationBridge.translate("about.feature.sensorDesc")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                                 wrapMode: Text.WordWrap
@@ -389,7 +388,7 @@ Flickable {
                     }
                     
                     Text {
-                        text: tr.translate("about.techSpecs")
+                        text: TranslationBridge.translate("about.techSpecs")
                         font.pixelSize: Theme.fontSizeLarge
                         color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
@@ -463,7 +462,7 @@ Flickable {
                     }
                     
                     Text {
-                        text: tr.translate("about.certifications")
+                        text: TranslationBridge.translate("about.certifications")
                         font.pixelSize: Theme.fontSizeLarge
                         color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
@@ -545,7 +544,7 @@ Flickable {
                     }
                     
                     Text {
-                        text: tr.translate("about.techSupport")
+                        text: TranslationBridge.translate("about.techSupport")
                         font.pixelSize: Theme.fontSizeLarge
                         color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
@@ -575,7 +574,7 @@ Flickable {
                             spacing: 0
                             
                             Text {
-                                text: tr.translate("about.hotline")
+                                text: TranslationBridge.translate("about.hotline")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -606,7 +605,7 @@ Flickable {
                             spacing: 0
                             
                             Text {
-                                text: tr.translate("about.email")
+                                text: TranslationBridge.translate("about.email")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
@@ -637,13 +636,13 @@ Flickable {
                             spacing: 0
                             
                             Text {
-                                text: tr.translate("about.address")
+                                text: TranslationBridge.translate("about.address")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                             }
                             
                             Text {
-                                text: tr.translate("about.addressValue")
+                                text: TranslationBridge.translate("about.addressValue")
                                 font.pixelSize: Theme.fontSizeMedium
                                 color: "#e2e8f0"
                             }
@@ -668,7 +667,7 @@ Flickable {
                 spacing: Theme.spacingSmall
                 
                 Text {
-                    text: tr.translate("about.copyright")
+                    text: TranslationBridge.translate("about.copyright")
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textTertiary
                     horizontalAlignment: Text.AlignHCenter
@@ -676,7 +675,7 @@ Flickable {
                 }
                 
                 Text {
-                    text: tr.translate("about.copyrightNotice")
+                    text: TranslationBridge.translate("about.copyrightNotice")
                     font.pixelSize: Theme.fontSizeTiny
                     color: "#62748e"
                     horizontalAlignment: Text.AlignHCenter

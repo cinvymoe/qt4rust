@@ -11,7 +11,6 @@ Item {
     
     property int currentTabIndex: 0
     
-    TranslationBridge { id: tr }
     
     Rectangle {
         anchors.fill: parent
@@ -71,11 +70,11 @@ Item {
                         
                         Repeater {
                             model: [
-                                {text: tr.translate("settings.systemStatus"), icon: "icon-system-status.svg"},
-                                {text: tr.translate("settings.calibration"), icon: "icon-calibration.svg"},
-                                {text: tr.translate("settings.momentCurve"), icon: "icon-moment-curve.svg"},
-                                {text: tr.translate("settings.about"), icon: "icon-about-system.svg"},
-                                {text: tr.translate("settings.language"), icon: "icon-language.svg"}
+                                {text: TranslationBridge.translate("settings.systemStatus"), icon: "icon-system-status.svg"},
+                                {text: TranslationBridge.translate("settings.calibration"), icon: "icon-calibration.svg"},
+                                {text: TranslationBridge.translate("settings.momentCurve"), icon: "icon-moment-curve.svg"},
+                                {text: TranslationBridge.translate("settings.about"), icon: "icon-about-system.svg"},
+                                {text: TranslationBridge.translate("settings.language"), icon: "icon-language.svg"}
                             ]
                             
                             Rectangle {
@@ -159,11 +158,11 @@ Item {
     // 获取当前 Tab 的标题
     function getCurrentTabTitle() {
         switch(currentTabIndex) {
-            case 0: return tr.translate("settings.systemStatus")
-            case 1: return tr.translate("settings.calibration")
-            case 2: return tr.translate("settings.momentCurve")
-            case 3: return tr.translate("settings.about")
-            case 4: return tr.translate("settings.language")
+            case 0: return TranslationBridge.translate("settings.systemStatus")
+            case 1: return TranslationBridge.translate("settings.calibration")
+            case 2: return TranslationBridge.translate("settings.momentCurve")
+            case 3: return TranslationBridge.translate("settings.about")
+            case 4: return TranslationBridge.translate("settings.language")
             default: return ""
         }
     }
@@ -171,11 +170,11 @@ Item {
     // 获取当前 Tab 的描述文本
     function getCurrentTabDescription() {
         switch(currentTabIndex) {
-            case 0: return tr.translate("systemStatus.sensorConnection")
-            case 1: return tr.translate("calibration.multiplierDesc")
-            case 2: return tr.translate("momentCurve.title")
-            case 3: return tr.translate("about.version")
-            case 4: return tr.translate("settings.language")
+            case 0: return TranslationBridge.translate("systemStatus.sensorConnection")
+            case 1: return TranslationBridge.translate("calibration.multiplierDesc")
+            case 2: return TranslationBridge.translate("momentCurve.title")
+            case 3: return TranslationBridge.translate("about.version")
+            case 4: return TranslationBridge.translate("settings.language")
             default: return ""
         }
     }

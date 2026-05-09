@@ -7,7 +7,6 @@ import "../../styles"
 Rectangle {
     id: root
     
-    TranslationBridge { id: tr }
     
     // 公开属性
     property real boomLength: 0.0    // 臂长（米）
@@ -43,7 +42,7 @@ Rectangle {
             }
             
             Text {
-                text: tr.translate("boomLength.title")
+                text: TranslationBridge.translate("boomLength.title")
                 font.pixelSize: Theme.fontSizeSmall
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textSecondary
@@ -63,7 +62,7 @@ Rectangle {
             }
             
             Text {
-                text: tr.translate("boomLength.unit")
+                text: TranslationBridge.translate("boomLength.unit")
                 font.pixelSize: Theme.fontSizeLarge
                 font.family: Theme.fontFamilyDefault
                 color: Theme.textTertiary
@@ -74,7 +73,7 @@ Rectangle {
         
         // 描述文本
         Text {
-            text: tr.translate("boomLength.description")
+            text: TranslationBridge.translate("boomLength.description")
             font.pixelSize: Theme.fontSizeTiny
             font.family: Theme.fontFamilyDefault
             color: Theme.textTertiary
